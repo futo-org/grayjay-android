@@ -13,17 +13,17 @@
     <string name="home">Əsas səhifə</string>
     <string name="sync_history">Uzaqdan tarixçəni sinxronlaşdır</string>
     <string name="sync_history_desc">Başlanğıcda bu platformadan hesab tarixçəsini sinxronlaşdır</string>
-    <string name="progress_bar">Gedişat zolağı</string>
+    <string name="progress_bar">İrəliləyiş çubuğu</string>
     <string name="advanced_settings">Qabaqcıl tənzimləmələr</string>
     <string name="advanced_settings_description">Qabaqcıl tənzimləmələrin göstərilməsi təcrübənizi tənzimləmək üçün əlavə seçimləri üzə çıxarır.</string>
-    <string name="progress_bar_description">Keçmiş gedişat çubuğunun göstərilib-göstərilməyəcəyi</string>
+    <string name="progress_bar_description">Keçmiş irəliləyiş çubuğunun göstərilib-göstərilməyəcəyi</string>
     <string name="hide_hidden_from_search">Axtarışda əsas səhifədən gizlədilənləri gizlət</string>
     <string name="hide_hidden_from_search_description">Əsas səhifədən gizlədilmiş videoları və yaradıcıları axtarış nəticələrində də gizlət</string>
     <string name="recommendations">Tövsiyələr</string>
     <string name="more">Daha çox</string>
-    <string name="playlists">Oynatma siyahıları</string>
+    <string name="playlists">Oxutma siyahıları</string>
     <string name="subscriptions">Abunəliklər</string>
-    <string name="loading">Yüklənilir</string>
+    <string name="loading">Yüklənir</string>
     <string name="retry">Yenidən cəhd et</string>
     <string name="install_failed_device_installer_broken">Sistem quraşdırıcısı başladılmadı. Cihazınızın ROM-u avtomatik yeniləmələrlə uyğun gəlmir.</string>
     <string name="cancel">Ləğv et</string>
@@ -44,7 +44,7 @@
     <string name="defaults">İlkin dəyərlər</string>
     <string name="home_screen">Əsas ekran</string>
     <string name="preferred_quality">Üstünlük verilən keyfiyyət</string>
-    <string name="preferred_quality_description">Video izləmək üçün ilkin keyfiyyət</string>
+    <string name="preferred_quality_description">Video izləmək üçün defolt keyfiyyət</string>
     <string name="update">Yenilə</string>
     <string name="refresh">Lentini yenilə</string>
     <string name="close">Bağla</string>
@@ -101,16 +101,16 @@
     <string name="no_results">Burada baxılacaq heç nə yoxdur</string>
     <string name="no_results_shorts">Aktivləşdirilmiş mənbələrdə heç bir qısa video nəticəsi yoxdur.</string>
     <string name="create">Yarat</string>
-    <string name="ok">Oldu</string>
+    <string name="ok">OK</string>
     <string name="yes">Bəli</string>
     <string name="no">Xeyr</string>
-    <string name="confirm">Təsdiqlə</string>
+    <string name="confirm">Təsdiq et</string>
     <string name="do_not_ask_again">Bir daha soruşma</string>
     <string name="confirm_delete_playlist">Bu oxutma siyahısını silmək istədiyinizə əminsinizmi?</string>
     <string name="confirm_delete_subscription">Bu abunəliyi silmək istədiyinizə əminsinizmi?</string>
     <string name="confirm_remove_source">Bu mənbənin silinməsi bəzi abunəliklərinizin həll edilməməsi ilə nəticələnəcək.</string>
-    <string name="shuffle">Qarışdır</string>
-    <string name="play_all">Hamısını oynat</string>
+    <string name="shuffle">Qarışıq</string>
+    <string name="play_all">Hamısını oxut</string>
     <string name="search_history">Axtarış tarixçəsi</string>
     <string name="app_error">Tətbiq xətası</string>
     <string name="developer">Tərtibatçı</string>
@@ -145,8 +145,8 @@
     <string name="source_permissions_explanation">Bunlar plaginin işləməsi üçün tələb etdiyi icazələrdir</string>
     <string name="source_explain_eval_access">Plagin eval imkanına çıxış əldə edəcək</string>
     <string name="source_explain_script_url">Plagin aşağıdakı domenlərə çıxış əldə edəcək</string>
-    <string name="scan_qr">QR skanla</string>
-    <string name="scan_qr_explain">Quraşdırmaq üçün QR kodu skanla</string>
+    <string name="scan_qr">QR skan et</string>
+    <string name="scan_qr_explain">Quraşdırmaq üçün QR kodu skan edin</string>
     <string name="enter_url_explain">Plagin konfiqurasiyasını yükləmək üçün URL daxil edin.</string>
     <string name="enter_url">URL daxil edin</string>
     <string name="install">Quraşdır</string>
@@ -158,7 +158,7 @@
     <string name="start">Başlat</string>
     <string name="storage_space">Yaddaş sahəsi</string>
     <string name="downloads">Endirmələr</string>
-    <string name="deselect_all">Hamısının seçmini ləğv et</string>
+    <string name="deselect_all">Hamısının seçimini ləğv et</string>
     <string name="select_all">Hamısını seç</string>
     <string name="add_casting_device">Yayım cihazı əlavə et</string>
     <string name="new_activity">Yeni fəaliyyət</string>
@@ -173,13 +173,13 @@
     <string name="enable_in_home">Əsas səhifədə aktivləşdir</string>
     <string name="enable_in_search">Axtarışda aktivləşdir</string>
     <string name="check">Yoxla</string>
-    <string name="buy_text">Grayjay qurmaq və saxlamaq asan və ya ucuz tətbiq deyil. Tətbiqdə və onun ətrafındakı sistemlərdə tam ştatlı mühəndislərimiz işləyir. Çox güman ki, tezliklə, bəlkə ümumiyyətlə, xərcini çıxarmayacaq.\n\nFUTO-nun missiyası açıq mənbəli proqram təminatının və zərərli olmayan proqram təminatı biznes təcrübələrinin layihələr və onların tərtibatçıları üçün davamlı gəlir mənbəyinə çevrilməsidir. Buna görə də istifadəçilərin proqram təminatı üçün faktiki olaraq pul ödəməsinin tərəfdarıyıq.\nMəhz buna görə Grayjay proqram üçün pul ödəmənizi istəyir.</string>
+    <string name="buy_text">Grayjay qurmaq və saxlamaq asan və ya ucuz tətbiq deyil. Tətbiqdə və onun ətrafındakı sistemlərdə tam ştatlı mühəndislərimiz işləyir. Çox güman ki, tezliklə, əgər ümumiyyətlə olarsa, xərcini çıxarmayacaq.\n\nFUTO-nun missiyası açıq mənbəli proqram təminatının və zərərli olmayan proqram təminatı biznes təcrübələrinin layihələr və onların tərtibatçıları üçün davamlı gəlir mənbəyinə çevrilməsidir. Buna görə də istifadəçilərin proqram təminatı üçün faktiki olaraq pul ödəməsinin tərəfdarıyıq.\nMəhz buna görə Grayjay proqram üçün pul ödəmənizi istəyir.</string>
     <string name="an_uncaught_exception_was_thrown_we_re_sorry_for_the_inconvenience">Tutulmamış istisna baş verdi, narahatlığa görə üzr istəyirik.</string>
     <string name="to_help_us_solve_this_please_share_the_below_crash_report_with_us_and_perhaps_adds_some_context_on_what_you_were_doing">Bunu həll etməyə kömək etmək üçün zəhmət olmasa aşağıdakı qəza hesabatını bizimlə paylaşın və bəlkə də nə etdiyinizlə bağlı bəzi kontekstlər əlavə edin.</string>
     <string name="new_profile">Yeni profil</string>
     <string name="import_existing_profile">Mövcud profili idxal et</string>
-    <string name="generate_a_new_identity">Yeni kimlik yarat</string>
-    <string name="use_an_existing_identity">Mövcud kimlikdən istifadə et</string>
+    <string name="generate_a_new_identity">Yeni eyniyyət yarat</string>
+    <string name="use_an_existing_identity">Mövcud eyniyyətdən istifadə et</string>
     <string name="permissions">İcazələr</string>
     <string name="security_warnings">Təhlükəsizlik xəbərdarlıqları</string>
     <string name="these_are_warnings_of_plugin_behavior_and_implementation">Bunlar plaginin davranış və tətbiqi xəbərdarlıqlarıdır</string>
@@ -192,7 +192,7 @@
     <string name="send_your_identity_to_another_app">Eyniyyətinizi başqa tətbiqə göndərin</string>
     <string name="copy">Kopyala</string>
     <string name="copy_your_identity_to_clipboard">Eyniyyətinizi mübadilə buferinə kopyalayın</string>
-    <string name="polycentric">Harbor</string>
+    <string name="polycentric">Polycentric</string>
     <string name="harbor">Harbor</string>
     <string name="platform">Platforma</string>
     <string name="profile_name">Profil adı</string>
@@ -235,12 +235,12 @@
     <string name="do_you_want_to_import_this_store">Bu mağazanı idxal etmək istəyirsiniz?</string>
     <string name="sources_required_need_to_be_enabled">Tələb olunan mənbələr aktivləşdirilməlidir</string>
     <string name="items_require_migration_or_are_corrupted_would_you_like_to_restore_them_from_backup_now">Elementlərin miqrasiyası tələb olunur və ya zədələniblər, onları ehtiyat nüsxədən indi bərpa etmək istəyirsinizmi?</string>
-    <string name="if_ignored_you_will_be_asked_again_next_startup">Məhəl qoyulmasa, növbəti başladıqda yenidən soruşulacaqsınız.</string>
+    <string name="if_ignored_you_will_be_asked_again_next_startup">Məhəl qoyulmazsa, növbəti başladıqda yenidən soruşulacaqsınız.</string>
     <string name="ignore">Məhəl qoyma</string>
     <string name="view_changelog">Dəyişiklik qeydinə bax</string>
     <string name="i_already_paid">Artıq ödəmişəm</string>
-    <string name="memberships">Üvlüklər</string>
-    <string name="a_monthly_recurring_payment_with_often">Tez-tez təkrarlanan aylıq ödəniş</string>
+    <string name="memberships">Üzvlüklər</string>
+    <string name="a_monthly_recurring_payment_with_often">Tez-tez əlavə üstünlükləri olan aylıq təkrarlanan ödəniş</string>
     <string name="additional_perks">əlavə üstünlüklər</string>
     <string name="a_one_time_payment_to_support_the_creator">Yaradıcıya dəstək olmaq üçün birdəfəlik ödəniş</string>
     <string name="a_store_by_the_creator">Yaradıcı tərəfindən mağaza</string>
@@ -267,11 +267,11 @@
     <string name="under">ALTINDA</string>
     <string name="construction">TİKİNTİ</string>
     <string name="disable">Deaktiv et</string>
-    <string name="the_following_content_cannot_be_opened_in_grayjay_due_to_a_missing_plugin">Aşağıdakı məzmun çatışmayan plajin səbəbindən Grayjay-də açıla bilməz.</string>
+    <string name="the_following_content_cannot_be_opened_in_grayjay_due_to_a_missing_plugin">Aşağıdakı məzmun çatışmayan plagin səbəbindən Grayjay-də açıla bilməz.</string>
     <string name="locked_content_description">Bu məzmun kilidlənib</string>
     <string name="unknown">Naməlum</string>
     <string name="tap_to_open_in_browser">Brauzerdə açmaq üçün toxunun</string>
-    <string name="missing_plugin">Çatışmayan plajin</string>
+    <string name="missing_plugin">Çatışmayan plagin</string>
     <string name="viewers_are_raiding">İzləyicilər basqın edir</string>
     <string name="go_now">İndi get</string>
     <string name="prevent">Qarşısını al</string>
@@ -299,7 +299,7 @@
     <string name="repeat">Təkrarla</string>
     <string name="view">Bax</string>
     <string name="install_by_qr">QR vasitəsilə quraşdır</string>
-    <string name="install_a_plugin_by_scanning_a_qr_code">QR kodu skan edərək plajin quraşdırın</string>
+    <string name="install_a_plugin_by_scanning_a_qr_code">QR kodu skan edərək plagin quraşdırın</string>
     <string name="logout">Çıxış et</string>
     <string name="video">Video</string>
     <string name="view_a_more_in_depth_video">Daha dərindən video izləyin</string>
@@ -312,11 +312,11 @@
     <string name="install_by_url">URL vasitəsilə quraşdır</string>
     <string name="cache_to_quickly_load_previously_fetched_videos">Əvvəllər gətirilmiş videoları tez yükləmək üçün keş</string>
     <string name="a_list_of_user_reported_and_self_reported_issues">İstifadəçilər tərəfindən bildirilən və öz-özünə bildirilən problemlərin siyahısı</string>
-    <string name="also_removes_any_data_related_plugin_like_login_or_settings">Həmçinin giriş və ya tənzimləmələr kimi məlumatlarla əlaqəli hər hansı plajini silir</string>
+    <string name="also_removes_any_data_related_plugin_like_login_or_settings">Həmçinin giriş və ya tənzimləmələr kimi məlumatlarla əlaqəli hər hansı plagini silir</string>
     <string name="announcement">Elan</string>
     <string name="notifications">Bildirişlər</string>
-    <string name="check_disabled_plugin_updates">Deaktiv edilmiş plajinlər üçün yeniləmələri yoxla</string>
-    <string name="check_disabled_plugin_updates_description">Deaktiv edilmiş plajinlər üçün yeniləmələri yoxla</string>
+    <string name="check_disabled_plugin_updates">Deaktiv edilmiş plaginlər üçün yeniləmələri yoxla</string>
+    <string name="check_disabled_plugin_updates_description">Deaktiv edilmiş plaginlər üçün yeniləmələri yoxla</string>
     <string name="planned_content_notifications">Planlaşdırılmış məzmun bildirişləri</string>
     <string name="planned_content_notifications_description">Aşkar edilmiş planlaşdırılmış məzmunu bildiriş kimi planlaşdırır ki, bu da bu məzmun üçün daha dəqiq bildirişlərlə nəticələnir.</string>
     <string name="attempt_to_utilize_byte_ranges">Bayt diapazonlarından istifadə etməyə cəhd edin</string>
@@ -346,7 +346,7 @@
     <string name="change_the_external_storage_for_download_files">Endirmə faylları üçün xarici yaddaşı dəyişdir</string>
     <string name="clear_cookies">Kukiləri təmizlə</string>
     <string name="clear_cookies_after_login">Girişdən sonra kukiləri təmizlə</string>
-    <string name="clear_cookies_after_login_desc">Girişdən sonra veb-görünüşdəki bütün kukiləri silir, bu, müəyyən plajinlərin düzgün işləməsi üçün tələb oluna bilər.</string>
+    <string name="clear_cookies_after_login_desc">Girişdən sonra veb-görünüşdəki bütün kukiləri silir, bu, müəyyən plaginlərin düzgün işləməsi üçün tələb oluna bilər.</string>
     <string name="clear_cookies_on_logout">Çıxış edərkən kukiləri təmizlə</string>
     <string name="test_background_worker">Arxa fon işçisini sınaqdan keçir</string>
     <string name="test_background_worker_description"></string>
@@ -373,7 +373,7 @@
     <string name="default_video_quality">Defolt video keyfiyyəti</string>
     <string name="deletes_license_keys_from_app">Lisenziya açarlarını tətbiqdən silir</string>
     <string name="download_when">Nə vaxt endir</string>
-    <string name="enable_video_cache">Video keşkini aktivləşdir</string>
+    <string name="enable_video_cache">Video keşini aktivləşdir</string>
     <string name="use_downloaded_ca_bundle">Endirilmiş CA dəstindən istifadə et</string>
     <string name="use_downloaded_ca_bundle_description">Köhnəlmiş kök sertifikatları olan cihazlarda kömək edə bilər.</string>
     <string name="enable_casting">Yayımı aktivləşdir</string>
@@ -389,10 +389,10 @@
     <string name="fetch_on_app_boot">Tətbiq açıldıqda gətir</string>
     <string name="fetch_on_tab_opened">Vərəq açıldıqda gətir</string>
     <string name="fetch_on_tab_opened_description">Vərəq açıldıqda yeni nəticələri gətir (hələ nəticə yoxdursa, problemləriniz yoxdursa söndürmək tövsiyə edilmir)</string>
-    <string name="always_reload_from_cache">Həmişə keşkdən yenidən yüklə</string>
+    <string name="always_reload_from_cache">Həmişə keşdən yenidən yüklə</string>
     <string name="always_reload_from_cache_description">Bu tövsiyə edilmir, lakin bəzi problemlər üçün mümkün həlldir.</string>
     <string name="peek_channel_contents">Kanal məzmununa göz gəzdir</string>
-    <string name="peek_channel_contents_description">Limitə məruz qalan çağırışların plajini tərəfindən dəstəklənirsə kanal məzmununa göz gəzdirin, abunəliklərin yenidən yüklənmə müddətini artıra bilər.</string>
+    <string name="peek_channel_contents_description">Limitə məruz qalan çağırışların plagini tərəfindən dəstəklənirsə kanal məzmununa göz gəzdirin, abunəliklərin yenidən yüklənmə müddətini artıra bilər.</string>
     <string name="get_answers_to_common_questions">Ümumi suallara cavab alın</string>
     <string name="give_feedback_on_the_application">Tətbiq haqqında rəy bildirin</string>
     <string name="info">Məlumat</string>
@@ -478,8 +478,8 @@
     <string name="preview_feed_items_description">Önizləmə lent stili istifadə edildikdə, elementlərin üzərindən sürüşdürərkən avtomatik önizləmə edib-etməyəcəyi</string>
     <string name="show_home_filters">Əsas səhifə filtrlərini göstər</string>
     <string name="show_home_filters_description">Əsas səhifə filtrlərinin əsas səhifənin üzərində göstərilib-göstərilməyəcəyi</string>
-    <string name="show_home_filters_plugin_names">Əsas səhifə filtri plajin adları</string>
-    <string name="show_home_filters_plugin_names_description">Əsas səhifə filtrlərinin tam plajin adlarını yoxsa sadəcə işarələri göstərəcəyi</string>
+    <string name="show_home_filters_plugin_names">Əsas səhifə filtri plagin adları</string>
+    <string name="show_home_filters_plugin_names_description">Əsas səhifə filtrlərinin tam plagin adlarını ya da sadəcə ikonaları göstərəcəyi</string>
     <string name="log_level">Loq səviyyəsi</string>
     <string name="logging">Loqlama</string>
     <string name="license_status">Lisenziya statusu</string>
@@ -503,14 +503,14 @@
     <string name="watch_later_add_start_description">Daha sonra izlə siyahısına videolar əlavə edərkən onları sonuna deyil, siyahının əvvəlinə əlavə edin</string>
     <string name="already_in_watch_later">Artıq daha sonra izlə siyahısındadır</string>
     <string name="enable_polycentric">Harbor-u aktivləşdir</string>
-    <string name="polycentric_local_cache">Harbor yerli keşkini aktivləşdir</string>
-    <string name="polycentric_local_cache_description">Yüklənmə vaxtını azaltmaq üçün polisentrik nəticələri cihazda keşləyir, dəyişdirmək tətbiqin yenidən başladılmasını tələb edir</string>
+    <string name="polycentric_local_cache">Harbor yerli keşini aktivləşdir</string>
+    <string name="polycentric_local_cache_description">Yüklənmə vaxtını azaltmaq üçün Polycentric nəticələri cihazda keşləyir, dəyişdirmək tətbiqin yenidən başladılmasını tələb edir</string>
     <string name="can_be_disabled_when_you_are_experiencing_issues">Problemlərlə qarşılaşdıqda söndürülə bilər</string>
     <string name="bypass_rotation_prevention_description">Video olmayan görünüşlərdə fırlanmaya icazə verir.\nXƏBƏRDARLIQ: Bunun üçün nəzərdə tutulmayıb</string>
     <string name="bypass_rotation_prevention_warning">Bu gözlənilməz davranışa səbəb ola bilər və əsasən sınaqdan keçirilməyib.</string>
     <string name="changing_this_field_requires_restart">Bu sahənin dəyişdirilməsi tətbiqin yenidən başladılmasını tələb edəcək.</string>
     <string name="player">Pleyer</string>
-    <string name="plugins">Plajinlər</string>
+    <string name="plugins">Plaginlər</string>
     <string name="preferred_casting_quality">Üstünlük verilən yayım keyfiyyəti</string>
     <string name="preferred_casting_quality_description">Xarici cihaza yayımlayarkən defolt keyfiyyət</string>
     <string name="preferred_metered_quality">Üstünlük verilən ölçülmüş keyfiyyət</string>
@@ -529,7 +529,7 @@
     <string name="default_recommendations_description">Şərhlər əvəzinə defolt olaraq tövsiyələri göstər.</string>
     <string name="bad_reputation_comments_fading">Pis reputasiyalı şərhlərin solması</string>
     <string name="bad_reputation_comments_fading_description">Çox pis reputasiyaya malik şərhlərin solub-solmayacağı. Söndürmək təcrübəni pisləşdirə bilər.</string>
-    <string name="reinstall_embedded_plugins">Yerləşdirilmiş plajinləri yenidən quraşdır</string>
+    <string name="reinstall_embedded_plugins">Yerləşdirilmiş plaginləri yenidən quraşdır</string>
     <string name="remove_cached_version">Keşlənmiş versiyanı sil</string>
     <string name="remove_last_downloaded_version">Sonuncu endirilmiş versiyanı sil</string>
     <string name="clear_hidden">Gizliləri təmizlə</string>
@@ -553,8 +553,8 @@
     <string name="specify_how_many_threads_are_used_to_fetch_channels">Kanalları gətirmək üçün neçə axından istifadə olunduğunu təyin edin</string>
     <string name="submit_feedback">Rəy bildir</string>
     <string name="submit_logs">Loqları göndər</string>
-    <string name="clear_channel_cache">Kanal keşkini təmizlə</string>
-    <string name="clear_channel_cache_description">Abunəlik kanalı keşkindən bütün məzmunu silir</string>
+    <string name="clear_channel_cache">Kanal keşini təmizlə</string>
+    <string name="clear_channel_cache_description">Abunəlik kanalı keşindən bütün məzmunu silir</string>
     <string name="submit_logs_to_help_us_narrow_down_issues">Problemləri daraltmağımıza kömək etmək üçün loqları göndərin</string>
     <string name="subscription_concurrency">Abunəlik eyniliyi</string>
     <string name="track_playtime_locally">Oynatma vaxtını yerli olaraq izlə</string>
@@ -566,10 +566,10 @@
     <string name="version_code">Versiya kodu</string>
     <string name="version_name">Versiya adı</string>
     <string name="version_type">Versiya növü</string>
-    <string name="dev_info_channel_cache_size">Kanal keşk ölçüsü (Başlanğıc)</string>
+    <string name="dev_info_channel_cache_size">Kanal keş ölçüsü (Başlanğıc)</string>
     <string name="when_watching_a_video_in_preview_mode_resume_at_the_position_when_opening_the_video_code">Önizləmə rejimində videoya baxarkən video kodunu açarkən mövqedən davam edin</string>
     <string name="please_enable_logging_to_submit_logs">Loqları göndərmək üçün zəhmət olmasa loqlamanı aktivləşdirin</string>
-    <string name="embedded_plugins_reinstalled_a_reboot_is_recommended">Yerləşdirilmiş plajinlər yenidən quraşdırıldı, yenidən başlatma tövsiyə olunur</string>
+    <string name="embedded_plugins_reinstalled_a_reboot_is_recommended">Yerləşdirilmiş plaginlər yenidən quraşdırıldı, yenidən başlatma tövsiyə olunur</string>
     <string name="announcements_reset">Elanlar sıfırlandı.</string>
     <string name="failed_to_show_store">Mağaza göstərilmədi.</string>
     <string name="retrieving_changelog">Dəyişiklik qeydi əldə edilir</string>
@@ -623,17 +623,17 @@
     <string name="sync">Sinxronlaşdırma</string>
     <string name="sync_desc">Platforma məlumatlarının sinxronlaşdırılması</string>
     <string name="check_for_updates_setting">Yeniləmələri yoxla</string>
-    <string name="check_for_updates_setting_description">Başlanğıcda plajinin yeniləmələr üçün yoxlanılıb-yoxlanılmayacağı</string>
+    <string name="check_for_updates_setting_description">Başlanğıcda plaginin yeniləmələr üçün yoxlanılıb-yoxlanılmayacağı</string>
     <string name="automatic_update_setting">Avtomatik yeniləmə</string>
-    <string name="automatic_update_setting_description">Heç bir icazə dəyişməyibsə və plajin aktivdirsə, açılışda avtomatik yenilə</string>
+    <string name="automatic_update_setting_description">Heç bir icazə dəyişməyibsə və plagin aktivdirsə, açılışda avtomatik yenilə</string>
     <string name="allow_developer_submit">Tərtibatçı təqdimatlarına icazə ver</string>
     <string name="allow_developer_submit_description">Tərtibatçıya məlumatı öz serverinə göndərməyə icazə verir, bunun həssas məlumatları ehtiva edə biləcəyi üçün diqqətli olun.</string>
     <string name="allow_developer_submit_warning">Tərtibatçıya etibar etdiyinizə əmin olun. Onlar həssas məlumatlara çıxış əldə edə bilərlər. Bunu yalnız tərtibatçıya xətanı düzəltməyə çalışarkən aktivləşdirin.</string>
     <string name="ratelimit">Sürət limiti</string>
-    <string name="ratelimit_description">Bu plajinin davranışının sürət məhdudiyyəti ilə əlaqəli tənzimləmələri</string>
+    <string name="ratelimit_description">Bu plaginin davranışının sürət məhdudiyyəti ilə əlaqəli tənzimləmələri</string>
     <string name="ratelimit_sub_setting">Abunəliklərin sürətini məhdudlaşdır</string>
     <string name="ratelimit_sub_setting_description">Edilən abunəlik sorğularının miqdarını məhdudlaşdır</string>
-    <string name="enable_where_this_plugins_content_are_visible">Bu plajinin məzmununun görünən olduğu yerdə aktivləşdir</string>
+    <string name="enable_where_this_plugins_content_are_visible">Bu plaginin məzmununun görünən olduğu yerdə aktivləşdir</string>
     <string name="show_content_in_home_tab">Məzmunu əsas səhifə vərəqində göstər</string>
     <string name="show_content_in_search_results">Məzmunu axtarış nəticələrində göstər</string>
     <string name="show_content_in_shorts_tab">Məzmunu Shorts vərəqində göstər</string>
@@ -642,11 +642,11 @@
     <string name="failed_to_fetch_configuration">Konfiqurasiya gətirilmədi</string>
     <string name="failed_to_fetch_script">Skript gətirilmədi</string>
     <string name="url_access">URL girişi</string>
-    <string name="the_plugin_will_have_access_to_the_following_domains">Plaqin aşağıdakı domenlərə giriş əldə edəcək</string>
+    <string name="the_plugin_will_have_access_to_the_following_domains">Plagin aşağıdakı domenlərə giriş əldə edəcək</string>
     <string name="eval_access">Eval girişi</string>
-    <string name="the_plugin_will_have_access_to_eval_capability_remote_injection">Plaqin eval imkanına (uzaqdan yeritmə) giriş əldə edəcək</string>
+    <string name="the_plugin_will_have_access_to_eval_capability_remote_injection">Plagin eval imkanına (uzaqdan yeritmə) giriş əldə edəcək</string>
     <string name="failed_to_scan_qr_code">QR kod skan edilmədi</string>
-    <string name="not_a_plugin_url">Plaqin URL-i deyil</string>
+    <string name="not_a_plugin_url">Plagin URL-i deyil</string>
     <string name="scan_a_qr_code">QR kod skan et</string>
     <string name="not_implemented_yet">Hələ tətbiq olunmayıb..</string>
     <string name="unknown_context">Naməlum kontekst</string>
@@ -717,9 +717,9 @@
     <string name="used">İstifadə olunub</string>
     <string name="available">Mövcuddur</string>
     <string name="failed_to_load_next_page">Növbəti səhifə yüklənmədi</string>
-    <string name="plugin_pluginname_failed_message">{pluginName} plajini uğursuz oldu:\n{message}</string>
-    <string name="plugin_failed_due_to">Plaqin səbəbindən uğursuz oldu:</string>
-    <string name="failed_to_get_home_plugin">Əsas səhifə\nPlajini əldə edilmədi</string>
+    <string name="plugin_pluginname_failed_message">{pluginName} plagini uğursuz oldu:\n{message}</string>
+    <string name="plugin_failed_due_to">Plagin səbəbindən uğursuz oldu:</string>
+    <string name="failed_to_get_home_plugin">Əsas səhifə\nPlagini əldə edilmədi</string>
     <string name="failed_to_get_home">Əsas səhifə əldə edilmədi</string>
     <string name="no_home_available">Mövcud əsas səhifə yoxdur</string>
     <string name="no_home_page_is_available_please_check_if_you_are_connected_to_the_internet_and_refresh">Heç bir əsas səhifə mövcud deyil, zəhmət olmasa internetə qoşulduğunuzu yoxlayın və yeniləyin.</string>
@@ -744,9 +744,9 @@
     <string name="replies">cavablar</string>
     <string name="Replies">Cavablar</string>
     <string name="chapters">Fəsillər</string>
-    <string name="plugin_settings_saved">Plaqin tənzimləmələri saxlanıldı</string>
-    <string name="plugin_settings">Plaqin tənzimləmələri</string>
-    <string name="these_settings_are_defined_by_the_plugin">Bu tənzimləmələr plajin tərəfindən müəyyən edilir</string>
+    <string name="plugin_settings_saved">Plagin tənzimləmələri saxlanıldı</string>
+    <string name="plugin_settings">Plagin tənzimləmələri</string>
+    <string name="these_settings_are_defined_by_the_plugin">Bu tənzimləmələr plagin tərəfindən müəyyən edilir</string>
     <string name="failed_to_load_source">Mənbə yüklənmədi</string>
     <string name="check_for_updates">Yeniləmələri yoxla</string>
     <string name="checks_for_new_versions_of_the_source">Mənbənin yeni versiyalarını yoxlayır</string>
@@ -759,19 +759,19 @@
     <string name="sign_into_the_platform_of_this_source">Bu mənbənin platformasına daxil olun</string>
     <string name="management">İdarəetmə</string>
     <string name="uninstall">Sil</string>
-    <string name="removes_the_plugin_from_the_app">Plajini tətbiqdən silir</string>
+    <string name="removes_the_plugin_from_the_app">Plagini tətbiqdən silir</string>
     <string name="delete_captcha">Kaptçanı sil</string>
-    <string name="deletes_stored_captcha_answer_for_this_plugin">Bu plajin üçün saxlanılmış kaptça cavabını silir</string>
+    <string name="deletes_stored_captcha_answer_for_this_plugin">Bu plagin üçün saxlanılmış kaptça cavabını silir</string>
     <string name="failed_to_retrieve_playlists">Oxutma siyahıları əldə edilmədi.</string>
     <string name="subscriptioncount_user_subscriptions_retrieved">{subscriptionCount} istifadəçi abunəliyi əldə edildi.</string>
     <string name="failed_to_retrieve_subscriptions">Abunəliklər əldə edilmədi.</string>
     <string name="are_you_sure_you_want_to_uninstall">Silmək istədiyinizə əminsinizmi</string>
-    <string name="uninstalled">Silindi </string>
+    <string name="uninstalled">Quraşdırma ləğv edildi</string>
     <string name="failed_to_check_for_updates">Yeniləmələr yoxlanılmadı</string>
-    <string name="plugin_is_fully_up_to_date">Plaqin tamamilə yenidir</string>
+    <string name="plugin_is_fully_up_to_date">Plagin tamamilə yenidir</string>
     <string name="rate_limit_warning">Sürət limiti xəbərdarlığı</string>
     <string name="this_is_a_temporary_measure_to_prevent_people_from_hitting_rate_limit_until_we_have_better_support_for_lots_of_subscriptions">Bu, çoxlu abunəliklər üçün daha yaxşı dəstəyimiz olana qədər insanların sürət limitinə düşməsinin qarşısını almaq üçün müvəqqəti tədbirdir.</string>
-    <string name="you_have_too_many_subscriptions_for_the_following_plugins">\n\nAşağıdakı plajinlər üçün çoxlu abunəliyiniz var:\n</string>
+    <string name="you_have_too_many_subscriptions_for_the_following_plugins">\n\nAşağıdakı plaginlər üçün çoxlu abunəliyiniz var:\n</string>
     <string name="posts">Paylaşımlar</string>
     <string name="planned">Planlaşdırılmış</string>
     <string name="watched">İzlənilib</string>
@@ -790,7 +790,7 @@
     <string name="failed_to_load_media">Media yüklənmədi</string>
     <string name="offline_playback">Oflayn oxutma</string>
     <string name="media_error">Media xətası</string>
-    <string name="the_media_source_encountered_an_unauthorized_error_this_might_be_solved_by_a_plugin_reload_would_you_like_to_reload_experimental">Media mənbəyi icazəsiz xəta ilə qarşılaşdı.\nBu, plajinin yenidən yüklənməsi ilə həll oluna bilər.\nYenidən yükləmək istəyirsinizmi?\n(Eksperimental)</string>
+    <string name="the_media_source_encountered_an_unauthorized_error_this_might_be_solved_by_a_plugin_reload_would_you_like_to_reload_experimental">Media mənbəyi icazəsiz xəta ilə qarşılaşdı.\nBu, plaginin yenidən yüklənməsi ilə həll oluna bilər.\nYenidən yükləmək istəyirsinizmi?\n(Eksperimental)</string>
     <string name="playback_rate">Oxutma sürəti</string>
     <string name="quality">Keyfiyyət</string>
     <string name="offline_video">Oflayn video</string>
@@ -809,12 +809,12 @@
     <string name="pauses_the_video">Videonun oxunmasını dayandırır</string>
     <string name="resumes_the_video">Videonun oxunmasını davam etdirir</string>
     <string name="video_without_source">Mənbəsiz video</string>
-    <string name="there_was_a_in_your_queue_videoname_by_authorname_without_the_required_source_being_enabled_playback_was_skipped">Növbənizdə tələb olunan mənbə aktivləşdirilmədən video var idi [{videoName}] müəllif [{authorName}], oxutma atlandı.</string>
+    <string name="there_was_a_in_your_queue_videoname_by_authorname_without_the_required_source_being_enabled_playback_was_skipped">Növbənizdə tələb olunan mənbə aktivləşdirilmədən video var idi [{videoName}], müəllif [{authorName}]. Oxutma atlandı.</string>
     <string name="failed_to_load_video_scriptimplementationexception">Video yüklənmədi (ScriptImplementationException)</string>
     <string name="invalid_video">Etibarsız video</string>
     <string name="there_was_an_invalid_video_in_your_queue_videoname_by_authorname_playback_was_skipped">Növbənizdə etibarsız video var idi [{videoName}], müəllif [{authorName}], oxutma atlandı.</string>
     <string name="age_restricted_video">Yaş məhdudiyyətli video</string>
-    <string name="there_was_an_age_restricted_video_in_your_queue_videoname_by_authorname_this_video_was_not_accessible_and_playback_was_skipped">Növbənizdə yaş məhdudiyyətli video var idi [{videoName}], müəllif [{authorName}], bu videoya giriş мүмkün olmadı və oxutma atlandı.</string>
+    <string name="there_was_an_age_restricted_video_in_your_queue_videoname_by_authorname_this_video_was_not_accessible_and_playback_was_skipped">Növbənizdə yaş məhdudiyyətli video var idi [{videoName}], müəllif [{authorName}], bu videoya giriş mümkün olmadı və oxutma atlandı.</string>
     <string name="failed_to_load_video_scriptexception">Video yüklənmədi (ScriptException)</string>
     <string name="failed_to_load_video">Video yüklənmədi</string>
     <string name="not_yet_available_retrying_in_time_s">Hələ əlçatan deyil, {time}s ərzində yenidən cəhd edilir</string>
@@ -869,7 +869,7 @@
     <string name="actions">Əməliyyatlar</string>
     <string name="download_the_video">Videonu endir</string>
     <string name="video_options">Video seçimləri</string>
-    <string name="change_pins">Sanqəçləri dəyiş</string>
+    <string name="change_pins">Sancaqları dəyiş</string>
     <string name="decide_which_buttons_should_be_pinned">Hansı düymələrin sancılacağına qərar verin</string>
     <string name="select_your_pins_in_order">Sancaqlarınızı ardıcıllıqla seçin</string>
     <string name="more_options">Daha çox seçim</string>
@@ -950,10 +950,10 @@
     <string name="cd_edit_image">Şəkli redaktə et</string>
     <string name="cd_button_add">Əlavə et</string>
     <string name="cd_download_indicator">Endirmə göstəricisi</string>
-    <string name="cd_drag_drop">Dart və burax</string>
+    <string name="cd_drag_drop">Sürüklə və burax</string>
     <string name="cd_button_add_to_watch_later">Daha sonra izlə siyahısına əlavə et</string>
     <string name="cd_button_close">Bağla</string>
-    <string name="cd_thumbnail_player_unmute">Səni aç</string>
+    <string name="cd_thumbnail_player_unmute">Səsi aç</string>
     <string name="cd_button_minimize">Kiçilt</string>
     <string name="cd_button_rotate_lock">Fırlanmanı kilidlə</string>
     <string name="cd_button_loop">Dövrə</string>
@@ -1087,19 +1087,19 @@
     </string-array>
     <string-array name="app_languages">
         <item>Sistem</item>
-        <item>İngiliscə (EN)</item>
-        <item>Almanca (DE)</item>
-        <item>İspanca (ES)</item>
-        <item>Portuqalca (PT)</item>
-        <item>Fransızca (FR)</item>
-        <item>Yaponca (JA)</item>
-        <item>Koreyaca (KO)</item>
-        <item>Çincə (ZH)</item>
-        <item>Rusca (RU)</item>
-        <item>Ərəbcə (AR)</item>
-        <item>Azərbaycanca (AZ)</item>
-        <item>İtalyanca (IT)</item>
-        <item>Türkcə (TR)</item>
+        <item>İngiliscə</item>
+        <item>Almanca</item>
+        <item>İspanca</item>
+        <item>Portuqalca</item>
+        <item>Fransızca</item>
+        <item>Yaponca</item>
+        <item>Koreyaca</item>
+        <item>Çincə</item>
+        <item>Rusca</item>
+        <item>Ərəbcə</item>
+        <item>Azərbaycanca</item>
+        <item>İtalyanca</item>
+        <item>Türkcə</item>
     </string-array>
     <string-array name="player_background_behavior">
         <item>Heç biri</item>
