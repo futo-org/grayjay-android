@@ -178,20 +178,20 @@
     <string name="to_help_us_solve_this_please_share_the_below_crash_report_with_us_and_perhaps_adds_some_context_on_what_you_were_doing">Bunu həll etməyə kömək etmək üçün zəhmət olmasa aşağıdakı qəza hesabatını bizimlə paylaşın və bəlkə də nə etdiyinizlə bağlı bəzi kontekstlər əlavə edin.</string>
     <string name="new_profile">Yeni profil</string>
     <string name="import_existing_profile">Mövcud profili idxal et</string>
-    <string name="generate_a_new_identity">Yeni eyniyyət yarat</string>
-    <string name="use_an_existing_identity">Mövcud eyniyyətdən istifadə et</string>
+    <string name="generate_a_new_identity">Yeni kimlik yarat</string>
+    <string name="use_an_existing_identity">Mövcud kimlikdən istifadə et</string>
     <string name="permissions">İcazələr</string>
     <string name="security_warnings">Təhlükəsizlik xəbərdarlıqları</string>
     <string name="these_are_warnings_of_plugin_behavior_and_implementation">Bunlar plaginin davranış və tətbiqi xəbərdarlıqlarıdır</string>
-    <string name="please_enter_the_captcha_and_close_when_finished">Zəhmət olmasa kaptçanı daxil edin və bitirdikdən sonra bağlayın</string>
+    <string name="please_enter_the_captcha_and_close_when_finished">Zəhmət olmasa captcha daxil edin və bitirdikdən sonra bağlayın</string>
     <string name="close_capitalized">BAĞLA</string>
     <string name="submit">Göndər</string>
     <string name="restart">Yenidən başlat</string>
     <string name="manage_tabs">Vərəqləri idarə et</string>
     <string name="scan_to_import">İdxal etmək üçün skan et</string>
-    <string name="send_your_identity_to_another_app">Eyniyyətinizi başqa tətbiqə göndərin</string>
+    <string name="send_your_identity_to_another_app">Kimliyinizi başqa tətbiqə göndərin</string>
     <string name="copy">Kopyala</string>
-    <string name="copy_your_identity_to_clipboard">Eyniyyətinizi mübadilə buferinə kopyalayın</string>
+    <string name="copy_your_identity_to_clipboard">Kimliyinizi mübadilə buferinə kopyalayın</string>
     <string name="polycentric">Polycentric</string>
     <string name="harbor">Harbor</string>
     <string name="platform">Platforma</string>
@@ -306,8 +306,8 @@
     <string name="technical_documentation">Texniki sənədlər</string>
     <string name="view_the_technical_documentation">Texniki sənədlərə baxın</string>
     <string name="visit_my_store">Mağazama baş çəkin</string>
-    <string name="make_a_backup_of_your_identity">Eyniyyətinizin ehtiyat nüsxəsini yaradın</string>
-    <string name="sign_out_of_this_identity">Bu eyniyyətdən çıxış edin</string>
+    <string name="make_a_backup_of_your_identity">Kimliyinizin ehtiyat nüsxəsini yaradın</string>
+    <string name="sign_out_of_this_identity">Bu kimlikdən çıxış edin</string>
     <string name="delete_this_profile">Bu profili sil</string>
     <string name="install_by_url">URL vasitəsilə quraşdır</string>
     <string name="cache_to_quickly_load_previously_fetched_videos">Əvvəllər gətirilmiş videoları tez yükləmək üçün keş</string>
@@ -388,7 +388,7 @@
     <string name="may_require_restart">Yenidən başlatma tələb oluna bilər</string>
     <string name="fetch_on_app_boot">Tətbiq açıldıqda gətir</string>
     <string name="fetch_on_tab_opened">Vərəq açıldıqda gətir</string>
-    <string name="fetch_on_tab_opened_description">Vərəq açıldıqda yeni nəticələri gətir (hələ nəticə yoxdursa, problemləriniz yoxdursa söndürmək tövsiyə edilmir)</string>
+    <string name="fetch_on_tab_opened_description">Vərəq açıldıqda yeni nəticələri gətir (hələ nəticə yoxdursa, problemləriniz yoxdursa söndürmək tələb olunmur)</string>
     <string name="always_reload_from_cache">Həmişə keşdən yenidən yüklə</string>
     <string name="always_reload_from_cache_description">Bu tövsiyə edilmir, lakin bəzi problemlər üçün mümkün həlldir.</string>
     <string name="peek_channel_contents">Kanal məzmununa göz gəzdir</string>
@@ -479,15 +479,15 @@
     <string name="show_home_filters">Əsas səhifə filtrlərini göstər</string>
     <string name="show_home_filters_description">Əsas səhifə filtrlərinin əsas səhifənin üzərində göstərilib-göstərilməyəcəyi</string>
     <string name="show_home_filters_plugin_names">Əsas səhifə filtri plagin adları</string>
-    <string name="show_home_filters_plugin_names_description">Əsas səhifə filtrlərinin tam plagin adlarını ya da sadəcə ikonaları göstərəcəyi</string>
+    <string name="show_home_filters_plugin_names_description">Əsas səhifə filtrlərinin tam plagin adlarını və ya sadəcə ikonaları göstərəcəyi</string>
     <string name="log_level">Loq səviyyəsi</string>
     <string name="logging">Loqlama</string>
     <string name="license_status">Lisenziya statusu</string>
     <string name="view_license_status">Lisenziya statusuna bax</string>
     <string name="sync_grayjay">Grayjay-i sinxronlaşdır</string>
     <string name="sync_grayjay_description">Məlumatlarınızı bir neçə cihaz arasında sinxronlaşdırın</string>
-    <string name="manage_polycentric_identity">Harbor eyniyyətini idarə et</string>
-    <string name="manage_your_polycentric_identity">Harbor eyniyyətinizi idarə et</string>
+    <string name="manage_polycentric_identity">Harbor kimliyini idarə et</string>
+    <string name="manage_your_polycentric_identity">Harbor kimliyinizi idarə et</string>
     <string name="manual_check">Əl ilə yoxlama</string>
     <string name="manually_check_for_updates">Yeniləmələri əl ilə yoxla</string>
     <string name="number_of_concurrent_threads_to_multiply_download_speeds_from_throttled_sources">Məhdudlaşdırılmış mənbələrdən endirmə sürətini çoxaltmaq üçün eyni vaxtda işləyən axınların sayı</string>
@@ -675,9 +675,9 @@
     <string name="failed_to_create_profile">Profil yaradılmadı.</string>
     <string name="failed_to_delete_profile">Profil silinmədi.</string>
     <string name="failed_to_log_out">Çıxış edilmədi.</string>
-    <string name="failed_to_switch_identity">Bu eyniyyətə daxil olmaq mümkün olmadı.</string>
+    <string name="failed_to_switch_identity">Bu kimliyə daxil olmaq mümkün olmadı.</string>
     <string name="failed_to_fully_backfill_servers">Serverlər tamamilə ehtiyatlandırılmadı.</string>
-    <string name="sign_in_to_this_identity">Bu eyniyyətə daxil ol</string>
+    <string name="sign_in_to_this_identity">Bu kimliyə daxil ol</string>
     <string name="text_field_does_not_contain_any_data">Mətn sahəsində heç bir məlumat yoxdur</string>
     <string name="not_a_valid_url">Etibarlı URL deyil</string>
     <string name="this_profile_is_already_imported">Bu profil artıq idxal edilib</string>
@@ -760,8 +760,8 @@
     <string name="management">İdarəetmə</string>
     <string name="uninstall">Sil</string>
     <string name="removes_the_plugin_from_the_app">Plagini tətbiqdən silir</string>
-    <string name="delete_captcha">Kaptçanı sil</string>
-    <string name="deletes_stored_captcha_answer_for_this_plugin">Bu plagin üçün saxlanılmış kaptça cavabını silir</string>
+    <string name="delete_captcha">Captcha-nı sil</string>
+    <string name="deletes_stored_captcha_answer_for_this_plugin">Bu plagin üçün saxlanılmış captcha cavabını silir</string>
     <string name="failed_to_retrieve_playlists">Oxutma siyahıları əldə edilmədi.</string>
     <string name="subscriptioncount_user_subscriptions_retrieved">{subscriptionCount} istifadəçi abunəliyi əldə edildi.</string>
     <string name="failed_to_retrieve_subscriptions">Abunəliklər əldə edilmədi.</string>
@@ -967,7 +967,7 @@
     <string name="cd_button_stop">Dayandır</string>
     <string name="cd_button_scan_qr">QR kod skan et</string>
     <string name="cd_button_help">Kömək</string>
-    <string name="cd_image_polycentric">Harbor profil şəklini dəyiş</string>
+    <string name="cd_image_polycentric">Harbor profil şəklini dəyişdir</string>
     <string-array name="home_screen_array">
         <item>Tövsiyələr</item>
         <item>Abunəliklər</item>
@@ -1122,7 +1122,6 @@
         <item>Platforma</item>
         <item>Son seçilmiş</item>
     </string-array>
-    <string-array name="audio_languages">
         <item>İngiliscə</item>
         <item>İspanca</item>
         <item>Almanca</item>
