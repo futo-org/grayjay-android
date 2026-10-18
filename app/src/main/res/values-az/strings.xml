@@ -101,7 +101,7 @@
     <string name="no_results">Burada baxılacaq heç nə yoxdur</string>
     <string name="no_results_shorts">Aktivləşdirilmiş mənbələrdə heç bir qısa video nəticəsi yoxdur.</string>
     <string name="create">Yarat</string>
-    <string name="ok">OK</string>
+    <string name="ok">Oldu</string>
     <string name="yes">Bəli</string>
     <string name="no">Xeyr</string>
     <string name="confirm">Təsdiq et</string>
@@ -109,7 +109,7 @@
     <string name="confirm_delete_playlist">Bu oxutma siyahısını silmək istədiyinizə əminsinizmi?</string>
     <string name="confirm_delete_subscription">Bu abunəliyi silmək istədiyinizə əminsinizmi?</string>
     <string name="confirm_remove_source">Bu mənbənin silinməsi bəzi abunəliklərinizin həll edilməməsi ilə nəticələnəcək.</string>
-    <string name="shuffle">Qarışıq</string>
+    <string name="shuffle">Qarışdır</string>
     <string name="play_all">Hamısını oxut</string>
     <string name="search_history">Axtarış tarixçəsi</string>
     <string name="app_error">Tətbiq xətası</string>
@@ -1087,19 +1087,19 @@
     </string-array>
     <string-array name="app_languages">
         <item>Sistem</item>
-        <item>İngiliscə</item>
-        <item>Almanca</item>
-        <item>İspanca</item>
-        <item>Portuqalca</item>
-        <item>Fransızca</item>
-        <item>Yaponca</item>
-        <item>Koreyaca</item>
-        <item>Çincə</item>
-        <item>Rusca</item>
-        <item>Ərəbcə</item>
-        <item>Azərbaycanca</item>
-        <item>İtalyanca</item>
-        <item>Türkcə</item>
+        <item>İngiliscə (EN)</item>
+        <item>Almanca (DE)</item>
+        <item>İspanca (ES)</item>
+        <item>Portuqalca (PT)</item>
+        <item>Fransızca (FR)</item>
+        <item>Yaponca (JA)</item>
+        <item>Koreyaca (KO)</item>
+        <item>Çincə (ZH)</item>
+        <item>Rusca (RU)</item>
+        <item>Ərəbcə (AR)</item>
+        <item>Azərbaycanca (AZ)</item>
+        <item>İtalyanca (IT)</item>
+        <item>Türkcə (TR)</item>
     </string-array>
     <string-array name="player_background_behavior">
         <item>Heç biri</item>
