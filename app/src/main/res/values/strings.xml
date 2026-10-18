@@ -1097,6 +1097,7 @@
         <item>Chinese (ZH)</item>
         <item>Russian (RU)</item>
         <item>Arabic (AR)</item>
+        <item>Azerbaijani (AZ)</item>
         <item>Italian (IT)</item>
         <item>Turkish (TR)</item>
     </string-array>
@@ -1133,6 +1134,7 @@
         <item>Indonesian</item>
         <item>Hindi</item>
         <item>Arabic</item>
+        <item>Azerbaijani</item>
         <item>Turkish</item>
         <item>Russian</item>
         <item>Portuguese</item>
