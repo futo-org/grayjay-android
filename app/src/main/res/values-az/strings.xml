@@ -1122,6 +1122,7 @@
         <item>Platforma</item>
         <item>Son seçilmiş</item>
     </string-array>
+    <string-array name="audio_languages">
         <item>İngiliscə</item>
         <item>İspanca</item>
         <item>Almanca</item>
