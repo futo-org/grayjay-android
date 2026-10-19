@@ -141,23 +141,41 @@ suspend fun PolycentricAdapter.updateProfile(
     )
 }
 
-/** Default Harbor servers. */
-fun PolycentricAdapter.getSeedServers(): List<String> = PolycentricAdapter.SEED_SERVERS
+/**
+ * Returns either the servers the identity declares, or the client's current servers if the identity
+ * hasn't set any.
+ */
+internal fun effectiveServers(documentServers: List<String>?, clientServers: List<String>): List<String> =
+    documentServers ?: clientServers
+
+/** The server URL to add for user input [url]. */
+internal fun serverUrlFromInput(url: String): String = url.trim()
+
+/** The active identity's servers, in identity document order. */
+suspend fun PolycentricAdapter.getServers(): List<String> =
+    effectiveServers(client.identityManager.getCurrent().servers, client.servers)
 
 /**
- * Configured servers: those advertised by the active identity's identity document when there is
- * one, the seed servers otherwise.
+ * Whether the current keypair is a rotation key of the active identity, which is required to
+ * publish a changed server list.
  */
-suspend fun PolycentricAdapter.getServers(): List<String> =
-    client.activeIdentityKey
-        ?.let { client.identityManager.getCurrent().servers }
-        ?.takeIf { it.isNotEmpty() }
-        ?: client.servers
+suspend fun PolycentricAdapter.canEditServers(): Boolean {
+    val identityKey = client.activeIdentityKey ?: return false
+    return client.identityManager.isRotationKeyForIdentity(identityKey, client.currentSystem)
+}
 
-/** Add a server to the active identity's identity document. */
-suspend fun PolycentricAdapter.addServer(url: String) = client.identityManager.addServer(url)
+/**
+ * Add a server to the end of the active identity's server list. Throws
+ * [org.futo.polycentric.core.ServerAlreadyAddedException] when it is already listed, and fails
+ * when the server is unreachable.
+ */
+suspend fun PolycentricAdapter.addServer(url: String) {
+    client.identityManager.addServer(serverUrlFromInput(url))
+}
 
-/** Remove a server from the active identity's identity document. */
-suspend fun PolycentricAdapter.removeServer(url: String) = client.identityManager.removeServer(url)
+/** Remove a server from the active identity's server list. */
+suspend fun PolycentricAdapter.removeServer(url: String) {
+    client.identityManager.removeServer(url)
+}
 
 private const val TAG = "PolycentricIdentity"

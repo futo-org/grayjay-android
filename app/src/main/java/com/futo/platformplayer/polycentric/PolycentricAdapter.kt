@@ -100,7 +100,7 @@ class PolycentricAdapter(internal val client: PolycentricClient) {
     companion object {
 
         /**
-         * TODO: make the seed server list configurable, rather than hard-coded.
+         * The initial servers of new identities.
          */
         val SEED_SERVERS: List<String> = listOf("https://srv.staging.harbor.social")
 
