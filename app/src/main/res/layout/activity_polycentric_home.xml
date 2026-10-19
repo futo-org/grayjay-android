@@ -85,13 +85,13 @@
                 app:buttonText="@string/new_profile" />
 
             <com.futo.platformplayer.views.buttons.BigButton
-                android:id="@+id/button_import_profile"
+                android:id="@+id/button_pair_device"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                app:buttonIcon="@drawable/ic_arrow_downward"
-                app:buttonSubText="@string/use_an_existing_identity"
-                app:buttonText="@string/import_existing_profile" />
+                app:buttonIcon="@drawable/ic_qr"
+                app:buttonSubText="@string/pairing_pair_with_existing_device_description"
+                app:buttonText="@string/pairing_pair_with_existing_device" />
         </LinearLayout>
     </ScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>

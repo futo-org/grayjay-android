@@ -1,5 +1,6 @@
 package com.futo.platformplayer.activities
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -10,6 +11,7 @@ import android.view.View
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.ScrollView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
@@ -32,11 +34,18 @@ import kotlinx.coroutines.withContext
 class PolycentricHomeActivity : AppCompatActivity() {
     private lateinit var _buttonHelp: ImageButton;
     private lateinit var _buttonNewProfile: BigButton;
-    private lateinit var _buttonImportProfile: BigButton;
+    private lateinit var _buttonPairDevice: BigButton;
     private lateinit var _layoutButtons: LinearLayout;
     private lateinit var _scroll: ScrollView;
     private lateinit var _loader: LoaderView;
     private var _switching = false;
+
+    private val _pairResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            startActivity(Intent(this, PolycentricProfileActivity::class.java));
+            finish();
+        }
+    };
     private val _profileButtons = arrayListOf<BigButton>();
 
     override fun attachBaseContext(newBase: Context?) {
@@ -50,13 +59,10 @@ class PolycentricHomeActivity : AppCompatActivity() {
 
         _buttonHelp = findViewById(R.id.button_help);
         _buttonNewProfile = findViewById(R.id.button_new_profile);
-        _buttonImportProfile = findViewById(R.id.button_import_profile);
+        _buttonPairDevice = findViewById(R.id.button_pair_device);
         _layoutButtons = findViewById(R.id.layout_buttons);
         _scroll = findViewById(R.id.scroll);
         _loader = findViewById(R.id.loader);
-
-        // TODO: repurpose this for Harbor's pairing concept
-        _buttonImportProfile.visibility = View.GONE;
 
         findViewById<ImageButton>(R.id.button_back).setOnClickListener {
             startActivity(Intent(this, MainActivity::class.java));
@@ -70,6 +76,10 @@ class PolycentricHomeActivity : AppCompatActivity() {
         _buttonNewProfile.onClick.subscribe {
             startActivity(Intent(this, PolycentricCreateProfileActivity::class.java));
             finish();
+        };
+
+        _buttonPairDevice.onClick.subscribe {
+            _pairResultLauncher.launch(Intent(this, PolycentricPairClaimerActivity::class.java));
         };
 
         StatePolycentric.instance.onIdentitiesChanged.subscribe(this) {
