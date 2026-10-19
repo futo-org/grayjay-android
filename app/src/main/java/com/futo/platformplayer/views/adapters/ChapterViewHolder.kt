@@ -32,8 +32,6 @@ import com.futo.platformplayer.views.LoaderView
 import com.futo.platformplayer.views.others.CreatorThumbnail
 import com.futo.platformplayer.views.pills.PillButton
 import com.futo.platformplayer.views.pills.PillRatingLikesDislikes
-import com.futo.polycentric.core.ApiMethods
-import com.futo.polycentric.core.Opinion
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 

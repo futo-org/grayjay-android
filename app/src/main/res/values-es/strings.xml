@@ -148,18 +148,11 @@
     <string name="ignore">Ignorar</string>
     <string name="view_changelog">Ver registro de cambios</string>
     <string name="i_already_paid">Ya he pagado</string>
-    <string name="memberships">Membresías</string>
-    <string name="a_monthly_recurring_payment_with_often">Un pago recurrente mensual con frecuencia</string>
-    <string name="additional_perks">beneficios adicionales.</string>
-    <string name="a_one_time_payment_to_support_the_creator">Un pago único para apoyar al creador</string>
-    <string name="donation">Donación</string>
     <string name="downloading">Descargando</string>
     <string name="videos">Vídeos</string>
     <string name="clear_history">Borrar historial</string>
     <string name="nothing_to_import">Nada para importar</string>
     <string name="enabling_lots_of_sources_can_reduce_the_loading_speed_of_your_application">Habilitar muchas fuentes puede reducir la velocidad de carga de tu aplicación.</string>
-    <string name="support">Soporte</string>
-    <string name="store">Tienda</string>
     <string name="live_chat">Chat en vivo</string>
     <string name="remove">Eliminar</string>
     <string name="space_videos">Vídeos</string>
@@ -206,7 +199,6 @@
     <string name="view_a_more_in_depth_video">Ver un vídeo más detallado</string>
     <string name="technical_documentation">Documentación técnica</string>
     <string name="view_the_technical_documentation">Ver la documentación técnica</string>
-    <string name="visit_my_store">Visitar mi tienda</string>
     <string name="make_a_backup_of_your_identity">Hacer una copia de seguridad de tu identidad</string>
     <string name="sign_out_of_this_identity">Cerrar sesión de esta identidad</string>
     <string name="delete_this_profile">Eliminar este perfil</string>

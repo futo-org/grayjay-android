@@ -18,7 +18,6 @@ import com.futo.platformplayer.fragment.mainactivity.main.LibraryFilesFragment
 import com.futo.platformplayer.models.Playlist
 import com.futo.platformplayer.states.FileEntry
 import com.futo.platformplayer.views.casting.CastButton
-import com.futo.polycentric.core.PolycentricProfile
 
 class FilesTopBarFragment : TopFragment() {
     private var _buttonBack: ImageButton? = null;
@@ -47,8 +46,6 @@ class FilesTopBarFragment : TopFragment() {
             _textTitle?.text = parameter;
         } else if (parameter is IPlatformClient) {
             _textTitle?.text = parameter.name;
-        } else if (parameter is PolycentricProfile) {
-            _textTitle?.text = parameter.systemState.username;
         } else if(parameter is FileEntry) {
             val treePrefix = "content://com.android.externalstorage.documents/tree/";
             if(parameter.path.startsWith(treePrefix)) {

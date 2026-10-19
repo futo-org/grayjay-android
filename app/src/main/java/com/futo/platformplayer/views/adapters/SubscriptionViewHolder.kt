@@ -15,12 +15,10 @@ import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.dp
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Subscription
-import com.futo.platformplayer.selectBestImage
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.toHumanTimeIndicator
 import com.futo.platformplayer.views.others.CreatorThumbnail
 import com.futo.platformplayer.views.platform.PlatformIndicator
-import com.futo.polycentric.core.toURLInfoSystemLinkUrl
 
 class SubscriptionViewHolder : ViewHolder {
     private val _layoutSubscription: LinearLayout;

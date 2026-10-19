@@ -15,16 +15,13 @@ import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.constructs.Event3
 import com.futo.platformplayer.fragment.channel.tab.ChannelAboutFragment
 import com.futo.platformplayer.fragment.channel.tab.ChannelContentsFragment
-import com.futo.platformplayer.fragment.channel.tab.ChannelListFragment
-import com.futo.platformplayer.fragment.channel.tab.ChannelMonetizationFragment
 import com.futo.platformplayer.fragment.channel.tab.ChannelPlaylistsFragment
 import com.futo.platformplayer.fragment.channel.tab.IChannelTabFragment
-import com.futo.polycentric.core.PolycentricProfile
 import com.google.android.material.tabs.TabLayout
 
 
 enum class ChannelTab {
-    VIDEOS, SHORTS, CHANNELS, PLAYLISTS, SUPPORT, ABOUT
+    VIDEOS, SHORTS, PLAYLISTS, ABOUT
 }
 
 class ChannelViewPagerAdapter(fragmentManager: FragmentManager, lifecycle: Lifecycle) :
@@ -34,7 +31,6 @@ class ChannelViewPagerAdapter(fragmentManager: FragmentManager, lifecycle: Lifec
     )
     private val _tabs = arrayListOf(ChannelTab.VIDEOS, ChannelTab.ABOUT)
 
-    var profile: PolycentricProfile? = null
     var channel: IPlatformChannel? = null
 
     val onContentUrlClicked = Event2<String, ContentType>()
@@ -110,11 +106,6 @@ class ChannelViewPagerAdapter(fragmentManager: FragmentManager, lifecycle: Lifec
                 }
             }
 
-            ChannelTab.CHANNELS -> {
-                fragment = ChannelListFragment.newInstance()
-                    .apply { onClickChannel.subscribe(onChannelClicked::emit) }
-            }
-
             ChannelTab.PLAYLISTS -> {
                 fragment = ChannelPlaylistsFragment.newInstance().apply {
                     onContentClicked.subscribe(this@ChannelViewPagerAdapter.onContentClicked::emit)
@@ -128,16 +119,11 @@ class ChannelViewPagerAdapter(fragmentManager: FragmentManager, lifecycle: Lifec
                 }
             }
 
-            ChannelTab.SUPPORT -> {
-                fragment = ChannelMonetizationFragment.newInstance()
-            }
-
             ChannelTab.ABOUT -> {
                 fragment = ChannelAboutFragment.newInstance()
             }
         }
         channel?.let { (fragment as IChannelTabFragment).setChannel(it) }
-        profile?.let { (fragment as IChannelTabFragment).setPolycentricProfile(it) }
 
         return fragment
     }
