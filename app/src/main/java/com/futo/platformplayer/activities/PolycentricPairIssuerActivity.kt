@@ -82,6 +82,7 @@ class PolycentricPairIssuerActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        isOpen = true
         setContentView(R.layout.activity_polycentric_pair_issuer)
         setNavigationBarColorAndIcons()
 
@@ -153,6 +154,11 @@ class PolycentricPairIssuerActivity : AppCompatActivity() {
 
         showPanel(_layoutLoading)
         createSession()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        isOpen = false
     }
 
     private fun showPanel(panel: View) {
@@ -327,5 +333,9 @@ class PolycentricPairIssuerActivity : AppCompatActivity() {
     companion object {
         private const val TAG = "PolycentricPairIssuerActivity"
         private const val POLL_INTERVAL_MS = 2000L
+
+        /** Whether an instance exists, so the launcher icon can bring it back. See [MainActivity]. */
+        var isOpen = false
+            private set
     }
 }

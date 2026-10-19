@@ -78,6 +78,7 @@ class PolycentricPairClaimerActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        isOpen = true
         setContentView(R.layout.activity_polycentric_pair_claimer)
         setNavigationBarColorAndIcons()
 
@@ -139,6 +140,7 @@ class PolycentricPairClaimerActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        isOpen = false
         _job?.cancel()
         if (!_claimed) {
             cancelClaimer()
@@ -308,5 +310,9 @@ class PolycentricPairClaimerActivity : AppCompatActivity() {
 
         /** A pairing link or code to start with, skipping the entry panel. */
         const val EXTRA_LINK = "link"
+
+        /** Whether an instance exists, so the launcher icon can bring it back. See [MainActivity]. */
+        var isOpen = false
+            private set
     }
 }
