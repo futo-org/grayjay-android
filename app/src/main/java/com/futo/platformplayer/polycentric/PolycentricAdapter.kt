@@ -34,19 +34,20 @@ class PolycentricAdapter(internal val client: PolycentricClient) {
     /** Whether [initialize] has finished and the keypair is set. */
     val isReady: Boolean get() = client.isReady
 
-    /** Suspends until [initialize] completes; throws if it failed. */
-    suspend fun awaitReady() = client.awaitReady()
-
     /**
      * The active identity key, or an [IllegalStateException] when nobody is
      * logged in. Called at the head of every write path.
      */
     internal fun requireActiveIdentity(): String =
         client.activeIdentityKey
-            ?: throw IllegalStateException("Not logged in to Polycentric")
+            ?: throw IllegalStateException("Not logged in to Harbor")
 
     /**
-     * Build, sign, commit locally, and push one event.
+     * Build, sign, commit locally, and push one event. The event stays in local storage whether
+     * the push succeeds or not.
+     *
+     * TODO: when polycentric-core throws publish errors for us to catch, we should catch them and
+     * display the error.
      */
     internal suspend fun publish(content: Content, collection: Int): EventKey {
         val event = client.buildEvent(content, collection)
@@ -112,6 +113,15 @@ class PolycentricAdapter(internal val client: PolycentricClient) {
         const val WEB_BASE_URL: String = "https://staging.harbor.social"
 
         /**
+         * Base URL of Harbor's `grayjay-migrator` lookup service, which maps legacy v1 system
+         * keys to their migrated v2 identities. The v1 identity migration is skipped while unset.
+         * Migrated identities live on [SEED_SERVERS] (the migrator's `IDENTITY_SERVERS`).
+         *
+         * TODO: set the production hostname
+         */
+        val MIGRATOR_URL: String = "https://grayjay-migrator.staging.harbor.social"
+
+        /**
          * Construct a Harbor client using the Kotlin SDK, using Grayjay's
          * global app context to construct arguments.
          */
@@ -133,4 +143,13 @@ class PolycentricAdapter(internal val client: PolycentricClient) {
             )
         }
     }
+}
+
+/**
+ * A short, user-facing description of why a Harbor write failed, suitable for appending to a
+ * "Failed to ..." toast.
+ */
+fun Throwable.toHarborErrorMessage(): String = when (this) {
+    is IllegalStateException, is IllegalArgumentException -> message ?: "Harbor is unavailable"
+    else -> "Could not reach Harbor" + (message?.let { " ($it)" } ?: "")
 }

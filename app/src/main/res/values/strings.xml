@@ -167,7 +167,7 @@
     <string name="export">Export</string>
     <string name="delete">Delete</string>
     <string name="loading_update">Loading update…</string>
-    <string name="polycentric_explanation">As you browse online videos and want to leave a comment, consider trying Polycentric, a new way to manage your online presence that\'s both easy to use and focused on your needs. Here\'s why creating a Polycentric profile is a great choice:\n\n 1. You\'re in Control: With Polycentric, your data isn\'t stored in one place controlled by a single company. Instead, it\'s spread across multiple locations, giving you more control over your online presence. You decide where your data is stored and can easily switch between providers or add new ones.\n\n 2. Privacy and Security: Polycentric keeps your information safe by using advanced security techniques. You can trust that your personal details are well-protected and only accessible by those you choose to share them with.\n\n 3. Seamless Networking: Polycentric lets you connect with others and interact with their content without being tied to a single platform. If a provider becomes unreliable or tries to block access, your Polycentric client will automatically find information from other sources, keeping you connected.\n\n 4. Smart Search and Recommendations: Polycentric uses multiple sources for search and recommendations, offering you top-notch performance while ensuring no single provider has too much influence over the results you see.\n\n 5. Adaptable and Open: Polycentric is designed to be flexible and open to new developments, allowing for constant improvements and new features that adapt to the needs of its users.\n\n 6. By creating a Polycentric profile, you can leave comments on online videos and enjoy a more personalized online experience. See for yourself how this user-friendly solution puts you in control of your digital life. Sign up for Polycentric today!</string>
+    <string name="polycentric_explanation">As you browse online videos and want to leave a comment, consider trying Harbor, a new way to manage your online presence that\'s both easy to use and focused on your needs. Here\'s why creating a Harbor profile is a great choice:\n\n 1. You\'re in Control: With Harbor, your data isn\'t stored in one place controlled by a single company. Instead, it\'s spread across multiple locations, giving you more control over your online presence. You decide where your data is stored and can easily switch between providers or add new ones.\n\n 2. Privacy and Security: Harbor keeps your information safe by using advanced security techniques. You can trust that your personal details are well-protected and only accessible by those you choose to share them with.\n\n 3. Seamless Networking: Harbor lets you connect with others and interact with their content without being tied to a single platform. If a provider becomes unreliable or tries to block access, your Harbor client will automatically find information from other sources, keeping you connected.\n\n 4. Smart Search and Recommendations: Harbor uses multiple sources for search and recommendations, offering you top-notch performance while ensuring no single provider has too much influence over the results you see.\n\n 5. Adaptable and Open: Harbor is designed to be flexible and open to new developments, allowing for constant improvements and new features that adapt to the needs of its users.\n\n 6. By creating a Harbor profile, you can leave comments on online videos and enjoy a more personalized online experience. See for yourself how this user-friendly solution puts you in control of your digital life. Sign up for Harbor today!</string>
     <string name="publish">Publish</string>
     <string name="usage">Usage</string>
     <string name="enable_in_home">Enable in home</string>
@@ -192,7 +192,7 @@
     <string name="send_your_identity_to_another_app">Send your identity to another app</string>
     <string name="copy">Copy</string>
     <string name="copy_your_identity_to_clipboard">Copy your identity to clipboard</string>
-    <string name="polycentric">Polycentric</string>
+    <string name="polycentric">Harbor</string>
     <string name="harbor">Harbor</string>
     <string name="platform">Platform</string>
     <string name="profile_name">Profile Name</string>
@@ -261,7 +261,7 @@
     <string name="remove">Remove</string>
     <string name="space_videos">Videos</string>
     <string name="playlist">Playlist</string>
-    <string name="neopass_channel">Polycentric channel</string>
+    <string name="neopass_channel">Harbor channel</string>
     <string name="enable">Enable</string>
     <string name="under_construction">Under Construction</string>
     <string name="under">UNDER</string>
@@ -486,8 +486,8 @@
     <string name="view_license_status">View license status</string>
     <string name="sync_grayjay">Sync Grayjay</string>
     <string name="sync_grayjay_description">Sync your data across multiple devices</string>
-    <string name="manage_polycentric_identity">Manage Polycentric identity</string>
-    <string name="manage_your_polycentric_identity">Manage your Polycentric identity</string>
+    <string name="manage_polycentric_identity">Manage Harbor identity</string>
+    <string name="manage_your_polycentric_identity">Manage your Harbor identity</string>
     <string name="manual_check">Manual check</string>
     <string name="manually_check_for_updates">Manually check for updates</string>
     <string name="number_of_concurrent_threads_to_multiply_download_speeds_from_throttled_sources">Number of concurrent threads to multiply download speeds from throttled sources</string>
@@ -502,8 +502,8 @@
     <string name="watch_later_add_start">Add new videos to the beginning of Watch Later</string>
     <string name="watch_later_add_start_description">When adding videos to Watch Later add them to the beginning of the list instead of the end</string>
     <string name="already_in_watch_later">Already in watch later</string>
-    <string name="enable_polycentric">Enable Polycentric</string>
-    <string name="polycentric_local_cache">Enable Polycentric Local Caching</string>
+    <string name="enable_polycentric">Enable Harbor</string>
+    <string name="polycentric_local_cache">Enable Harbor Local Caching</string>
     <string name="polycentric_local_cache_description">Caches polycentric results on-device to reduce load times, changing requires app reboot</string>
     <string name="can_be_disabled_when_you_are_experiencing_issues">Can be disabled when you are experiencing issues</string>
     <string name="bypass_rotation_prevention_description">Allows for rotation on non-video views.\nWARNING: Not designed for it</string>
@@ -662,7 +662,7 @@
     <string name="invalid_license_format">Invalid license format</string>
     <string name="unknown_content_format">Unknown content format</string>
     <string name="unknown_file_format">Unknown file format</string>
-    <string name="unknown_polycentric_format">Unknown Polycentric format</string>
+    <string name="unknown_polycentric_format">Unknown Harbor format</string>
     <string name="unknown_url_format">Unknown url format</string>
     <string name="failed_to_handle_file">Failed to handle file</string>
     <string name="unknown_reconstruction_type">Unknown reconstruction type</string>
@@ -673,6 +673,9 @@
     <string name="copied_text">Copied Text</string>
     <string name="must_be_at_least_3_characters_long">Must be at least 3 characters long.</string>
     <string name="failed_to_create_profile">Failed to create profile.</string>
+    <string name="failed_to_delete_profile">Failed to delete profile.</string>
+    <string name="failed_to_log_out">Failed to log out.</string>
+    <string name="failed_to_switch_identity">Failed to sign in to this identity.</string>
     <string name="failed_to_fully_backfill_servers">Failed to fully backfill servers.</string>
     <string name="sign_in_to_this_identity">Sign in to this identity</string>
     <string name="text_field_does_not_contain_any_data">Text field does not contain any data</string>
@@ -830,6 +833,8 @@
     <string name="seconds">seconds</string>
     <string name="please_login_to_post_a_comment">Please login to post a comment</string>
     <string name="failed_to_post_comment">Failed to post comment:</string>
+    <string name="failed_to_set_rating">Failed to set rating:</string>
+    <string name="failed_to_delete_comment">Failed to delete comment:</string>
     <string name="waiting_for_unmetered">Waiting for unmetered</string>
     <string name="last_error">Last error</string>
     <string name="error">Error</string>
@@ -869,7 +874,7 @@
     <string name="select_your_pins_in_order">Select your pins in order</string>
     <string name="more_options">More Options</string>
     <string name="save">Save</string>
-    <string name="this_creator_has_not_set_any_support_options_on_harbor_polycentric">This creator has not set any support options on Harbor (Polycentric)</string>
+    <string name="this_creator_has_not_set_any_support_options_on_harbor_polycentric">This creator has not set any support options on Harbor</string>
     <string name="load_more">Load More</string>
     <string name="stopped_after_requestcount_to_avoid_rate_limit_click_load_more_to_load_more">Stopped after {requestCount} to avoid rate limit, click load more to load more.</string>
     <string name="this_creator_has_not_setup_any_monetization_features">This creator has not setup any monetization features</string>
@@ -893,7 +898,12 @@
     <string name="fcast_website">FCast Website</string>
     <string name="fcast_technical_documentation">FCast Technical Documentation</string>
     <string name="login_to_view_your_comments">Login to view your comments</string>
-    <string name="polycentric_is_disabled">Polycentric is disabled</string>
+    <string name="polycentric_is_disabled">Harbor is disabled</string>
+    <string name="polycentric_migration_complete">Your Polycentric profile has been moved to Harbor. You will need to reupload your profile picture.</string>
+    <string name="polycentric_migration_complete_multiple">Your Polycentric profiles have been moved to Harbor. You will need to reupload your profile pictures.</string>
+    <string name="polycentric_migration_failed">Your Polycentric profile could not be moved to Harbor</string>
+    <string name="polycentric_migration_not_found">No Harbor account was found for this profile.</string>
+    <string name="polycentric_migration_delete">Delete and create new</string>
     <string name="play_pause">Play Pause</string>
     <string name="position">Position</string>
     <string name="tutorials">Tutorials</string>
@@ -957,7 +967,7 @@
     <string name="cd_button_stop">Stop</string>
     <string name="cd_button_scan_qr">Scan QR code</string>
     <string name="cd_button_help">Help</string>
-    <string name="cd_image_polycentric">Change Polycentric profile picture</string>
+    <string name="cd_image_polycentric">Change Harbor profile picture</string>
     <string-array name="home_screen_array">
         <item>Recommendations</item>
         <item>Subscriptions</item>
@@ -1107,7 +1117,7 @@
         <item>120</item>
     </string-array>
     <string-array name="comment_sections">
-        <item>Polycentric</item>
+        <item>Harbor</item>
         <item>Platform</item>
         <item>Last Selected</item>
     </string-array>

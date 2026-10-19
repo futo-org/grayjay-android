@@ -14,13 +14,11 @@ import com.futo.platformplayer.api.media.models.ratings.RatingLikeDislikes
 import com.futo.platformplayer.api.media.models.ratings.RatingLikes
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event3
-import com.futo.platformplayer.states.StatePolycentric
+import com.futo.platformplayer.polycentric.PolycentricLoginFlow
 import com.futo.platformplayer.toHumanNumber
 import com.futo.platformplayer.views.LoaderView
-import com.futo.polycentric.core.ProcessHandle
 
 data class OnLikeDislikeUpdatedArgs(
-    val processHandle: ProcessHandle,
     val likes: Long,
     val hasLiked: Boolean,
     val dislikes: Long,
@@ -54,8 +52,8 @@ class PillRatingLikesDislikes : LinearLayout {
         _loaderViewLikes = findViewById(R.id.loader_likes)
         _loaderViewDislikes = findViewById(R.id.loader_dislikes)
 
-        findViewById<LinearLayout>(R.id.layout_like).setOnClickListener { if (!_isLoading) StatePolycentric.instance.requireLogin(context, context.getString(R.string.please_login_to_like)) { like(it) }; };
-        findViewById<LinearLayout>(R.id.layout_dislike).setOnClickListener { if (!_isLoading) StatePolycentric.instance.requireLogin(context, context.getString(R.string.please_login_to_dislike)) { dislike(it) }; };
+        findViewById<LinearLayout>(R.id.layout_like).setOnClickListener { if (!_isLoading) PolycentricLoginFlow.requireLogin(context, context.getString(R.string.please_login_to_like)) { like() }; };
+        findViewById<LinearLayout>(R.id.layout_dislike).setOnClickListener { if (!_isLoading) PolycentricLoginFlow.requireLogin(context, context.getString(R.string.please_login_to_dislike)) { dislike() }; };
     }
 
     fun setLoading(loading: Boolean) {
@@ -128,7 +126,7 @@ class PillRatingLikesDislikes : LinearLayout {
         updateColors();
     }
 
-    fun like(processHandle: ProcessHandle) {
+    fun like() {
         if (_hasDisliked) {
             _dislikes--;
             _hasDisliked = false;
@@ -145,10 +143,10 @@ class PillRatingLikesDislikes : LinearLayout {
 
         _textLikes.text = _likes.toHumanNumber();
         updateColors();
-        onLikeDislikeUpdated.emit(OnLikeDislikeUpdatedArgs(processHandle, _likes, _hasLiked, _dislikes, _hasDisliked));
+        onLikeDislikeUpdated.emit(OnLikeDislikeUpdatedArgs(_likes, _hasLiked, _dislikes, _hasDisliked));
     }
 
-    fun dislike(processHandle: ProcessHandle) {
+    fun dislike() {
         if (_hasLiked) {
             _likes--;
             _hasLiked = false;
@@ -165,7 +163,7 @@ class PillRatingLikesDislikes : LinearLayout {
 
         _textDislikes.text = _dislikes.toHumanNumber();
         updateColors();
-        onLikeDislikeUpdated.emit(OnLikeDislikeUpdatedArgs(processHandle, _likes, _hasLiked, _dislikes, _hasDisliked));
+        onLikeDislikeUpdated.emit(OnLikeDislikeUpdatedArgs(_likes, _hasLiked, _dislikes, _hasDisliked));
     }
 
     private fun updateColors() {

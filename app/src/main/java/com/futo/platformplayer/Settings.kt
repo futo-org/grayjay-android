@@ -75,13 +75,13 @@ class Settings : FragmentedStorageFileJson() {
     fun managePolycentricIdentity() {
         StateApp?.instance?.activity?.let {
             if (StatePolycentric.instance.enabled) {
-                if (StatePolycentric.instance.processHandle != null) {
+                if (StatePolycentric.instance.isLoggedIn) {
                     it.startActivity(Intent(it, PolycentricProfileActivity::class.java));
                 } else {
                     it.startActivity(Intent(it, PolycentricHomeActivity::class.java));
                 }
             } else {
-                UIDialogs.toast(it, "Polycentric is disabled")
+                UIDialogs.toast(it, "Harbor is disabled")
             }
         }
     }

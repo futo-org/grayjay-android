@@ -104,6 +104,11 @@ class CreatorThumbnail : ConstraintLayout {
     }
 
     fun setHarborAvailable(available: Boolean, animate: Boolean, system: Protocol.PublicKey?) {
+        setHarborAvailableForIdentity(available, animate, system?.toString());
+    }
+
+    /** Like [setHarborAvailable], but takes a Harbor identity key; the identicon is generated from it. */
+    fun setHarborAvailableForIdentity(available: Boolean, animate: Boolean, identity: String?) {
         _harborAnimator?.cancel();
         _harborAnimator = null;
 
@@ -117,8 +122,8 @@ class CreatorThumbnail : ConstraintLayout {
             _imageNeoPass.visibility = View.GONE;
         }
 
-        if (system != null) {
-            _identicon.hashString = system.toString()
+        if (identity != null) {
+            _identicon.hashString = identity
             _identicon.visibility = View.VISIBLE
         } else {
             _identicon.visibility = View.GONE

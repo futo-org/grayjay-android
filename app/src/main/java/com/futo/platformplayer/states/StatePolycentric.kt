@@ -2,11 +2,18 @@ package com.futo.platformplayer.states
 
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import com.futo.platformplayer.R
-import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
-import com.futo.platformplayer.activities.PolycentricHomeActivity
+import com.futo.platformplayer.activities.PolycentricCreateProfileActivity
+import com.futo.platformplayer.constructs.Event0
+import com.futo.platformplayer.polycentric.claimMigratedIdentity
+import com.futo.platformplayer.polycentric.deleteLegacyKeyPair
+import com.futo.platformplayer.polycentric.importLegacyDatabaseKeys
+import com.futo.platformplayer.polycentric.legacyKeyPairs
+import com.futo.platformplayer.polycentric.lookupMigratedIdentity
+import com.futo.platformplayer.toHexString
+import java.util.concurrent.atomic.AtomicBoolean
+import com.futo.platformplayer.Settings
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
 import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComment
@@ -19,10 +26,7 @@ import com.futo.platformplayer.api.media.structures.MultiChronoContentPager
 import com.futo.platformplayer.awaitFirstDeferred
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.polycentric.PolycentricAdapter
-import com.futo.platformplayer.polycentric.PolycentricStorage
 import com.futo.platformplayer.resolveChannelUrl
-import com.futo.platformplayer.stores.FragmentedStorage
-import com.futo.platformplayer.stores.StringStorage
 import com.futo.platformplayer.polycentric.getComment
 import com.futo.platformplayer.polycentric.getCommentPager
 import com.futo.platformplayer.polycentric.deleteComment
@@ -36,23 +40,34 @@ import com.futo.platformplayer.polycentric.postComment
 import com.futo.platformplayer.polycentric.postReply
 import com.futo.platformplayer.polycentric.setCommentRating
 import com.futo.platformplayer.polycentric.setVideoRating
+import com.futo.platformplayer.polycentric.AvatarVariant
+import com.futo.platformplayer.polycentric.PolycentricChannelProfile
+import com.futo.platformplayer.polycentric.isLoggedIn
+import com.futo.platformplayer.polycentric.activeIdentity
+import com.futo.platformplayer.polycentric.createIdentity
+import com.futo.platformplayer.polycentric.listIdentities
+import com.futo.platformplayer.polycentric.switchIdentity
+import com.futo.platformplayer.polycentric.getIdentityProfile
+import com.futo.platformplayer.polycentric.updateProfile
+import com.futo.platformplayer.polycentric.logout
+import com.futo.platformplayer.polycentric.deleteActiveIdentity
 import com.futo.polycentric.core.PolycentricProfile
-import com.futo.polycentric.core.ProcessHandle
-import com.futo.polycentric.core.PublicKey
-import com.futo.polycentric.core.SqlLiteDbHelper
-import com.futo.polycentric.core.Store
-import com.futo.platformplayer.base64ToByteArray
-import com.futo.platformplayer.toBase64
-import com.futo.polycentric.core.ensureServerAndBackfill
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.suspendCancellableCoroutine
+import org.futo.polycentric.core.StoredKeyPair
 import polycentric.v2.EventKey
-import userpackage.Protocol
+import kotlin.coroutines.resume
 
 
 class StatePolycentric {
@@ -65,149 +80,203 @@ class StatePolycentric {
      */
     val adapter: PolycentricAdapter by lazy { PolycentricAdapter() }
 
-    var processHandle: ProcessHandle? = null; private set;
-    private val _activeProcessHandle = FragmentedStorage.get<StringStorage>("activeProcessHandle");
     private var _transientEnabled = true
     val enabled get() = _transientEnabled && Settings.instance.other.polycentricEnabled
 
     private val _backgroundJob = SupervisorJob()
     private val _backgroundScope = CoroutineScope(_backgroundJob + Dispatchers.IO)
+    private val _initMutex = Mutex()
+    private val _identityMutex = Mutex()
+    private val _migrationStarted = AtomicBoolean(false)
+
+    /**
+     * Emitted on the main thread when identities are added or the active identity changes in the
+     * background.
+     */
+    val onIdentitiesChanged = Event0()
 
     fun load(context: Context) {
         if (!enabled) {
             return
         }
 
-        for (i in 0 .. 1) {
-            try {
-                val db = SqlLiteDbHelper(context);
-                Store.initializeSqlLiteStore(db);
+        _backgroundScope.launch {
+            importLegacyDatabaseKeys(context)
+            awaitAdapter() ?: return@launch
+            migrateLegacyIdentities(context)
+        }
+    }
 
-                val activeProcessHandleString = _activeProcessHandle.value;
-                if (activeProcessHandleString.isNotEmpty()) {
-                    try {
-                        val system = PublicKey.fromProto(Protocol.PublicKey.parseFrom(activeProcessHandleString.base64ToByteArray()));
-                        setProcessHandle(Store.instance.getProcessSecret(system)?.toProcessHandle());
-                    } catch (e: Throwable) {
-                        db.upgradeOldSecrets(db.writableDatabase);
+    /**
+     * Claims the v2 identities that Harbor's Grayjay migrator service created for the legacy v1
+     * keys on this device, then restores the user's session. A key that fails to migrate asks the
+     * user to retry or delete it.
+     */
+    private suspend fun migrateLegacyIdentities(context: Context) {
+        val migratorUrl = PolycentricAdapter.MIGRATOR_URL ?: return
+        if (!enabled || !_migrationStarted.compareAndSet(false, true)) {
+            return
+        }
 
-                        val system = PublicKey.fromProto(Protocol.PublicKey.parseFrom(activeProcessHandleString.base64ToByteArray()));
-                        setProcessHandle(Store.instance.getProcessSecret(system)?.toProcessHandle());
-
-                        Log.i(TAG, "Failed to initialize Polycentric.", e)
-                    }
-                }
-
-                getProcessHandles()
-
-                // Initialize the Harbor v2 adapter in the background so comment/rating
-                // reads only have to await readiness.
-                _backgroundScope.launch {
-                    try {
-                        adapter.initialize()
-                        adapter.awaitReady()
-                    } catch (e: Throwable) {
-                        Logger.w(TAG, "Failed to initialize Polycentric adapter: " + e.message)
-                    }
-                }
-
-                break;
-            } catch (e: Throwable) {
-                if (i == 0) {
-                    Logger.i(TAG, "Clearing Polycentric database due to corruption");
-                    val db = SqlLiteDbHelper(context);
-                    db.recreate()
-                } else {
-                    _transientEnabled = false
-                    UIDialogs.showGeneralErrorDialog(context, "Failed to initialize Polycentric.", e);
-                    Log.i(TAG, "Failed to initialize Polycentric.", e)
+        val claimed = mutableListOf<String>()
+        var deleted = false
+        try {
+            for (keyPair in adapter.legacyKeyPairs()) {
+                when (val outcome = migrateLegacyKeyPair(context, migratorUrl, keyPair)) {
+                    is LegacyKeyOutcome.Claimed -> claimed.add(outcome.identity)
+                    LegacyKeyOutcome.Deleted -> deleted = true
+                    LegacyKeyOutcome.Skipped -> {}
                 }
             }
+
+            if (claimed.isNotEmpty()) {
+                mutateIdentity {
+                    // If no active identity, activate the newly migrated one
+                    if (it.activeIdentity() == null) {
+                        it.switchIdentity(claimed.first())
+                    }
+                }
+            }
+            Logger.i(TAG, "Legacy identity migration finished: claimed $claimed, deleted $deleted, active identity ${adapter.activeIdentity()}")
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Throwable) {
+            Logger.e(TAG, "Legacy identity migration failed.", e)
+        }
+
+        if (claimed.isNotEmpty()) {
+            val text = context.getString(
+                if (claimed.size > 1) R.string.polycentric_migration_complete_multiple else R.string.polycentric_migration_complete
+            )
+            UIDialogs.toast(text, long = true)
+        }
+        withContext(Dispatchers.Main) {
+            if (claimed.isNotEmpty()) {
+                onIdentitiesChanged.emit()
+            }
+            // If the user decided to delete old v1 identity, prompt to create a new v2 identity.
+            if (deleted && activeIdentity() == null) {
+                StateApp.instance.activity?.let {
+                    it.startActivity(Intent(it, PolycentricCreateProfileActivity::class.java))
+                }
+            }
+        }
+    }
+
+    private sealed interface LegacyKeyOutcome {
+        class Claimed(val identity: String) : LegacyKeyOutcome
+        object Deleted : LegacyKeyOutcome
+        /** The user dismissed the failure prompt; the key is retried on a later start. */
+        object Skipped : LegacyKeyOutcome
+    }
+
+    /**
+     * Looks up and claims the migrated identity of one legacy key. On failure, asks the user to
+     * retry or to delete the key.
+     */
+    private suspend fun migrateLegacyKeyPair(context: Context, migratorUrl: String, keyPair: StoredKeyPair): LegacyKeyOutcome {
+        // While loop used when the user selects to retry a key migration
+        while (true) {
+            Logger.i(TAG, "Migrating legacy key ${keyPair.publicKey.toHexString()}")
+            val error = try {
+                val identity = lookupMigratedIdentity(migratorUrl, keyPair.publicKey)
+                    ?: throw IllegalStateException(context.getString(R.string.polycentric_migration_not_found))
+                mutateIdentity { it.claimMigratedIdentity(keyPair, identity) }
+                Logger.i(TAG, "Claimed migrated identity $identity")
+                return LegacyKeyOutcome.Claimed(identity)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                Logger.w(TAG, "Failed to migrate legacy identity.", e)
+                e
+            }
+
+            when (promptMigrationFailure(error)) {
+                MigrationFailureChoice.RETRY -> continue
+                MigrationFailureChoice.DELETE -> {
+                    mutateIdentity { it.deleteLegacyKeyPair(keyPair) }
+                    return LegacyKeyOutcome.Deleted
+                }
+                null -> return LegacyKeyOutcome.Skipped
+            }
+        }
+    }
+
+    private enum class MigrationFailureChoice { RETRY, DELETE }
+
+    /** Shows the migration error and waits for the user's choice; null when dismissed. */
+    private suspend fun promptMigrationFailure(error: Throwable): MigrationFailureChoice? = withContext(Dispatchers.Main) {
+        val activity = StateApp.instance.activity ?: return@withContext null
+        suspendCancellableCoroutine { continuation ->
+            val choose = { choice: MigrationFailureChoice? ->
+                if (continuation.isActive) {
+                    // Implicitly returns choice from [suspendCancellableCoroutine]
+                    continuation.resume(choice)
+                }
+            }
+            val dialog = UIDialogs.showDialog(activity, R.drawable.ic_error_pred,
+                activity.getString(R.string.polycentric_migration_failed),
+                error.message ?: error.javaClass.simpleName, null, -1,
+                UIDialogs.Action(activity.getString(R.string.polycentric_migration_delete), {
+                    choose(MigrationFailureChoice.DELETE)
+                }, UIDialogs.ActionStyle.DANGEROUS),
+                UIDialogs.Action(activity.getString(R.string.retry), {
+                    choose(MigrationFailureChoice.RETRY)
+                }, UIDialogs.ActionStyle.PRIMARY)
+            )
+            dialog.setOnCancelListener { choose(null) }
+            continuation.invokeOnCancellation { dialog.dismiss() }
         }
     }
 
     fun ensureEnabled() {
         if (!enabled) {
-            throw Exception("Polycentric is disabled")
+            throw IllegalStateException("Harbor is disabled")
         }
     }
 
-    fun getProcessHandles(): List<ProcessHandle> {
-        if (!enabled) {
-            return listOf()
-        }
+    val isLoggedIn: Boolean
+        get() = enabled && adapter.isReady && adapter.isLoggedIn
 
-        val storeProcessSecrets = Store.instance.getProcessSecrets().toMutableList()
-        val processSecrets = PolycentricStorage.instance.getProcessSecrets()
-
-        for (processSecret in processSecrets)
-        {
-            if (!storeProcessSecrets.contains(processSecret)) {
-                try {
-                    Store.instance.addProcessSecret(processSecret)
-                } catch (e: Throwable) {
-                    Logger.e(TAG, "Failed to backfill process secret.")
-                }
-            }
-        }
-
-        for (processSecret in storeProcessSecrets)
-        {
-            if (!processSecrets.contains(processSecret)) {
-                try {
-                    PolycentricStorage.instance.addProcessSecret(processSecret)
-                } catch (e: Throwable) {
-                    Logger.e(TAG, "Failed to backfill process secret.")
-                }
-            }
-        }
-
-        return (storeProcessSecrets + processSecrets).distinct().map { it.toProcessHandle() }
-    }
-
-    fun setProcessHandle(processHandle: ProcessHandle?) {
+    /** Runs a serialized, non-cancellable identity mutation. */
+    private suspend fun <T> mutateIdentity(block: suspend (PolycentricAdapter) -> T): T {
         ensureEnabled()
-        this.processHandle = processHandle;
-
-        if (processHandle != null) {
-            _activeProcessHandle.setAndSave(processHandle.system.toProto().toByteArray().toBase64());
-
-            // Ensure current server is registered & synced
-            _backgroundScope.launch {
-                try {
-                    processHandle.ensureServerAndBackfill()
-                } catch (e: Throwable) {
-                    Logger.w(TAG, "Failed to ensure server and backfill: "+e.message)
-                }
-            }
-        } else {
-            _activeProcessHandle.setAndSave("");
+        val adapter = awaitAdapter() ?: throw IllegalStateException("Harbor is disabled")
+        return withContext(NonCancellable) {
+            _identityMutex.withLock { block(adapter) }
         }
     }
 
-
-    fun requireLogin(context: Context, text: String, action: (processHandle: ProcessHandle) -> Unit) {
-        if (!enabled) {
-            UIDialogs.toast(context, "Polycentric is disabled")
-            return
+    fun activeIdentity(): String? {
+        if (!enabled || !adapter.isReady) {
+            return null
         }
-
-        val p = processHandle;
-        if (p == null) {
-            Logger.i(TAG, "requireLogin preventPictureInPicture.emit()");
-            StateApp.instance.preventPictureInPicture.emit();
-            UIDialogs.showDialog(context, R.drawable.ic_login,
-                text, null, null,
-                1,
-                UIDialogs.Action("Cancel", { }, UIDialogs.ActionStyle.ACCENT),
-                UIDialogs.Action("OK", {
-                    context.startActivity(Intent(context, PolycentricHomeActivity::class.java));
-                }, UIDialogs.ActionStyle.PRIMARY)
-            );
-        } else {
-            action(p);
-        }
+        return adapter.activeIdentity()
     }
+
+    suspend fun createIdentity(name: String): String = mutateIdentity { it.createIdentity(name) }
+
+    suspend fun listIdentities(): List<String> {
+        ensureEnabled()
+        awaitAdapter() ?: return listOf()
+        return adapter.listIdentities()
+    }
+
+    suspend fun switchIdentity(identity: String) = mutateIdentity { it.switchIdentity(identity) }
+
+    suspend fun getIdentityProfile(identity: String): PolycentricChannelProfile {
+        ensureEnabled()
+        val adapter = awaitAdapter() ?: throw IllegalStateException("Harbor is disabled")
+        return adapter.getIdentityProfile(identity)
+    }
+
+    suspend fun updateProfile(name: String, avatar: List<AvatarVariant>?, mimeType: String = "image/png") =
+        mutateIdentity { it.updateProfile(name, avatar, mimeType) }
+
+    suspend fun logout() = mutateIdentity { it.logout() }
+
+    suspend fun deleteIdentity() = mutateIdentity { it.deleteActiveIdentity() }
+
 
     fun getChannelUrls(url: String, channelId: PlatformID? = null, cacheOnly: Boolean = false, doCacheNull: Boolean = false): List<String> {
         return getChannelUrlsWithUpdateResult(url, channelId, cacheOnly, doCacheNull).second;
@@ -277,13 +346,27 @@ class StatePolycentric {
         }
 
         return try {
-            adapter.initialize()
-            adapter.awaitReady()
-            adapter
+            requireAdapter()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Throwable) {
             Logger.e(TAG, "Polycentric adapter not available.", e)
             null
         }
+    }
+
+    /**
+     * Returns the Harbor adapter once its client is initialized, throwing when
+     * Polycentric is disabled or with the cause when initialization failed.
+     */
+    suspend fun requireAdapter(): PolycentricAdapter {
+        ensureEnabled()
+        _initMutex.withLock {
+            if (!adapter.isReady) {
+                adapter.initialize()
+            }
+        }
+        return adapter
     }
 
     suspend fun getCommentPager(videoUrl: String): IPager<IPlatformComment> {
@@ -374,28 +457,28 @@ class StatePolycentric {
 
     // Writes delegate to the adapter; they throw when no Harbor identity is
     // available (the v2 identity system is not wired up yet).
-    suspend fun postComment(videoUrl: String, text: String): PolycentricPlatformComment {
-        awaitAdapter() ?: throw IllegalStateException("Polycentric is disabled")
-        return adapter.postComment(videoUrl, text)
+    suspend fun postComment(videoUrl: String, videoTitle: String?, text: String): PolycentricPlatformComment {
+        awaitAdapter() ?: throw IllegalStateException("Harbor is disabled")
+        return adapter.postComment(videoUrl, videoTitle, text)
     }
 
     suspend fun postReply(parent: PolycentricPlatformComment, text: String): PolycentricPlatformComment {
-        awaitAdapter() ?: throw IllegalStateException("Polycentric is disabled")
+        awaitAdapter() ?: throw IllegalStateException("Harbor is disabled")
         return adapter.postReply(parent, text)
     }
 
     suspend fun deleteComment(comment: PolycentricPlatformComment) {
-        awaitAdapter() ?: throw IllegalStateException("Polycentric is disabled")
+        awaitAdapter() ?: throw IllegalStateException("Harbor is disabled")
         adapter.deleteComment(comment)
     }
 
-    suspend fun setVideoRating(videoUrl: String, positive: Boolean?) {
-        awaitAdapter() ?: throw IllegalStateException("Polycentric is disabled")
-        adapter.setVideoRating(videoUrl, positive)
+    suspend fun setVideoRating(videoUrl: String, videoTitle: String?, positive: Boolean?) {
+        awaitAdapter() ?: throw IllegalStateException("Harbor is disabled")
+        adapter.setVideoRating(videoUrl, videoTitle, positive)
     }
 
     suspend fun setCommentRating(comment: PolycentricPlatformComment, positive: Boolean?) {
-        awaitAdapter() ?: throw IllegalStateException("Polycentric is disabled")
+        awaitAdapter() ?: throw IllegalStateException("Harbor is disabled")
         adapter.setCommentRating(comment, positive)
     }
 
@@ -408,10 +491,15 @@ class StatePolycentric {
 
         private var _instance: StatePolycentric? = null;
         val instance: StatePolycentric
-            get(){
+            @Synchronized get(){
                 if(_instance == null)
                     _instance = StatePolycentric();
                 return _instance!!;
             };
+        @Synchronized
+        fun dispose() {
+            _instance?.cleanup()
+            _instance = null;
+        }
     }
 }

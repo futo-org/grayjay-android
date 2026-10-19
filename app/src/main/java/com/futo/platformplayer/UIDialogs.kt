@@ -538,8 +538,8 @@ class UIDialogs {
             toast.show()
         }
 
-        fun showCommentDialog(context: Context, contextUrl: String, parent: PolycentricPlatformComment?, onCommentAdded: (comment: IPlatformComment) -> Unit) {
-            val dialog = CommentDialog(context, contextUrl, parent);
+        fun showCommentDialog(context: Context, contextUrl: String, contextTitle: String?, parent: PolycentricPlatformComment?, onCommentAdded: (comment: IPlatformComment) -> Unit) {
+            val dialog = CommentDialog(context, contextUrl, contextTitle, parent);
             registerDialogOpened(dialog);
             dialog.setOnDismissListener { registerDialogClosed(dialog) };
             dialog.onCommentAdded.subscribe { onCommentAdded(it); };

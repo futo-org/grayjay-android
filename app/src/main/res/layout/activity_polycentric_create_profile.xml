@@ -44,7 +44,7 @@
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toRightOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                app:srcCompat="@drawable/neopass" />
+                app:srcCompat="@drawable/harbor_logo" />
 
             <TextView
                 android:id="@+id/text_polycentric"
