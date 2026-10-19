@@ -151,7 +151,7 @@
                     android:layout_height="wrap_content"
                     app:buttonText="@string/harbor_servers"
                     app:buttonSubText="@string/harbor_servers_configure"
-                    app:buttonIcon="@drawable/ic_internet"
+                    app:buttonIcon="@drawable/ic_language"
                     android:layout_marginTop="8dp" />
 
                 <com.futo.platformplayer.views.buttons.BigButton
