@@ -22,6 +22,7 @@ import com.futo.platformplayer.setPlatformPlayerLinkMovementMethod
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.toHumanNowDiffString
+import com.futo.platformplayer.views.ModerationWarnView
 import com.futo.platformplayer.views.others.CreatorThumbnail
 import com.futo.platformplayer.views.pills.PillButton
 import com.futo.platformplayer.views.pills.PillRatingLikesDislikes
@@ -37,6 +38,7 @@ class CommentWithReferenceViewHolder : ViewHolder {
     private val _pillRatingLikesDislikes: PillRatingLikesDislikes;
     private val _layoutComment: ConstraintLayout;
     private val _buttonDelete: FrameLayout;
+    private val _moderationWarn: ModerationWarnView;
 
     val onRepliesClick = Event1<IPlatformComment>();
     val onDelete = Event1<IPlatformComment>();
@@ -54,6 +56,7 @@ class CommentWithReferenceViewHolder : ViewHolder {
         _buttonReplies = itemView.findViewById(R.id.button_replies);
         _pillRatingLikesDislikes = itemView.findViewById(R.id.rating);
         _buttonDelete = itemView.findViewById(R.id.button_delete)
+        _moderationWarn = itemView.findViewById(R.id.moderation_warn)
 
         _pillRatingLikesDislikes.onLikeDislikeUpdated.subscribe { args ->
             val c = comment
@@ -99,6 +102,11 @@ class CommentWithReferenceViewHolder : ViewHolder {
             onClick.emit(c);
         }
 
+        _moderationWarn.onShow.subscribe {
+            val c = comment ?: return@subscribe;
+            bind(c);
+        }
+
         _textBody.setPlatformPlayerLinkMovementMethod(viewGroup.context);
     }
 
@@ -140,6 +148,15 @@ class CommentWithReferenceViewHolder : ViewHolder {
         } else {
             _pillRatingLikesDislikes.visibility = View.GONE
             _buttonReplies.visibility = View.GONE
+        }
+
+        // A warned comment hides the content until the warning is dismissed
+        if (_moderationWarn.bind(comment)) {
+            _textBody.visibility = View.GONE
+            _pillRatingLikesDislikes.visibility = View.GONE
+            _buttonReplies.visibility = View.GONE
+        } else {
+            _textBody.visibility = View.VISIBLE
         }
     }
 

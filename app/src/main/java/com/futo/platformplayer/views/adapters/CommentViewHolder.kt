@@ -30,6 +30,7 @@ import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.toHumanNowDiffString
 import com.futo.platformplayer.toHumanNumber
 import com.futo.platformplayer.views.LoaderView
+import com.futo.platformplayer.views.ModerationWarnView
 import com.futo.platformplayer.views.others.CreatorThumbnail
 import com.futo.platformplayer.views.pills.PillButton
 import com.futo.platformplayer.views.pills.PillRatingLikesDislikes
@@ -51,6 +52,10 @@ class CommentViewHolder : ViewHolder {
     private val _pillRatingLikesDislikes: PillRatingLikesDislikes;
     private val _layoutComment: ConstraintLayout;
     private val _buttonDelete: FrameLayout;
+    private val _moderationWarn: ModerationWarnView;
+    // Tapping show on a moderation warning can happen long after [bind] returned, so the [onShow]
+    // handler re-binds with the stored read-only field to restore the comment in the same mode.
+    private var _readonly = false;
 
     private val _containerComments: ConstraintLayout;
     private val _loader: LoaderView;
@@ -76,6 +81,7 @@ class CommentViewHolder : ViewHolder {
         _layoutRating = itemView.findViewById(R.id.layout_rating);
         _pillRatingLikesDislikes = itemView.findViewById(R.id.rating);
         _buttonDelete = itemView.findViewById(R.id.button_delete);
+        _moderationWarn = itemView.findViewById(R.id.moderation_warn);
 
         _containerComments = itemView.findViewById(R.id.comment_container);
         _loader = itemView.findViewById(R.id.loader);
@@ -134,10 +140,16 @@ class CommentViewHolder : ViewHolder {
             onDelete.emit(c);
         }
 
+        _moderationWarn.onShow.subscribe {
+            val c = comment ?: return@subscribe;
+            bind(c, _readonly);
+        }
+
         _textBody.setPlatformPlayerLinkMovementMethod(viewGroup.context)
     }
 
     fun bind(comment: IPlatformComment, readonly: Boolean) {
+        _readonly = readonly;
 
         if(comment is LazyComment){
             if(comment.isAvailable)
@@ -245,6 +257,18 @@ class CommentViewHolder : ViewHolder {
             _buttonDelete.visibility = View.VISIBLE
         } else {
             _buttonDelete.visibility = View.GONE
+        }
+
+        // Comment bodies are hidden until a moderation warning is dismissed
+        if (_moderationWarn.bind(comment)) {
+            _textBody.visibility = View.GONE;
+            _layoutRating.visibility = View.GONE;
+            _pillRatingLikesDislikes.visibility = View.GONE;
+            _buttonCopy.visibility = View.GONE;
+            _buttonReplies.visibility = View.GONE;
+        } else {
+            _textBody.visibility = View.VISIBLE;
+            _buttonCopy.visibility = View.VISIBLE;
         }
 
         this.comment = comment;

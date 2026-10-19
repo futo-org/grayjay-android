@@ -2,7 +2,6 @@ package com.futo.platformplayer.polycentric
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.futo.platformplayer.constructs.Event0
 
 /**
  * User moderation preferences for Harbor comments. Levels are "hide", "warn", and "show", with the
@@ -10,8 +9,6 @@ import com.futo.platformplayer.constructs.Event0
  */
 class ModerationsManager private constructor(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences("polycentric_moderation", Context.MODE_PRIVATE)
-
-    val onChanged = Event0()
 
     fun getLevel(value: String): ModerationLevel =
         when (prefs.getString(prefKey(value), null)) {
@@ -22,7 +19,6 @@ class ModerationsManager private constructor(context: Context) {
 
     fun setLevel(value: String, level: ModerationLevel) {
         prefs.edit().putString(prefKey(value), level.name.lowercase()).apply()
-        onChanged.emit()
     }
 
     /** Label values set to "hide", for the `omitLabels` field in feed queries. */
