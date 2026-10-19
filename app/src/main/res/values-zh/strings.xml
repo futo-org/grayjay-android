@@ -187,18 +187,11 @@
     <string name="ignore">忽略</string>
     <string name="view_changelog">查看更改日志</string>
     <string name="i_already_paid">我已经付款了</string>
-    <string name="memberships">会员资格</string>
-    <string name="a_monthly_recurring_payment_with_often">一个经常带有附加福利的每月定期付款</string>
-    <string name="additional_perks">额外的好处</string>
-    <string name="a_one_time_payment_to_support_the_creator">一次性付款以支持创作者</string>
-    <string name="donation">捐款</string>
     <string name="downloading">下载中</string>
     <string name="videos">视频</string>
     <string name="clear_history">清除历史</string>
     <string name="nothing_to_import">没有可导入的内容</string>
     <string name="enabling_lots_of_sources_can_reduce_the_loading_speed_of_your_application">启用大量的来源可能会降低您的应用程序的加载速度。</string>
-    <string name="support">支持</string>
-    <string name="store">商店</string>
     <string name="live_chat">在线聊天</string>
     <string name="remove">移除</string>
     <string name="space_videos">空间视频</string>
@@ -245,7 +238,6 @@
     <string name="view_a_more_in_depth_video">查看更深入的视频</string>
     <string name="technical_documentation">技术文档</string>
     <string name="view_the_technical_documentation">查看技术文档</string>
-    <string name="visit_my_store">访问我的商店</string>
     <string name="make_a_backup_of_your_identity">备份您的身份</string>
     <string name="sign_out_of_this_identity">从此身份退出</string>
     <string name="delete_this_profile">删除此个人资料</string>

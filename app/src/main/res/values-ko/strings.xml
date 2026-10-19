@@ -186,18 +186,11 @@
     <string name="ignore">무시</string>
     <string name="view_changelog">변경 로그 보기</string>
     <string name="i_already_paid">이미 결제했습니다</string>
-    <string name="memberships">멤버십</string>
-    <string name="a_monthly_recurring_payment_with_often">자주 발생하는 월별 결제</string>
-    <string name="additional_perks">추가 혜택</string>
-    <string name="a_one_time_payment_to_support_the_creator">창작자를 지원하기 위한 일회성 결제</string>
-    <string name="donation">기부</string>
     <string name="downloading">다운로드 중</string>
     <string name="videos">비디오</string>
     <string name="clear_history">기록 지우기</string>
     <string name="nothing_to_import">가져올 것이 없습니다</string>
     <string name="enabling_lots_of_sources_can_reduce_the_loading_speed_of_your_application">많은 소스를 활성화하면 앱의 로딩 속도가 느려질 수 있습니다.</string>
-    <string name="support">지원</string>
-    <string name="store">스토어</string>
     <string name="live_chat">실시간 채팅</string>
     <string name="remove">제거</string>
     <string name="space_videos">비디오</string>
@@ -244,7 +237,6 @@
     <string name="view_a_more_in_depth_video">더 자세한 비디오 보기</string>
     <string name="technical_documentation">기술 문서</string>
     <string name="view_the_technical_documentation">기술 문서 보기</string>
-    <string name="visit_my_store">내 스토어 방문하기</string>
     <string name="make_a_backup_of_your_identity">당신의 신원을 백업하세요</string>
     <string name="sign_out_of_this_identity">이 신원에서 로그아웃</string>
     <string name="delete_this_profile">이 프로필 삭제</string>

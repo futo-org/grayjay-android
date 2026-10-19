@@ -12,11 +12,9 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event1
-import com.futo.platformplayer.getDataLinkFromUrl
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.views.IdenticonView
-import userpackage.Protocol
 
 class CreatorThumbnail : ConstraintLayout {
     private val _root: ConstraintLayout;
@@ -42,7 +40,7 @@ class CreatorThumbnail : ConstraintLayout {
         _imageNeoPass = findViewById(R.id.image_neopass);
 
         if (!isInEditMode) {
-            setHarborAvailable(false, animate = false, system = null);
+            setHarborAvailable(false, animate = false, identity = null);
             setNewActivity(false);
         }
     }
@@ -50,7 +48,7 @@ class CreatorThumbnail : ConstraintLayout {
     fun clear() {
         _imageChannelThumbnail.visibility = View.GONE;
         _imageChannelThumbnail.setImageResource(R.drawable.placeholder_channel_thumbnail);
-        setHarborAvailable(false, animate = false, system = null);
+        setHarborAvailable(false, animate = false, identity = null);
         setNewActivity(false);
     }
 
@@ -73,16 +71,7 @@ class CreatorThumbnail : ConstraintLayout {
         _imageAnimator?.cancel();
         _imageAnimator = null;
 
-        if (url.startsWith("polycentric://")) {
-            try {
-                val dataLink = url.getDataLinkFromUrl()
-                setHarborAvailable(true, animate, dataLink?.system);
-            } catch (e: Throwable) {
-                setHarborAvailable(false, animate, null);
-            }
-        } else {
-            setHarborAvailable(false, animate, null);
-        }
+        setHarborAvailable(false, animate, null);
         var placeholder = R.drawable.placeholder_channel_thumbnail;
         if(url.startsWith("content://") || isArtist)
             placeholder = R.drawable.ic_artist;
@@ -103,12 +92,8 @@ class CreatorThumbnail : ConstraintLayout {
         }
     }
 
-    fun setHarborAvailable(available: Boolean, animate: Boolean, system: Protocol.PublicKey?) {
-        setHarborAvailableForIdentity(available, animate, system?.toString());
-    }
-
-    /** Like [setHarborAvailable], but takes a Harbor identity key; the identicon is generated from it. */
-    fun setHarborAvailableForIdentity(available: Boolean, animate: Boolean, identity: String?) {
+    /** Takes a Harbor identity key; the identicon is generated from it. */
+    fun setHarborAvailable(available: Boolean, animate: Boolean, identity: String?) {
         _harborAnimator?.cancel();
         _harborAnimator = null;
 

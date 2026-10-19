@@ -1,6 +1,3 @@
-[submodule "dep/polycentricandroid"]
-	path = dep/polycentricandroid
-	url = ../polycentricandroid.git
 [submodule "app/src/stable/assets/sources/kick"]
 	path = app/src/stable/assets/sources/kick
 	url = ../plugins/kick.git

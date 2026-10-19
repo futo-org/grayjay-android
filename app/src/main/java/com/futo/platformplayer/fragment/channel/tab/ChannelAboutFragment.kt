@@ -11,18 +11,10 @@ import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
-import com.futo.platformplayer.dp
 import com.futo.platformplayer.fixHtmlLinks
-import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.resolveChannelUrl
-import com.futo.platformplayer.selectBestImage
 import com.futo.platformplayer.setPlatformPlayerLinkMovementMethod
-import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.toHumanNumber
 import com.futo.platformplayer.views.platform.PlatformLinkView
-import com.futo.polycentric.core.PolycentricProfile
-import com.futo.polycentric.core.toName
-import com.futo.polycentric.core.toURLInfoSystemLinkUrl
 
 class ChannelAboutFragment : Fragment, IChannelTabFragment {
     private var _textName: TextView? = null;
@@ -33,7 +25,6 @@ class ChannelAboutFragment : Fragment, IChannelTabFragment {
     private var _linksContainer: LinearLayout? = null;
 
     private var _lastChannel: IPlatformChannel? = null;
-    private var _lastPolycentricProfile: PolycentricProfile? = null;
 
     constructor() : super() {
 
@@ -53,9 +44,6 @@ class ChannelAboutFragment : Fragment, IChannelTabFragment {
         _lastChannel?.also {
             setChannel(it);
         };
-        _lastPolycentricProfile?.also {
-            setPolycentricProfile(it);
-        }
 
         return view;
     }
@@ -112,48 +100,6 @@ class ChannelAboutFragment : Fragment, IChannelTabFragment {
             _textFindOn?.visibility = View.GONE;
         }
 
-    }
-
-    override fun setPolycentricProfile(polycentricProfile: PolycentricProfile?) {
-        _lastPolycentricProfile = polycentricProfile;
-
-        if (polycentricProfile == null) {
-            return;
-        }
-
-        val map = hashMapOf<String, String>();
-        for (c in polycentricProfile.ownedClaims) {
-            try {
-                val url = c.claim.resolveChannelUrl();
-                val name = c.claim.toName();
-                if (url != null && name != null) {
-                    map[name] = url;
-                }
-            } catch (e: Throwable) {
-                Logger.w(TAG, "Failed to parse claim=$c", e)
-            }
-        }
-        if(!map.containsKey("Harbor"))
-            map.set("Harbor", polycentricProfile.getHarborUrl());
-
-        if (map.isNotEmpty())
-            setLinks(map, if (polycentricProfile.systemState.username.isNotBlank()) polycentricProfile.systemState.username else _lastChannel?.name ?: "")
-
-        if(polycentricProfile.systemState.description.isNotBlank())
-            _textDescription?.text = polycentricProfile.systemState.description.fixHtmlLinks();
-
-        if (polycentricProfile.systemState.username.isNotBlank())
-            _textName?.text = polycentricProfile.systemState.username;
-
-        val dp_80 = 80.dp(StateApp.instance.context.resources)
-        val avatar = polycentricProfile.systemState.avatar?.selectBestImage(dp_80 * dp_80)?.let {
-            it.toURLInfoSystemLinkUrl(polycentricProfile.system.toProto(), it.process, polycentricProfile.systemState.servers.toList())
-        };
-
-        if (avatar != null && _imageThumbnail != null)
-            Glide.with(_imageThumbnail!!)
-                .load(avatar)
-                .into(_imageThumbnail!!);
     }
 
     companion object {

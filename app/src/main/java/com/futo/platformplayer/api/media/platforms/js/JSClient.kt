@@ -765,43 +765,6 @@ open class JSClient : IPlatformClient {
     override fun isClaimTypeSupported(claimType: Int): Boolean {
         return capabilities.hasGetChannelTemplateByClaimMap && config.supportedClaimTypes.contains(claimType)
     }
-    fun isClaimTemplateMapSupported(claimType: Int, map: Map<Int,String>): Boolean {
-        return capabilities.hasGetChannelTemplateByClaimMap && channelClaimTemplates?.let {
-            it.containsKey(claimType) && it[claimType]!!.any { map.containsKey(it.key) };
-        } ?: false;
-    }
-
-    fun resolveChannelUrlByClaimTemplates(claimType: Int, values: Map<Int, String>): String? {
-        return channelClaimTemplates?.let {
-            if(it.containsKey(claimType)) {
-                val templates = it[claimType];
-                if(templates != null)
-                    for(value in values.keys.sortedBy { if(it == config.primaryClaimFieldType) Int.MIN_VALUE else it }) {
-                        if(templates.containsKey(value)) {
-                            return templates[value]!!.replace("{{CLAIMVALUE}}", values[value]!!);
-                        }
-                    }
-            }
-            return null;
-        };
-    }
-
-    fun resolveChannelUrlsByClaimTemplates(claimType: Int, values: Map<Int, String>): List<String> {
-        val urls = arrayListOf<String>();
-        channelClaimTemplates?.let {
-            if(it.containsKey(claimType)) {
-                val templates = it[claimType];
-                if(templates != null)
-                    for(value in values.keys.sortedBy { it }) {
-                        if(templates.containsKey(value)) {
-                            urls.add(templates[value]!!.replace("{{CLAIMVALUE}}", values[value]!!));
-                        }
-                    }
-            }
-        };
-
-        return urls;
-    }
 
     fun <T> busy(handle: ()->T): T {
         return _plugin.busy {
