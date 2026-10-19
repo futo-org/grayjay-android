@@ -46,8 +46,6 @@ LICENSE_TXT = REPO_ROOT / "app/src/main/assets/licenses/TWEMOJI-LICENSE.txt"
 @dataclass
 class FontMetrics:
     units_per_em: int
-    ascent: int
-    descent: int
     advance: int
     space_before: int
     space_after: int
@@ -152,7 +150,6 @@ def read_metrics(path: Path, glyphs: dict[str, str]) -> FontMetrics:
     font = TTFont(path)
     upem = font["head"].unitsPerEm
     ascent = font["hhea"].ascent
-    descent = font["hhea"].descent
     advances = {font["hmtx"][name][0] for name in glyphs.values()}
     if len(advances) != 1:
         raise SystemExit(f"{path.name}: pool glyphs have different advances: {sorted(advances)}")
@@ -190,7 +187,7 @@ def read_metrics(path: Path, glyphs: dict[str, str]) -> FontMetrics:
         )
     # The outlines don't quite reach the edges, so center the square on them.
     space_before = round((x_min + x_max - upem) / 2)
-    return FontMetrics(upem, ascent, descent, advance, space_before, advance - upem - space_before)
+    return FontMetrics(upem, advance, space_before, advance - upem - space_before)
 
 
 def write_pool_kt(pool: list[str], commit: str, fonts: list[tuple[Font, str, FontMetrics]]) -> None:
@@ -201,8 +198,6 @@ def write_pool_kt(pool: list[str], commit: str, fonts: list[tuple[Font, str, Fon
 /** Sizes in res/font/{font.output_name}, in font units. */
 internal val {font.kotlin_name}_METRICS = TwemojiFontMetrics(
     unitsPerEm = {m.units_per_em},
-    ascent = {m.ascent},
-    descent = {m.descent},
     advance = {m.advance},
     spaceBefore = {m.space_before},
     spaceAfter = {m.space_after},
