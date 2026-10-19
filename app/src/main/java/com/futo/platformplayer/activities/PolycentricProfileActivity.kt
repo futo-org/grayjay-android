@@ -43,6 +43,7 @@ class PolycentricProfileActivity : AppCompatActivity() {
     private lateinit var _editName: EditText;
     private lateinit var _buttonPairDevice: BigButton;
     private lateinit var _buttonExport: BigButton;
+    private lateinit var _buttonServers: BigButton;
     private lateinit var _buttonModeration: BigButton;
     private lateinit var _buttonLogout: BigButton;
     private lateinit var _buttonDelete: BigButton;
@@ -66,6 +67,7 @@ class PolycentricProfileActivity : AppCompatActivity() {
         _editName = findViewById(R.id.edit_profile_name);
         _buttonPairDevice = findViewById(R.id.button_pair_device);
         _buttonExport = findViewById(R.id.button_export);
+        _buttonServers = findViewById(R.id.button_servers);
         _buttonModeration = findViewById(R.id.button_moderation);
         _buttonLogout = findViewById(R.id.button_logout);
         _buttonDelete = findViewById(R.id.button_delete);
@@ -102,6 +104,10 @@ class PolycentricProfileActivity : AppCompatActivity() {
 
         // TODO: reuse this button for Harbor's backup key concept
         _buttonExport.visibility = View.GONE;
+
+        _buttonServers.onClick.subscribe {
+            startActivity(Intent(this, PolycentricServersActivity::class.java));
+        };
 
         _buttonModeration.onClick.subscribe {
             startActivity(Intent(this, PolycentricModerationActivity::class.java));
@@ -160,6 +166,13 @@ class PolycentricProfileActivity : AppCompatActivity() {
                     .into(_imagePolycentric)
 
                 _loaderOverlay.hide();
+            }
+        }
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            val canEdit = runCatching { StatePolycentric.instance.canEditServers() }.getOrDefault(true);
+            withContext(Dispatchers.Main) {
+                _buttonServers.withSecondaryText(getString(if (canEdit) R.string.harbor_servers_configure else R.string.harbor_servers_view));
             }
         }
     }

@@ -18,7 +18,6 @@ import kotlinx.serialization.json.Json
 import okio.ByteString.Companion.toByteString
 import org.futo.polycentric.core.KeyTypes
 import org.futo.polycentric.core.StoredKeyPair
-import org.futo.polycentric.core.SyncStrategy
 import polycentric.v2.KeyType
 import polycentric.v2.PublicKey
 
@@ -163,19 +162,6 @@ suspend fun PolycentricAdapter.claimMigratedIdentity(keyPair: StoredKeyPair, ide
         client.setCurrentKeyPair(keyPair)
         // When we claim, we adopt the identity's servers
         val state = client.identityManager.claim(identity)
-
-        // TODO remove upon release: switch to staging servers for testing (the migrator service
-        // sets migrated identities' servers to production)
-        client.adoptServers(PolycentricAdapter.SEED_SERVERS)
-        client.sync(SyncStrategy.PARTIAL_PUSH)
-        client.identityManager.publish(
-            identityKey = identity,
-            rotationKeys = state.rotationKeys,
-            signingKeys = state.signingKeys,
-            servers = PolycentricAdapter.SEED_SERVERS,
-            revocationBounds = state.revocationBounds,
-            recoveryKey = state.recoveryKey,
-        )
 
         Logger.i(TAG, "Claimed $identity: rotation keys ${state.rotationKeys.map { it.key.hex() }}, " +
             "signing keys ${state.signingKeys.map { it.key.hex() }}, servers ${state.servers}")

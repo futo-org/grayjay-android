@@ -26,158 +26,182 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <com.google.android.material.imageview.ShapeableImageView
-        android:id="@+id/image_polycentric"
-        android:layout_height="80dp"
-        android:layout_width="80dp"
-        android:contentDescription="@string/cd_image_polycentric"
-        android:scaleType="centerCrop"
-        app:shapeAppearanceOverlay="@style/roundedCorners_40dp"
-        app:srcCompat="@drawable/placeholder_profile"
-        android:background="@drawable/video_thumbnail_outline"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:fillViewport="true"
         app:layout_constraintTop_toBottomOf="@id/button_help"
-        android:layout_marginTop="40dp" />
-
-    <EditText
-        android:id="@+id/edit_profile_name"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Profile name"
-        android:layout_marginStart="40dp"
-        android:layout_marginEnd="40dp"
-        android:layout_marginTop="30dp"
-        android:singleLine="true"
-        android:background="@drawable/background_16_round_4dp"
-        app:layout_constraintTop_toBottomOf="@id/image_polycentric"
-        app:layout_constraintLeft_toLeftOf="@id/image_polycentric"
-        app:layout_constraintRight_toRightOf="@id/image_polycentric" />
-
-    <TextView
-        android:id="@+id/text_system"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        tools:text="gX0eCWctTm6WHVGot4sMAh7NDAIwWsIM5tRsOz9dX04="
-        android:fontFamily="@font/inter_regular"
-        android:textSize="10dp"
-        android:maxLines="1"
-        android:ellipsize="middle"
-        android:textColor="@color/gray_67"
-        android:layout_marginTop="20dp"
-        app:layout_constraintTop_toBottomOf="@id/edit_profile_name"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-    <TextView
-        android:id="@+id/text_cta"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:fontFamily="@font/inter_regular"
-        android:text="Further customize your profile, make platform claims, and other creator-specific features in the Harbor app."
-        android:textSize="12dp"
-        android:linksClickable="true"
-        android:paddingLeft="20dp"
-        android:paddingRight="20dp"
-        android:textAlignment="center"
-        android:ellipsize="middle"
-        android:textColor="@color/gray_ac"
-        android:layout_marginTop="10dp"
-        app:layout_constraintTop_toBottomOf="@id/text_system"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-    <TextView
-        android:id="@+id/text_cta2"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:fontFamily="@font/inter_regular"
-        tools:text="https://harbor.social"
-        android:textSize="12dp"
-        android:linksClickable="true"
-        android:paddingLeft="20dp"
-        android:paddingRight="20dp"
-        android:textAlignment="center"
-        android:ellipsize="middle"
-        android:textColor="#AAAAFF"
-        android:layout_marginTop="5dp"
-        app:layout_constraintTop_toBottomOf="@id/text_cta"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-    <TextView
-        android:id="@+id/text_cta3"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:fontFamily="@font/inter_regular"
-        android:text="@string/pairing_profile_cta"
-        android:textSize="12dp"
-        android:linksClickable="true"
-        android:paddingLeft="20dp"
-        android:paddingRight="20dp"
-        android:textAlignment="center"
-        android:ellipsize="middle"
-        android:textColor="@color/gray_ac"
-        android:layout_marginTop="5dp"
-        app:layout_constraintTop_toBottomOf="@id/text_cta2"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <LinearLayout
-        android:id="@+id/layout_buttons"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:layout_marginStart="20dp"
-        android:layout_marginEnd="20dp"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/text_cta"
         app:layout_constraintBottom_toBottomOf="parent">
 
-        <com.futo.platformplayer.views.buttons.BigButton
-            android:id="@+id/button_moderation"
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:buttonSubText="Set moderation settings for polycentric comments"
-            android:layout_marginTop="8dp"
-            app:buttonIcon="@drawable/ic_settings"
-            app:buttonText="Moderation Settings" />
+            android:paddingBottom="20dp">
 
-        <com.futo.platformplayer.views.buttons.BigButton
-            android:id="@+id/button_pair_device"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:buttonText="@string/pairing_pair_a_device"
-            app:buttonSubText="@string/pairing_pair_a_device_description"
-            app:buttonIcon="@drawable/ic_qr"
-            android:layout_marginTop="8dp" />
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/image_polycentric"
+                android:layout_height="80dp"
+                android:layout_width="80dp"
+                android:contentDescription="@string/cd_image_polycentric"
+                android:scaleType="centerCrop"
+                app:shapeAppearanceOverlay="@style/roundedCorners_40dp"
+                app:srcCompat="@drawable/placeholder_profile"
+                android:background="@drawable/video_thumbnail_outline"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                android:layout_marginTop="40dp" />
 
-        <com.futo.platformplayer.views.buttons.BigButton
-            android:id="@+id/button_export"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:buttonText="@string/export"
-            app:buttonSubText="@string/make_a_backup_of_your_identity"
-            app:buttonIcon="@drawable/ic_export"
-            android:layout_marginTop="8dp" />
+            <EditText
+                android:id="@+id/edit_profile_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Profile name"
+                android:layout_marginStart="40dp"
+                android:layout_marginEnd="40dp"
+                android:layout_marginTop="30dp"
+                android:singleLine="true"
+                android:background="@drawable/background_16_round_4dp"
+                app:layout_constraintTop_toBottomOf="@id/image_polycentric"
+                app:layout_constraintLeft_toLeftOf="@id/image_polycentric"
+                app:layout_constraintRight_toRightOf="@id/image_polycentric" />
 
-        <com.futo.platformplayer.views.buttons.BigButton
-            android:id="@+id/button_logout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:buttonText="@string/logout"
-            app:buttonSubText="@string/sign_out_of_this_identity"
-            app:buttonIcon="@drawable/ic_logout"
-            android:layout_marginTop="8dp" />
+            <TextView
+                android:id="@+id/text_system"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:text="gX0eCWctTm6WHVGot4sMAh7NDAIwWsIM5tRsOz9dX04="
+                android:fontFamily="@font/inter_regular"
+                android:textSize="10dp"
+                android:maxLines="1"
+                android:ellipsize="middle"
+                android:textColor="@color/gray_67"
+                android:layout_marginTop="20dp"
+                app:layout_constraintTop_toBottomOf="@id/edit_profile_name"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+            <TextView
+                android:id="@+id/text_cta"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/inter_regular"
+                android:text="Further customize your profile, make platform claims, and other creator-specific features in the Harbor app."
+                android:textSize="12dp"
+                android:linksClickable="true"
+                android:paddingLeft="20dp"
+                android:paddingRight="20dp"
+                android:textAlignment="center"
+                android:ellipsize="middle"
+                android:textColor="@color/gray_ac"
+                android:layout_marginTop="10dp"
+                app:layout_constraintTop_toBottomOf="@id/text_system"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+            <TextView
+                android:id="@+id/text_cta2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/inter_regular"
+                tools:text="https://harbor.social"
+                android:textSize="12dp"
+                android:linksClickable="true"
+                android:paddingLeft="20dp"
+                android:paddingRight="20dp"
+                android:textAlignment="center"
+                android:ellipsize="middle"
+                android:textColor="#AAAAFF"
+                android:layout_marginTop="5dp"
+                app:layout_constraintTop_toBottomOf="@id/text_cta"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+            <TextView
+                android:id="@+id/text_cta3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/inter_regular"
+                android:text="@string/pairing_profile_cta"
+                android:textSize="12dp"
+                android:linksClickable="true"
+                android:paddingLeft="20dp"
+                android:paddingRight="20dp"
+                android:textAlignment="center"
+                android:ellipsize="middle"
+                android:textColor="@color/gray_ac"
+                android:layout_marginTop="5dp"
+                app:layout_constraintTop_toBottomOf="@id/text_cta2"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
 
-        <com.futo.platformplayer.views.buttons.BigButton
-            android:id="@+id/button_delete"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:buttonText="@string/delete"
-            app:buttonSubText="@string/delete_this_profile"
-            app:buttonIcon="@drawable/ic_trash"
-            android:layout_marginTop="8dp"
-            app:buttonBackground="@drawable/background_big_button_red"/>
-    </LinearLayout>
+            <LinearLayout
+                android:id="@+id/layout_buttons"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginStart="20dp"
+                android:layout_marginEnd="20dp"
+                android:layout_marginTop="12dp"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/text_cta3"
+                app:layout_constraintBottom_toBottomOf="parent">
+
+                <com.futo.platformplayer.views.buttons.BigButton
+                    android:id="@+id/button_servers"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:buttonText="@string/harbor_servers"
+                    app:buttonSubText="@string/harbor_servers_configure"
+                    app:buttonIcon="@drawable/ic_language"
+                    android:layout_marginTop="8dp" />
+
+                <com.futo.platformplayer.views.buttons.BigButton
+                    android:id="@+id/button_moderation"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:buttonSubText="@string/harbor_moderation_settings_description"
+                    android:layout_marginTop="8dp"
+                    app:buttonIcon="@drawable/ic_settings"
+                    app:buttonText="@string/harbor_moderation_settings" />
+
+                <com.futo.platformplayer.views.buttons.BigButton
+                    android:id="@+id/button_pair_device"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:buttonText="@string/pairing_pair_a_device"
+                    app:buttonSubText="@string/pairing_pair_a_device_description"
+                    app:buttonIcon="@drawable/ic_qr"
+                    android:layout_marginTop="8dp" />
+
+                <com.futo.platformplayer.views.buttons.BigButton
+                    android:id="@+id/button_export"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:buttonText="@string/export"
+                    app:buttonSubText="@string/make_a_backup_of_your_identity"
+                    app:buttonIcon="@drawable/ic_export"
+                    android:layout_marginTop="8dp" />
+
+                <com.futo.platformplayer.views.buttons.BigButton
+                    android:id="@+id/button_logout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:buttonText="@string/logout"
+                    app:buttonSubText="@string/sign_out_of_this_identity"
+                    app:buttonIcon="@drawable/ic_logout"
+                    android:layout_marginTop="8dp" />
+
+                <com.futo.platformplayer.views.buttons.BigButton
+                    android:id="@+id/button_delete"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:buttonText="@string/delete"
+                    app:buttonSubText="@string/delete_this_profile"
+                    app:buttonIcon="@drawable/ic_trash"
+                    android:layout_marginTop="8dp"
+                    app:buttonBackground="@drawable/background_big_button_red"/>
+            </LinearLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </ScrollView>
 
     <com.futo.platformplayer.views.overlays.LoaderOverlay
         android:id="@+id/loader_overlay"
