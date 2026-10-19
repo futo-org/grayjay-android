@@ -155,8 +155,10 @@ class CommentWithReferenceViewHolder : ViewHolder {
             _textBody.visibility = View.GONE
             _pillRatingLikesDislikes.visibility = View.GONE
             _buttonReplies.visibility = View.GONE
+            _buttonDelete.visibility = View.GONE
         } else {
             _textBody.visibility = View.VISIBLE
+            _buttonDelete.visibility = View.VISIBLE
         }
     }
 

@@ -266,6 +266,7 @@ class CommentViewHolder : ViewHolder {
             _pillRatingLikesDislikes.visibility = View.GONE;
             _buttonCopy.visibility = View.GONE;
             _buttonReplies.visibility = View.GONE;
+            _buttonDelete.visibility = View.GONE;
         } else {
             _textBody.visibility = View.VISIBLE;
             _buttonCopy.visibility = View.VISIBLE;
