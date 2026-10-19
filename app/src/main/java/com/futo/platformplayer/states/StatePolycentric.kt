@@ -25,14 +25,15 @@ import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.api.media.structures.MultiChronoContentPager
 import com.futo.platformplayer.awaitFirstDeferred
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.polycentric.ModerationsManager
 import com.futo.platformplayer.polycentric.PolycentricAdapter
 import com.futo.platformplayer.resolveChannelUrl
-import com.futo.platformplayer.polycentric.getComment
 import com.futo.platformplayer.polycentric.getCommentPager
 import com.futo.platformplayer.polycentric.deleteComment
 import com.futo.platformplayer.polycentric.getLiveVideoRating
 import com.futo.platformplayer.polycentric.getMyComments
 import com.futo.platformplayer.polycentric.getReplies
+import com.futo.platformplayer.polycentric.getThread
 import com.futo.platformplayer.polycentric.isMyComment
 import com.futo.platformplayer.polycentric.myCommentRating
 import com.futo.platformplayer.polycentric.myVideoRating
@@ -478,10 +479,13 @@ class StatePolycentric {
         return adapter
     }
 
+    /** Labels the user chose to hide. */
+    private fun omitLabels() = ModerationsManager.getInstance().omitLabels()
+
     suspend fun getCommentPager(videoUrl: String): IPager<IPlatformComment> {
         val adapter = awaitAdapter() ?: return EmptyPager()
         return try {
-            adapter.getCommentPager(videoUrl)
+            adapter.getCommentPager(videoUrl, omitLabels())
         } catch (e: Throwable) {
             Logger.e(TAG, "Failed to load comments.", e)
             EmptyPager()
@@ -491,19 +495,20 @@ class StatePolycentric {
     suspend fun getReplies(comment: PolycentricPlatformComment): IPager<IPlatformComment> {
         val adapter = awaitAdapter() ?: return EmptyPager()
         return try {
-            adapter.getReplies(comment)
+            adapter.getReplies(comment, omitLabels())
         } catch (e: Throwable) {
             Logger.e(TAG, "Failed to load replies.", e)
             EmptyPager()
         }
     }
 
-    suspend fun getComment(key: EventKey): PolycentricPlatformComment? {
+    /** The comment at [key] and a page of replies, or null if it could not be loaded. */
+    suspend fun getThread(key: EventKey, contextUrl: String): Pair<PolycentricPlatformComment, IPager<IPlatformComment>>? {
         val adapter = awaitAdapter() ?: return null
         return try {
-            adapter.getComment(key)
+            adapter.getThread(key, contextUrl, omitLabels())
         } catch (e: Throwable) {
-            Logger.e(TAG, "Failed to load comment.", e)
+            Logger.e(TAG, "Failed to load comment thread.", e)
             null
         }
     }

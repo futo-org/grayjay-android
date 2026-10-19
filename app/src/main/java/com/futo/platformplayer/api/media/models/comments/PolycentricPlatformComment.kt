@@ -4,6 +4,7 @@ import com.futo.platformplayer.api.media.IPlatformClient
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.ratings.IRating
 import com.futo.platformplayer.api.media.structures.IPager
+import com.futo.platformplayer.polycentric.CommentLabel
 import com.futo.polycentric.core.Pointer
 import polycentric.v2.EventKey
 import userpackage.Protocol.Reference
@@ -28,9 +29,12 @@ class PolycentricPlatformComment : IPlatformComment {
     val key: EventKey?;
     val root: EventKey?;
     val parent: EventKey?;
-    val labels: List<String>;
+    val labels: List<CommentLabel>;
 
-    constructor(contextUrl: String, author: PlatformAuthorLink, msg: String, rating: IRating, date: OffsetDateTime, eventPointer: Pointer? = null, parentReference: Reference? = null, replyCount: Int? = null, key: EventKey? = null, root: EventKey? = null, parent: EventKey? = null, labels: List<String> = listOf()) {
+    /** Whether the user tapped "show" on this comment's warning overlay. */
+    var moderationRevealed: Boolean = false;
+
+    constructor(contextUrl: String, author: PlatformAuthorLink, msg: String, rating: IRating, date: OffsetDateTime, eventPointer: Pointer? = null, parentReference: Reference? = null, replyCount: Int? = null, key: EventKey? = null, root: EventKey? = null, parent: EventKey? = null, labels: List<CommentLabel> = listOf()) {
         this.contextUrl = contextUrl;
         this.author = author;
         this.message = msg;
@@ -51,7 +55,9 @@ class PolycentricPlatformComment : IPlatformComment {
     }
 
     fun cloneWithUpdatedReplyCount(replyCount: Int?): PolycentricPlatformComment {
-        return PolycentricPlatformComment(contextUrl, author, message, rating, date, eventPointer, parentReference, replyCount, key, root, parent, labels);
+        return PolycentricPlatformComment(contextUrl, author, message, rating, date, eventPointer, parentReference, replyCount, key, root, parent, labels).also {
+            it.moderationRevealed = moderationRevealed;
+        };
     }
 
     companion object {
