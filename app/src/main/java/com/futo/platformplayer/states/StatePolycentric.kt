@@ -51,6 +51,20 @@ import com.futo.platformplayer.polycentric.getIdentityProfile
 import com.futo.platformplayer.polycentric.updateProfile
 import com.futo.platformplayer.polycentric.logout
 import com.futo.platformplayer.polycentric.deleteActiveIdentity
+import com.futo.platformplayer.polycentric.PairingExpiredException
+import com.futo.platformplayer.polycentric.PairingPreview
+import com.futo.platformplayer.polycentric.PendingClaim
+import com.futo.platformplayer.polycentric.approveClaimer
+import com.futo.platformplayer.polycentric.canIssuePairing
+import com.futo.platformplayer.polycentric.cancelClaimer
+import com.futo.platformplayer.polycentric.claimPaired
+import com.futo.platformplayer.polycentric.isPairingExpiredError
+import com.futo.platformplayer.polycentric.joinPairing
+import com.futo.platformplayer.polycentric.pollAuthorization
+import com.futo.platformplayer.polycentric.pollClaimers
+import com.futo.platformplayer.polycentric.prepareClaimerKey
+import com.futo.platformplayer.polycentric.previewPairing
+import com.futo.platformplayer.polycentric.startIssuerSession
 import com.futo.polycentric.core.PolycentricProfile
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -65,7 +79,10 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.suspendCancellableCoroutine
+import org.futo.polycentric.core.PairingSessionManager
 import org.futo.polycentric.core.StoredKeyPair
+import polycentric.v2.PairingInfo
+import polycentric.v2.PublicKey
 import polycentric.v2.EventKey
 import kotlin.coroutines.resume
 
@@ -276,6 +293,98 @@ class StatePolycentric {
     suspend fun logout() = mutateIdentity { it.logout() }
 
     suspend fun deleteIdentity() = mutateIdentity { it.deleteActiveIdentity() }
+
+    /** State for a pending claim (as a claimer). See `PolycentricPairing.kt`. */
+    private var _pendingClaim: PendingClaim? = null
+
+    /** Whether this device can approve another device into the active identity. */
+    suspend fun canIssuePairing(): Boolean {
+        ensureEnabled()
+        return requireAdapter().canIssuePairing()
+    }
+
+    suspend fun startIssuerPairing(): PairingSessionManager.PairingSession = mapPairingErrors {
+        requireAdapter().startIssuerSession()
+    }
+
+    suspend fun pollPairingClaimers(info: PairingInfo): List<PublicKey> = mapPairingErrors {
+        requireAdapter().pollClaimers(info)
+    }
+
+    suspend fun approvePairingClaimer(session: PairingSessionManager.PairingSession, key: PublicKey, asRotationKey: Boolean) =
+        mapPairingErrors { mutateIdentity { it.approveClaimer(session, key, asRotationKey) } }
+
+    suspend fun previewPairing(info: PairingInfo): PairingPreview = mapPairingErrors {
+        requireAdapter().previewPairing(info)
+    }
+
+    /**
+     * Create a new pending claim with a new key pair. Cancels any earlier unfinished pairing first.
+     */
+    suspend fun preparePairingClaimer(): PublicKey = mutateIdentity { adapter ->
+        _pendingClaim?.let { adapter.cancelClaimer(it) }
+        _pendingClaim = null
+        val pending = adapter.prepareClaimerKey()
+        _pendingClaim = pending
+        pending.publicKey
+    }
+
+    suspend fun joinPairing(info: PairingInfo) = mapPairingErrors {
+        requireAdapter().joinPairing(info)
+    }
+
+    suspend fun pollPairingAuthorization(info: PairingInfo): Boolean = mapPairingErrors {
+        requireAdapter().pollAuthorization(info)
+    }
+
+    /**
+     * Claims the issuer's identity once the issuer has approved this device. On failure, restores
+     * the identity that was active before pairing.
+     */
+    suspend fun claimPairedIdentity(session: PairingSessionManager.PairingSession) {
+        mapPairingErrors {
+            mutateIdentity { adapter ->
+                val pending = _pendingClaim ?: throw IllegalStateException("No pairing in progress")
+                try {
+                    adapter.claimPaired(pending, session)
+                } catch (e: Throwable) {
+                    _pendingClaim = null
+                    try {
+                        adapter.cancelClaimer(pending)
+                    } catch (cancelError: Throwable) {
+                        Logger.e(TAG, "Failed to restore the identity after a failed claim.", cancelError)
+                    }
+                    throw e
+                }
+                _pendingClaim = null
+            }
+        }
+        withContext(Dispatchers.Main) {
+            onIdentitiesChanged.emit()
+        }
+    }
+
+    /** Abandons an unfinished pairing and restores the identity that was active before it. */
+    suspend fun cancelPairingClaimer() = mutateIdentity { adapter ->
+        val pending = _pendingClaim ?: return@mutateIdentity
+        _pendingClaim = null
+        adapter.cancelClaimer(pending)
+    }
+
+    /**
+     * Converts polycentric-core's expired session error into a [PairingExpiredException].
+     * TODO: the polycentric-core's expired session error should be refactored into its own
+     * exception type, so that string matching isn't needed.
+     */
+    private inline fun <T> mapPairingErrors(block: () -> T): T =
+        try {
+            block()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Throwable) {
+            if (isPairingExpiredError(e)) throw PairingExpiredException(e)
+            throw e
+        }
 
 
     fun getChannelUrls(url: String, channelId: PlatformID? = null, cacheOnly: Boolean = false, doCacheNull: Boolean = false): List<String> {

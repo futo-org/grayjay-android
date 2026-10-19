@@ -41,6 +41,7 @@ import java.io.InputStream
 class PolycentricProfileActivity : AppCompatActivity() {
     private lateinit var _buttonHelp: ImageButton;
     private lateinit var _editName: EditText;
+    private lateinit var _buttonPairDevice: BigButton;
     private lateinit var _buttonExport: BigButton;
     private lateinit var _buttonModeration: BigButton;
     private lateinit var _buttonLogout: BigButton;
@@ -63,6 +64,7 @@ class PolycentricProfileActivity : AppCompatActivity() {
         _buttonHelp = findViewById(R.id.button_help);
         _imagePolycentric = findViewById(R.id.image_polycentric);
         _editName = findViewById(R.id.edit_profile_name);
+        _buttonPairDevice = findViewById(R.id.button_pair_device);
         _buttonExport = findViewById(R.id.button_export);
         _buttonModeration = findViewById(R.id.button_moderation);
         _buttonLogout = findViewById(R.id.button_logout);
@@ -89,6 +91,13 @@ class PolycentricProfileActivity : AppCompatActivity() {
 
         _buttonHelp.setOnClickListener {
             startActivity(Intent(this, PolycentricWhyActivity::class.java));
+        };
+
+        // Enabled once updateUI knows whether this device can approve others.
+        _buttonPairDevice.setButtonEnabled(false);
+        _buttonPairDevice.onClick.subscribe {
+            saveIfRequired();
+            startActivity(Intent(this, PolycentricPairIssuerActivity::class.java));
         };
 
         // TODO: reuse this button for Harbor's backup key concept
@@ -129,7 +138,14 @@ class PolycentricProfileActivity : AppCompatActivity() {
 
         lifecycleScope.launch(Dispatchers.IO) {
             val profile = runCatching { StatePolycentric.instance.getIdentityProfile(identity) }.getOrNull();
+            val canIssuePairing = runCatching { StatePolycentric.instance.canIssuePairing() }.getOrDefault(false);
             withContext(Dispatchers.Main) {
+                // Only rotation keys can add keys, so a device paired as a signing key can't pair others.
+                _buttonPairDevice.setButtonEnabled(canIssuePairing);
+                _buttonPairDevice.setSecondaryText(getString(
+                    if (canIssuePairing) R.string.pairing_pair_a_device_description else R.string.pairing_cannot_issue_description
+                ));
+
                 val name = profile?.name;
                 if (name != null) {
                     _username = name;
