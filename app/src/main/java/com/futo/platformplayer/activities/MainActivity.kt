@@ -771,7 +771,24 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent);
+        if (intent.action == Intent.ACTION_MAIN && intent.hasCategory(Intent.CATEGORY_LAUNCHER) && bringPairingToFront()) {
+            return;
+        }
         handleIntent(intent);
+    }
+
+    /**
+     * Brings an open pairing screen back to the front. It runs in its own task, because this
+     * activity is singleInstance. Returns false if no pairing screen is open.
+     */
+    private fun bringPairingToFront(): Boolean {
+        val activity = when {
+            PolycentricPairIssuerActivity.isOpen -> PolycentricPairIssuerActivity::class.java
+            PolycentricPairClaimerActivity.isOpen -> PolycentricPairClaimerActivity::class.java
+            else -> return false
+        };
+        startActivity(Intent(this, activity).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT));
+        return true;
     }
 
     private fun handleIntent(intent: Intent) {
