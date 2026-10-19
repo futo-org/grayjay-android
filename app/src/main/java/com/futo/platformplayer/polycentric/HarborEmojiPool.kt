@@ -12,8 +12,6 @@ import com.futo.platformplayer.views.others.TwemojiFontMetrics
 /** Sizes in res/font/twemoji_fingerprint.ttf, in font units. */
 internal val TWEMOJI_COLR_METRICS = TwemojiFontMetrics(
     unitsPerEm = 1000,
-    ascent = 900,
-    descent = -100,
     advance = 1150,
     spaceBefore = 100,
     spaceAfter = 50,
@@ -22,8 +20,6 @@ internal val TWEMOJI_COLR_METRICS = TwemojiFontMetrics(
 /** Sizes in res/font/twemoji_fingerprint_cbdt.ttf, in font units. */
 internal val TWEMOJI_CBDT_METRICS = TwemojiFontMetrics(
     unitsPerEm = 1000,
-    ascent = 900,
-    descent = -100,
     advance = 1150,
     spaceBefore = 73,
     spaceAfter = 77,
