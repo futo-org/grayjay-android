@@ -23,7 +23,6 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.UISlideOverlays
-import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.exceptions.NoPlatformClientException
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.ResultCapabilities
@@ -37,19 +36,15 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.assume
 import com.futo.platformplayer.constructs.TaskHandler
-import com.futo.platformplayer.dp
 import com.futo.platformplayer.fragment.channel.tab.IChannelTabFragment
 import com.futo.platformplayer.fragment.mainactivity.topbar.NavigationTopBarFragment
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.SearchType
 import com.futo.platformplayer.models.Subscription
-import com.futo.platformplayer.selectBestImage
-import com.futo.platformplayer.selectHighestResolutionImage
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.states.StatePlaylists
-import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.toHumanNumber
 import com.futo.platformplayer.views.adapters.ChannelTab
@@ -58,9 +53,6 @@ import com.futo.platformplayer.views.others.CreatorThumbnail
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuOverlay
 import com.futo.platformplayer.views.subscriptions.SubscribeButton
 import com.futo.platformplayer.withTimestamp
-import com.futo.polycentric.core.ApiMethods
-import com.futo.polycentric.core.PolycentricProfile
-import com.futo.polycentric.core.toURLInfoSystemLinkUrl
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import kotlinx.coroutines.Dispatchers
@@ -132,19 +124,10 @@ class ChannelFragment : MainFragment() {
 
         private val _onPageChangeCallback = object : ViewPager2.OnPageChangeCallback() {}
 
-        private val _taskLoadPolycentricProfile: TaskHandler<PlatformID, PolycentricProfile?>
         private val _taskGetChannel: TaskHandler<String, IPlatformChannel>
 
         init {
             inflater.inflate(R.layout.fragment_channel, this)
-            _taskLoadPolycentricProfile = TaskHandler<PlatformID, PolycentricProfile?>({ fragment.lifecycleScope },
-                    { id ->
-                        if (!StatePolycentric.instance.enabled)
-                            return@TaskHandler null
-                        return@TaskHandler ApiMethods.getPolycentricProfileByClaim(ApiMethods.SERVER, ApiMethods.FUTO_TRUST_ROOT, id.claimFieldType.toLong(), id.claimType.toLong(), id.value!!)
-                    }).success { setPolycentricProfile(it, animate = true) }.exception<Throwable> {
-                    Logger.w(TAG, "Failed to load polycentric profile.", it)
-                }
             _taskGetChannel = TaskHandler<String, IPlatformChannel>({ fragment.lifecycleScope },
                 { url -> StatePlatform.instance.getChannelLive(url) }).success { showChannel(it); }
                 .exception<NoPlatformClientException> {
@@ -289,7 +272,6 @@ class ChannelFragment : MainFragment() {
         }
 
         fun cleanup() {
-            _taskLoadPolycentricProfile.cancel()
             _taskGetChannel.cancel()
             _tabLayoutMediator.detach()
             _viewPager.unregisterOnPageChangeCallback(_onPageChangeCallback)
@@ -299,7 +281,6 @@ class ChannelFragment : MainFragment() {
 
         fun onShown(parameter: Any?, isBack: Boolean) {
             hideSlideUpOverlay()
-            _taskLoadPolycentricProfile.cancel()
             _selectedTabIndex = -1
 
             if (!isBack || _url == null) {
@@ -310,12 +291,10 @@ class ChannelFragment : MainFragment() {
                         _buttonSubscribe.setSubscribeChannel(parameter)
                         _buttonSubscriptionSettings.visibility =
                             if (_buttonSubscribe.isSubscribed) View.VISIBLE else View.GONE
-                        setPolycentricProfileOr(parameter) {
-                            _textChannel.text = ""
-                            _textChannelSub.text = ""
-                            _creatorThumbnail.setThumbnail(null, true)
-                            Glide.with(_imageBanner).clear(_imageBanner)
-                        }
+                        _textChannel.text = ""
+                        _textChannelSub.text = ""
+                        _creatorThumbnail.setThumbnail(null, true)
+                        Glide.with(_imageBanner).clear(_imageBanner)
 
                         _url = parameter
                         loadChannel()
@@ -329,28 +308,20 @@ class ChannelFragment : MainFragment() {
 
                     is IPlatformChannel -> showChannel(parameter)
                     is PlatformAuthorLink -> {
-                        setPolycentricProfileOr(parameter.url) {
-                            _textChannel.text = parameter.name
-                            _textChannelSub.text = ""
-                            _creatorThumbnail.setThumbnail(parameter.thumbnail, true)
-                            Glide.with(_imageBanner).clear(_imageBanner)
-
-                            loadPolycentricProfile(parameter.id)
-                        }
+                        _textChannel.text = parameter.name
+                        _textChannelSub.text = ""
+                        _creatorThumbnail.setThumbnail(parameter.thumbnail, true)
+                        Glide.with(_imageBanner).clear(_imageBanner)
 
                         _url = parameter.url
                         loadChannel()
                     }
 
                     is Subscription -> {
-                        setPolycentricProfileOr(parameter.channel.url) {
-                            _textChannel.text = parameter.channel.name
-                            _textChannelSub.text = ""
-                            _creatorThumbnail.setThumbnail(parameter.channel.thumbnail, true)
-                            Glide.with(_imageBanner).clear(_imageBanner)
-
-                            loadPolycentricProfile(parameter.channel.id)
-                        }
+                        _textChannel.text = parameter.channel.name
+                        _textChannelSub.text = ""
+                        _creatorThumbnail.setThumbnail(parameter.channel.thumbnail, true)
+                        Glide.with(_imageBanner).clear(_imageBanner)
 
                         _url = parameter.channel.url
                         loadChannel()
@@ -364,10 +335,6 @@ class ChannelFragment : MainFragment() {
         private fun selectTab(selectedTabIndex: Int) {
             _selectedTabIndex = selectedTabIndex
             _tabs.selectTab(_tabs.getTabAt(selectedTabIndex))
-        }
-
-        private fun loadPolycentricProfile(id: PlatformID) {
-            _taskLoadPolycentricProfile.run(id)
         }
 
         private fun setLoading(isLoading: Boolean) {
@@ -519,78 +486,9 @@ class ChannelFragment : MainFragment() {
 
             this.channel = channel
 
-            setPolycentricProfileOr(channel.url) {
-                _textChannel.text = channel.name
-                _creatorThumbnail.setThumbnail(channel.thumbnail, true)
-                Glide.with(_imageBanner).load(channel.banner).crossfade().into(_imageBanner)
-
-                _taskLoadPolycentricProfile.run(channel.id)
-            }
-        }
-
-        private fun setPolycentricProfileOr(url: String, or: () -> Unit) {
-            setPolycentricProfile(null, animate = false)
-            or()
-        }
-
-        private fun setPolycentricProfile(
-            profile: PolycentricProfile?, animate: Boolean
-        ) {
-            val dp35 = 35.dp(resources)
-            val avatar = profile?.systemState?.avatar?.selectBestImage(dp35 * dp35)?.let {
-                it.toURLInfoSystemLinkUrl(
-                    profile.system.toProto(), it.process, profile.systemState.servers.toList()
-                )
-            }
-
-            if (avatar != null) {
-                _creatorThumbnail.setThumbnail(avatar, animate)
-            } else {
-                _creatorThumbnail.setThumbnail(channel?.thumbnail, animate)
-                _creatorThumbnail.setHarborAvailable(
-                    profile != null, animate, profile?.system?.toProto()
-                )
-            }
-
-            val banner = profile?.systemState?.banner?.selectHighestResolutionImage()?.let {
-                it.toURLInfoSystemLinkUrl(
-                    profile.system.toProto(), it.process, profile.systemState.servers.toList()
-                )
-            }
-
-            if (banner != null) {
-                Glide.with(_imageBanner).load(banner).crossfade().into(_imageBanner)
-            } else {
-                Glide.with(_imageBanner).load(channel?.banner).crossfade().into(_imageBanner)
-            }
-
-            if (profile != null) {
-                _fragment.topBar?.onShown(profile)
-                _textChannel.text = profile.systemState.username
-            }
-
-            // sets the profile for each tab
-            for (fragment in _fragment.childFragmentManager.fragments) {
-                (fragment as IChannelTabFragment).setPolycentricProfile(profile)
-            }
-
-            val insertPosition = 1
-
-            //TODO only add channels and support if its setup on the polycentric profile
-            if (profile != null && !(_viewPager.adapter as ChannelViewPagerAdapter).containsItem(
-                    ChannelTab.SUPPORT.ordinal.toLong()
-                )
-            ) {
-                (_viewPager.adapter as ChannelViewPagerAdapter).insert(insertPosition, ChannelTab.SUPPORT)
-            }
-            if (profile != null && !(_viewPager.adapter as ChannelViewPagerAdapter).containsItem(
-                    ChannelTab.CHANNELS.ordinal.toLong()
-                )
-            ) {
-                (_viewPager.adapter as ChannelViewPagerAdapter).insert(insertPosition, ChannelTab.CHANNELS)
-            }
-            (_viewPager.adapter as ChannelViewPagerAdapter).profile = profile
-            _viewPager.adapter!!.notifyDataSetChanged()
+            _textChannel.text = channel.name
+            _creatorThumbnail.setThumbnail(channel.thumbnail, true)
+            Glide.with(_imageBanner).load(channel.banner).crossfade().into(_imageBanner)
         }
     }
 

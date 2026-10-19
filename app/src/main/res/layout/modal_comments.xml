@@ -327,11 +327,5 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:visibility="gone" />
-
-        <com.futo.platformplayer.views.overlays.SupportOverlay
-            android:id="@+id/videodetail_container_support"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:visibility="gone" />
     </FrameLayout>
 </LinearLayout>

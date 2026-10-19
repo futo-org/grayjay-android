@@ -6,7 +6,6 @@ import com.futo.platformplayer.api.media.structures.DedupContentPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.api.media.structures.MultiChronoContentPager
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.resolveChannelUrl
 import com.futo.platformplayer.serializers.PlatformContentSerializer
 import com.futo.platformplayer.stores.db.ManagedDBStore
 import com.futo.platformplayer.stores.db.types.DBSubscriptionCache

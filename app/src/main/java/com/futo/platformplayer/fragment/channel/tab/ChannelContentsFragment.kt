@@ -36,14 +36,12 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateCache
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlugins
-import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.views.FeedStyle
 import com.futo.platformplayer.views.SearchView
 import com.futo.platformplayer.views.adapters.ContentPreviewViewHolder
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 import com.futo.platformplayer.views.adapters.feedtypes.PreviewContentListAdapter
-import com.futo.polycentric.core.PolycentricProfile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlin.math.max
@@ -58,7 +56,6 @@ class ChannelContentsFragment(private val subType: String? = null) : Fragment(),
     private var _channel: IPlatformChannel? = null;
     private var _results: ArrayList<IPlatformContent> = arrayListOf();
     private var _adapterResults: InsertedViewAdapterWithLoader<ContentPreviewViewHolder>? = null;
-    private var _lastPolycentricProfile: PolycentricProfile? = null;
     private var _query: String? = null
     private var _searchView: SearchView? = null
 
@@ -86,20 +83,12 @@ class ChannelContentsFragment(private val subType: String? = null) : Fragment(),
                 pager = StatePlatform.instance.searchChannel(channel.url, query);
             }
         } else {
-            val lastPolycentricProfile = _lastPolycentricProfile;
-            if (lastPolycentricProfile != null && StatePolycentric.instance.enabled) {
-                pager = StatePolycentric.instance.getChannelContent(lifecycleScope, lastPolycentricProfile, type = subType);
-                Logger.i(TAG, "StatePolycentric.instance.getChannelContent(lifecycleScope, lastPolycentricProfile, type = ${subType})")
-            }
-
-            if(pager == null) {
-                if(subType != null) {
-                    pager = StatePlatform.instance.getChannelContent(channel.url, subType);
-                    Logger.i(TAG, "StatePlatform.instance.getChannelContent(channel.url = ${channel.url}, subType = ${subType})")
-                } else {
-                    pager = StatePlatform.instance.getChannelContent(channel.url);
-                    Logger.i(TAG, "StatePlatform.instance.getChannelContent(channel.url = ${channel.url})")
-                }
+            if(subType != null) {
+                pager = StatePlatform.instance.getChannelContent(channel.url, subType);
+                Logger.i(TAG, "StatePlatform.instance.getChannelContent(channel.url = ${channel.url}, subType = ${subType})")
+            } else {
+                pager = StatePlatform.instance.getChannelContent(channel.url);
+                Logger.i(TAG, "StatePlatform.instance.getChannelContent(channel.url = ${channel.url})")
             }
         }
         return pager;
@@ -379,24 +368,6 @@ class ChannelContentsFragment(private val subType: String? = null) : Fragment(),
     private fun setLoading(loading: Boolean) {
         _loading = loading;
         _adapterResults?.setLoading(loading);
-    }
-
-    override fun setPolycentricProfile(polycentricProfile: PolycentricProfile?) {
-        val p = _lastPolycentricProfile;
-        if (p != null && polycentricProfile != null && p.system == polycentricProfile.system) {
-            Logger.i(TAG, "setPolycentricProfile skipped because previous was same");
-            return;
-        }
-
-        _lastPolycentricProfile = polycentricProfile;
-
-        if (polycentricProfile != null) {
-            _taskLoadVideos.cancel();
-            val itemsRemoved = _results.size;
-            _results.clear();
-            _adapterResults?.notifyItemRangeRemoved(0, itemsRemoved);
-            loadInitial();
-        }
     }
 
     private fun processPagerExceptions(pager: IPager<*>) {

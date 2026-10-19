@@ -16,7 +16,6 @@ import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
 import com.futo.platformplayer.models.Playlist
 import com.futo.platformplayer.views.casting.CastButton
-import com.futo.polycentric.core.PolycentricProfile
 
 class NavigationTopBarFragment : TopFragment() {
     private var _buttonBack: ImageButton? = null;
@@ -45,8 +44,6 @@ class NavigationTopBarFragment : TopFragment() {
             _textTitle?.text = parameter;
         } else if (parameter is IPlatformClient) {
             _textTitle?.text = parameter.name;
-        } else if (parameter is PolycentricProfile) {
-            _textTitle?.text = parameter.systemState.username;
         }
 
         setMenuItems(listOf());

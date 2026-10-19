@@ -11,11 +11,9 @@ import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.dp
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.selectBestImage
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.views.adapters.AnyAdapter
 import com.futo.platformplayer.views.others.CreatorThumbnail
-import com.futo.polycentric.core.toURLInfoSystemLinkUrl
 
 class CreatorBarViewHolder(private val _viewGroup: ViewGroup) : AnyAdapter.AnyViewHolder<IPlatformChannel>(
     LayoutInflater.from(_viewGroup.context).inflate(R.layout.view_subscription_bar_icon, _viewGroup, false)) {

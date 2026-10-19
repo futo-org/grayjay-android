@@ -6,8 +6,6 @@ import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringStorage
-import com.futo.polycentric.core.PEncryptionProviderV0
-import com.futo.polycentric.core.PEncryptionProviderV1
 import com.futo.platformplayer.toHexString
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -20,6 +18,10 @@ import org.futo.polycentric.core.KeyTypes
 import org.futo.polycentric.core.StoredKeyPair
 import polycentric.v2.KeyType
 import polycentric.v2.PublicKey
+import java.security.Key
+import java.security.KeyStore
+import javax.crypto.Cipher
+import javax.crypto.spec.GCMParameterSpec
 
 /*
  * Polycentric v1 to v2 identity migration. Harbor's Grayjay migration service authors a v2 identity
@@ -76,13 +78,31 @@ fun importLegacyDatabaseKeys(context: Context, storage: PolycentricKeyStorage = 
     }
 }
 
-/** Decrypts with [PEncryptionProviderV1], or [PEncryptionProviderV0] as fallback. */
-private fun decryptLegacySecret(value: ByteArray): ByteArray =
-    try {
-        PEncryptionProviderV1.instance.decrypt(value)
+private const val LEGACY_KEY_ALIAS = "PolycentricCore_Key"
+private const val LEGACY_IV_SIZE = 12
+private const val LEGACY_TAG_LENGTH = 128
+private val LEGACY_V0_FIXED_IV = byteArrayOf(12, 43, 127, 2, 99, 22, 6, 78, 24, 53, 8, 101)
+
+/**
+ * Decrypts a secret written by the v1 SDK's AES-GCM Android Keystore encryption: the V1 format
+ * (random IV prefixed to the ciphertext), or the V0 format (fixed IV) as fallback.
+ */
+private fun decryptLegacySecret(value: ByteArray): ByteArray {
+    val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+    val key = keyStore.getKey(LEGACY_KEY_ALIAS, null)
+        ?: throw IllegalStateException("Legacy encryption key not found")
+    return try {
+        decryptLegacyAesGcm(key, value.copyOfRange(0, LEGACY_IV_SIZE), value.copyOfRange(LEGACY_IV_SIZE, value.size))
     } catch (e: Throwable) {
-        PEncryptionProviderV0.instance.decrypt(value)
+        decryptLegacyAesGcm(key, LEGACY_V0_FIXED_IV, value)
     }
+}
+
+private fun decryptLegacyAesGcm(key: Key, iv: ByteArray, encrypted: ByteArray): ByteArray {
+    val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+    cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(LEGACY_TAG_LENGTH, iv))
+    return cipher.doFinal(encrypted)
+}
 
 /**
  * Look up the v2 identity the migrator created for a legacy system key: null when the migrator

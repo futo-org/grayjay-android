@@ -14,20 +14,14 @@ import com.futo.platformplayer.polycentric.lookupMigratedIdentity
 import com.futo.platformplayer.toHexString
 import java.util.concurrent.atomic.AtomicBoolean
 import com.futo.platformplayer.Settings
-import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
 import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComment
-import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.ratings.RatingLikeDislikes
-import com.futo.platformplayer.api.media.structures.DedupContentPager
 import com.futo.platformplayer.api.media.structures.EmptyPager
 import com.futo.platformplayer.api.media.structures.IPager
-import com.futo.platformplayer.api.media.structures.MultiChronoContentPager
-import com.futo.platformplayer.awaitFirstDeferred
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.polycentric.ModerationsManager
 import com.futo.platformplayer.polycentric.PolycentricAdapter
-import com.futo.platformplayer.resolveChannelUrl
 import com.futo.platformplayer.polycentric.getCommentPager
 import com.futo.platformplayer.polycentric.deleteComment
 import com.futo.platformplayer.polycentric.getLiveVideoRating
@@ -56,16 +50,12 @@ import com.futo.platformplayer.polycentric.getServers
 import com.futo.platformplayer.polycentric.canEditServers
 import com.futo.platformplayer.polycentric.addServer
 import com.futo.platformplayer.polycentric.removeServer
-import com.futo.polycentric.core.PolycentricProfile
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.withLock
@@ -320,64 +310,6 @@ class StatePolycentric {
         withContext(Dispatchers.Main) { onServersChanged.emit() }
     }
 
-
-    fun getChannelUrls(url: String, channelId: PlatformID? = null, cacheOnly: Boolean = false, doCacheNull: Boolean = false): List<String> {
-        return getChannelUrlsWithUpdateResult(url, channelId, cacheOnly, doCacheNull).second;
-    }
-    fun getChannelUrlsWithUpdateResult(url: String, channelId: PlatformID? = null, cacheOnly: Boolean = false, doCacheNull: Boolean = false): Pair<Boolean, List<String>> {
-        var didUpdate = false;
-        if (!enabled) {
-            return Pair(false, listOf(url));
-        }
-        return Pair(didUpdate, listOf(url));
-    }
-
-    fun getChannelContent(scope: CoroutineScope, profile: PolycentricProfile, isSubscriptionOptimized: Boolean = false, channelConcurrency: Int = -1, type: String? = null): IPager<IPlatformContent>? {
-        ensureEnabled()
-
-        //TODO: Currently abusing subscription concurrency for parallelism
-        val concurrency = if (channelConcurrency == -1) Settings.instance.subscriptions.getSubscriptionsConcurrency() else channelConcurrency;
-        val deferred = profile.ownedClaims.groupBy { it.claim.claimType }
-            .mapNotNull {
-                val url = it.value.firstOrNull()?.claim?.resolveChannelUrl() ?: return@mapNotNull null;
-                val client = StatePlatform.instance.getChannelClientOrNull(url) ?: return@mapNotNull null;
-
-                return@mapNotNull Pair(client, scope.async(Dispatchers.IO) {
-                    try {
-                        if (type == null) {
-                            return@async StatePlatform.instance.getChannelContent(url, isSubscriptionOptimized, concurrency);
-                        } else {
-                            return@async StatePlatform.instance.getChannelContent(url, isSubscriptionOptimized, concurrency, type = type);
-                        }
-                    } catch (ex: Throwable) {
-                        Logger.e(TAG, "getChannelContent", ex);
-                        return@async null;
-                    }
-                })
-            }
-            .groupBy { it.first.name }
-            .map { it.value.first() };
-        val finishedPager: Pair<Deferred<IPager<IPlatformContent>?>, IPager<IPlatformContent>?> = (if(deferred.isEmpty()) null else runBlocking {
-                deferred.map { it.second }.awaitFirstDeferred();
-            }) ?: return null;
-
-        val toAwait = deferred.filter { it.second != finishedPager.first };
-
-        //TODO: Get a Parallel pager to work here.
-        val innerPager = MultiChronoContentPager(listOf(finishedPager.second!!) + toAwait.mapNotNull { runBlocking { it.second.await(); } });
-        innerPager.initialize();
-        //return RefreshChronoContentPager(listOf(finishedPager.second!!), toAwait.map { it.second }, listOf());
-        //return RefreshDedupContentPager(RefreshChronoContentPager(listOf(finishedPager.second!!), toAwait.map { it.second }, listOf()), StatePlatform.instance.getEnabledClients().map { it.id });
-        return DedupContentPager(innerPager, StatePlatform.instance.getEnabledClients().map { it.id });
-
-    /* //Gives out-of-order results
-        return RefreshDedupContentPager(RefreshDistributionContentPager(
-            listOf(finishedPager.second!!),
-            toAwait.map { it.second },
-            toAwait.map { PlaceholderPager(5) { PlatformContentPlaceholder(it.first.id) } }),
-            StatePlatform.instance.getEnabledClients().map { it.id }
-        );*/
-    }
 
     /**
      * Returns the Harbor adapter once its client is initialized, or null when
