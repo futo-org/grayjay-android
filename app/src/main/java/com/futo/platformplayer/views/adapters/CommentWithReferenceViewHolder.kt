@@ -144,7 +144,7 @@ class CommentWithReferenceViewHolder : ViewHolder {
             _buttonReplies.setLoading(false)
             _buttonReplies.visibility = View.VISIBLE;
             val replies = comment.replyCount ?: 0;
-            _buttonReplies.text.text = "$replies " + itemView.context.getString(R.string.replies);
+            _buttonReplies.text.text = replies.toString();
         } else {
             _pillRatingLikesDislikes.visibility = View.GONE
             _buttonReplies.visibility = View.GONE
