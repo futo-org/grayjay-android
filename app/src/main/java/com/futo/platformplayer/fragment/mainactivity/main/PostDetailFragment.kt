@@ -61,6 +61,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.lang.Integer.min
+import com.futo.platformplayer.polycentric.toAttributedContent
 
 class PostDetailFragment : MainFragment {
     override val isMainView: Boolean = true;
@@ -459,7 +460,7 @@ class PostDetailFragment : MainFragment {
             if (_postOverview == null) {
                 fetchPolycentricProfile();
                 updatePolycentricRating();
-                _addCommentView.setContext(value.url, null, value.name);
+                _addCommentView.setContext(value.url, null, value.toAttributedContent());
             }
 
             val commentType = !Settings.instance.other.polycentricEnabled || Settings.instance.comments.defaultCommentSection == 1
@@ -480,7 +481,7 @@ class PostDetailFragment : MainFragment {
             _textMeta.text = value.datetime?.toHumanNowDiffString()?.let { "$it ago" } ?: "" //TODO: Include view count?
             _textContent.text = value.description.fixHtmlWhitespace();
             _platformIndicator.setPlatformFromClientID(value.id.pluginId);
-            _addCommentView.setContext(value.url, null, value.name);
+            _addCommentView.setContext(value.url, null, value.toAttributedContent());
 
             updatePolycentricRating();
             fetchPolycentricProfile();

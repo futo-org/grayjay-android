@@ -1,13 +1,14 @@
 package com.futo.platformplayer.polycentric
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Tests that link attributions always satisfy the server's `Link` validation (non-empty title of
- * at most 100 UTF-8 bytes, URL of at most 200 UTF-8 bytes).
+ * Tests that link attributions and previews always satisfy the server's `Link` validation (non-empty
+ * title of at most 100 UTF-8 bytes, description, image and URL of at most 200 UTF-8 bytes).
  */
 class PolycentricAttributionLinkTests {
     private val url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
@@ -68,5 +69,59 @@ class PolycentricAttributionLinkTests {
         assertThrows(IllegalArgumentException::class.java) {
             requirePublishableUrl("https://example.com/" + "a".repeat(181))
         }
+    }
+
+    @Test
+    fun linkPreviewFillsOutAllFields() {
+        val link = linkPreview(url, AttributedContent("A video", "A description", listOf("https://i.ytimg.com/vi/x/hq.jpg")))
+        assertEquals("A video", link.title)
+        assertEquals("A description", link.description)
+        assertEquals("https://i.ytimg.com/vi/x/hq.jpg", link.image)
+        assertEquals(url, link.url)
+    }
+
+    @Test
+    fun linkPreviewWithoutContentFallsBackToHost() {
+        val link = linkPreview(url, null)
+        assertEquals("www.youtube.com", link.title)
+        assertNull(link.description)
+        assertNull(link.image)
+    }
+
+    @Test
+    fun linkPreviewConvertsDescriptionHtmlToText() {
+        val link = linkPreview(url, AttributedContent("t", "<p>Hello <b>world</b></p>\n\n<a href=\"x\">link</a>"))
+        assertEquals("Hello world link", link.description)
+    }
+
+    @Test
+    fun linkPreviewOmitsBlankDescription() {
+        assertNull(linkPreview(url, AttributedContent("t", "  <p> </p> ")).description)
+    }
+
+    @Test
+    fun linkPreviewTruncatesLongDescriptionWithEllipsis() {
+        val description = linkPreview(url, AttributedContent("t", "a".repeat(500))).description!!
+        assertTrue(utf8Size(description) <= 200)
+        assertTrue(description.endsWith("…"))
+    }
+
+    @Test
+    fun linkPreviewPicksFirstUsableImage() {
+        val images = listOf(
+            "",
+            "file:///storage/thumb.jpg",
+            "https://example.com/" + "a".repeat(181),
+            "https://example.com/ok.jpg",
+            "https://example.com/other.jpg",
+        )
+        assertEquals("https://example.com/ok.jpg", linkPreview(url, AttributedContent("t", null, images)).image)
+    }
+
+    @Test
+    fun truncateUtf8WithEllipsisKeepsShortStrings() {
+        assertEquals("abc", truncateUtf8WithEllipsis("abc", 3))
+        assertEquals("ab…", truncateUtf8WithEllipsis("abcdef", 5))
+        assertEquals("日…", truncateUtf8WithEllipsis("日日日", 8))
     }
 }

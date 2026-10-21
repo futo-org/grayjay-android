@@ -26,6 +26,7 @@ import com.futo.platformplayer.api.media.structures.MultiChronoContentPager
 import com.futo.platformplayer.awaitFirstDeferred
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.polycentric.ModerationsManager
+import com.futo.platformplayer.polycentric.AttributedContent
 import com.futo.platformplayer.polycentric.PolycentricAdapter
 import com.futo.platformplayer.resolveChannelUrl
 import com.futo.platformplayer.polycentric.getCommentPager
@@ -614,9 +615,9 @@ class StatePolycentric {
 
     // Writes delegate to the adapter; they throw when no Harbor identity is
     // available (the v2 identity system is not wired up yet).
-    suspend fun postComment(videoUrl: String, videoTitle: String?, text: String): PolycentricPlatformComment {
+    suspend fun postComment(videoUrl: String, video: AttributedContent?, text: String): PolycentricPlatformComment {
         awaitAdapter() ?: throw IllegalStateException("Harbor is disabled")
-        return adapter.postComment(videoUrl, videoTitle, text)
+        return adapter.postComment(videoUrl, video, text)
     }
 
     suspend fun postReply(parent: PolycentricPlatformComment, text: String): PolycentricPlatformComment {

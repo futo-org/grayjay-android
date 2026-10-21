@@ -95,15 +95,19 @@ suspend fun PolycentricAdapter.getMyComments(): List<IPlatformComment> {
 
 /**
  * Publishes a new comment as a `Post` attributed to the video on the Harbor network. Then returns
- * a [PolycentricPlatformComment] object representing the new comment. [videoTitle] is used as the
- * attribution link's title.
+ * a [PolycentricPlatformComment] object representing the new comment. The video is also included
+ * as the post's link preview, filled out from [video].
  */
-suspend fun PolycentricAdapter.postComment(videoUrl: String, videoTitle: String?, text: String): PolycentricPlatformComment {
+suspend fun PolycentricAdapter.postComment(videoUrl: String, video: AttributedContent?, text: String): PolycentricPlatformComment {
     requireActiveIdentity()
     val url = normalizeUrl(videoUrl)
     requirePublishableUrl(url)
     val content = Content(
-        post = Post(text = text, attributed_to = listOf(attributionLink(url, videoTitle))),
+        post = Post(
+            text = text,
+            links = listOf(linkPreview(url, video)),
+            attributed_to = listOf(attributionLink(url, video?.title)),
+        ),
     )
     val key = publish(content, Collections.FEED)
     return localComment(url, text, key, root = null, parent = null)
