@@ -292,7 +292,7 @@
     <string name="live_chat_webview">Live-Chat-Webansicht</string>
     <string name="log_level">Log-Level</string>
     <string name="logging">Protokollierung</string>
-    <string name="manage_polycentric_identity">Polycentic Identität verwalten</string>
+    <string name="manage_polycentric_identity">Polycentric Identität verwalten</string>
     <string name="manage_your_polycentric_identity">Ihre Harbor Identität verwalten</string>
     <string name="manual_check">Manuelle Überprüfung</string>
     <string name="manually_check_for_updates">Manuell nach Updates suchen</string>
