@@ -8,7 +8,7 @@ import com.futo.platformplayer.activities.PolycentricCreateProfileActivity
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.polycentric.claimMigratedIdentity
 import com.futo.platformplayer.polycentric.deleteLegacyKeyPair
-import com.futo.platformplayer.polycentric.importLegacyDatabaseKeys
+import com.futo.platformplayer.polycentric.recordLegacyKeys
 import com.futo.platformplayer.polycentric.legacyKeyPairs
 import com.futo.platformplayer.polycentric.lookupMigratedIdentity
 import com.futo.platformplayer.toHexString
@@ -126,7 +126,6 @@ class StatePolycentric {
         }
 
         _backgroundScope.launch {
-            importLegacyDatabaseKeys(context)
             awaitAdapter() ?: return@launch
             migrateLegacyIdentities(context)
         }
@@ -515,6 +514,8 @@ class StatePolycentric {
         ensureEnabled()
         _initMutex.withLock {
             if (!adapter.isReady) {
+                // Before the SDK may create keys of its own
+                withContext(Dispatchers.IO) { recordLegacyKeys(StateApp.instance.context) }
                 adapter.initialize()
             }
         }

@@ -5,6 +5,7 @@ import android.database.sqlite.SQLiteDatabase
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.stores.FragmentedStorage
+import com.futo.platformplayer.stores.StringArrayStorage
 import com.futo.platformplayer.stores.StringStorage
 import com.futo.polycentric.core.PEncryptionProviderV0
 import com.futo.polycentric.core.PEncryptionProviderV1
@@ -42,25 +43,51 @@ private val IDENTITY_REGEX = Regex("^[0-9a-f]{64}$")
 
 private const val LEGACY_DATABASE_NAME = "polycentric_core.db"
 
+/** v1 public keys on this device that should be migrated. */
+private val legacyKeys get() = FragmentedStorage.get<StringArrayStorage>("polycentricLegacyKeys")
+
+private fun addLegacyKeys(publicKeys: List<ByteArray>) {
+    for (publicKey in publicKeys) {
+        legacyKeys.addDistinct(publicKey.toHexString())
+    }
+    legacyKeys.saveBlocking()
+}
+
+/**
+ * Records the v1 keys on this device for migration, pulled from [PolycentricKeyStorage] and the
+ * Polycentric SDK v1 SQLite database. The record is used to distinguish between v1 keys that
+ * haven't been migrated, and v2 keys that haven't been bound to an identity yet.
+ */
+fun recordLegacyKeys(context: Context, storage: PolycentricKeyStorage = PolycentricKeyStorage.instance) {
+    val recorded = FragmentedStorage.get<StringStorage>("polycentricLegacyKeysRecorded")
+    if (recorded.value.isEmpty()) {
+        val keys = storage.getProcessSecrets().map { it.publicKey }
+        addLegacyKeys(keys)
+        recorded.setAndSaveBlocking("true")
+        Logger.i(TAG, "Recorded legacy keys: ${keys.map { it.toHexString() }}")
+    }
+    importLegacyDatabaseKeys(context, storage)
+}
+
 /**
  * Import of the keys in the v1 Polycentric SDK database into v2 [PolycentricKeyStorage]. The v1
  * SDK kept keys both in the database and Grayjay's FragmentedStorage; see [PolycentricKeyStorage]
  * for how we access FragmentedStorage keys.
  */
-fun importLegacyDatabaseKeys(context: Context, storage: PolycentricKeyStorage = PolycentricKeyStorage.instance) {
+private fun importLegacyDatabaseKeys(context: Context, storage: PolycentricKeyStorage) {
     val imported = FragmentedStorage.get<StringStorage>("polycentricLegacyDatabaseImported")
     if (imported.value.isNotEmpty()) return
 
     try {
         val file = context.getDatabasePath(LEGACY_DATABASE_NAME)
-        var added = 0
+        val keys = mutableListOf<ByteArray>()
         if (file.exists()) {
             SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READONLY).use { db ->
                 db.rawQuery("SELECT value FROM process_secrets", null).use { cursor ->
                     while (cursor.moveToNext()) {
                         val value = cursor.getBlob(0) ?: continue
                         try {
-                            if (storage.importProcessSecret(decryptLegacySecret(value))) added++
+                            storage.importProcessSecret(decryptLegacySecret(value))?.let { keys.add(it) }
                         } catch (e: Throwable) {
                             Logger.w(TAG, "Failed to import legacy database key.", e)
                         }
@@ -68,8 +95,9 @@ fun importLegacyDatabaseKeys(context: Context, storage: PolycentricKeyStorage = 
                 }
             }
         }
+        addLegacyKeys(keys)
         imported.setAndSaveBlocking("true")
-        Logger.i(TAG, "Legacy database key import finished: added $added")
+        Logger.i(TAG, "Legacy database key import finished: imported ${keys.map { it.toHexString() }}")
     } catch (e: Throwable) {
         // Retried on the next start
         Logger.e(TAG, "Failed to read legacy database keys.", e)
@@ -136,13 +164,15 @@ internal fun parseLookupResponse(code: Int, body: String?, requestedKeyHex: Stri
 }
 
 /**
- * Unbound Ed25519 keypairs stored on this device. On a device that used v1 these are v1 system
- * keys; keys created through v2 are bound as soon as their identity is published.
+ * v1 system keys stored on this device (see [recordLegacyKeys]) that are not yet bound to a v2
+ * identity, i.e. not yet migrated.
  */
-suspend fun PolycentricAdapter.legacyKeyPairs(): List<StoredKeyPair> =
-    client.keyPairManager.getKeys().filter {
-        it.keyType == KeyTypes.ED25519 && client.getIdentityKeyFor(it) == null
+suspend fun PolycentricAdapter.legacyKeyPairs(): List<StoredKeyPair> {
+    val legacy = legacyKeys.getAllValues().toSet()
+    return client.keyPairManager.getKeys().filter {
+        it.keyType == KeyTypes.ED25519 && it.publicKey.toHexString() in legacy && client.getIdentityKeyFor(it) == null
     }
+}
 
 /**
  * Claim the identity that Harbor's Grayjay migrator created for a legacy v1 system key [keyPair].
@@ -180,7 +210,10 @@ suspend fun PolycentricAdapter.claimMigratedIdentity(keyPair: StoredKeyPair, ide
 }
 
 /** Delete a legacy keypair from this device, abandoning its migration. */
-suspend fun PolycentricAdapter.deleteLegacyKeyPair(keyPair: StoredKeyPair) =
+suspend fun PolycentricAdapter.deleteLegacyKeyPair(keyPair: StoredKeyPair) {
     client.keyPairManager.removeKeyPair(
         PublicKey(key_type = KeyType.KEY_TYPE_ED25519, key = keyPair.publicKey.toByteString())
     )
+    legacyKeys.remove(keyPair.publicKey.toHexString())
+    legacyKeys.saveBlocking()
+}

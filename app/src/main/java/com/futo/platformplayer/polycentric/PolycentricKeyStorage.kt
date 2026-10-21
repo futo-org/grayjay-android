@@ -53,14 +53,15 @@ class PolycentricKeyStorage {
 
     /**
      * Adds the key of a decrypted v1 `StorageTypeProcessSecret` unless it is already stored.
-     * Returns whether the key was added.
+     * Returns the key's public key, or null when it is not an Ed25519 key.
      */
-    fun importProcessSecret(decrypted: ByteArray): Boolean {
-        val seed = ed25519SeedOf(StorageTypeProcessSecret.parseFrom(decrypted)) ?: return false
+    fun importProcessSecret(decrypted: ByteArray): ByteArray? {
+        val seed = ed25519SeedOf(StorageTypeProcessSecret.parseFrom(decrypted)) ?: return null
         val publicKey = deriveEd25519PublicKey(seed)
-        if (getProcessSecrets().any { it.publicKey.contentEquals(publicKey) }) return false
-        addProcessSecret(publicKey, seed)
-        return true
+        if (getProcessSecrets().none { it.publicKey.contentEquals(publicKey) }) {
+            addProcessSecret(publicKey, seed)
+        }
+        return publicKey
     }
 
     fun removeProcessSecret(publicKey: ByteArray) {
