@@ -19,6 +19,7 @@ import com.futo.platformplayer.api.media.models.comments.IPlatformComment
 import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComment
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.polycentric.AttributedContent
 import com.futo.platformplayer.polycentric.toHarborErrorMessage
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePolycentric
@@ -28,7 +29,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 
 
-class CommentDialog(context: Context?, val contextUrl: String, val contextTitle: String?, val parent: PolycentricPlatformComment?) : AlertDialog(context) {
+class CommentDialog(context: Context?, val contextUrl: String, val contextContent: AttributedContent?, val parent: PolycentricPlatformComment?) : AlertDialog(context) {
     private lateinit var _buttonCreate: LinearLayout;
     private lateinit var _buttonCancel: MaterialButton;
     private lateinit var _editComment: EditText;
@@ -107,7 +108,7 @@ class CommentDialog(context: Context?, val contextUrl: String, val contextTitle:
             StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
                 val result = runCatching {
                     if (parent == null) {
-                        StatePolycentric.instance.postComment(contextUrl, contextTitle, comment)
+                        StatePolycentric.instance.postComment(contextUrl, contextContent, comment)
                     } else {
                         StatePolycentric.instance.postReply(parent, comment)
                     }
