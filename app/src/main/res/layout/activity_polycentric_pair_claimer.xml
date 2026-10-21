@@ -98,6 +98,7 @@
                     android:textSize="12dp"
                     android:gravity="start|top"
                     android:inputType="textUri|textMultiLine|textNoSuggestions"
+                    android:maxLines="20"
                     android:hint="@string/pairing_paste_link" />
 
                 <TextView
