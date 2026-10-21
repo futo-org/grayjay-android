@@ -1097,9 +1097,9 @@
         <item>Çincə (ZH)</item>
         <item>Rusca (RU)</item>
         <item>Ərəbcə (AR)</item>
-        <item>Azərbaycanca (AZ)</item>
         <item>İtalyanca (IT)</item>
         <item>Türkcə (TR)</item>
+        <item>Azərbaycanca (AZ)</item>
     </string-array>
     <string-array name="player_background_behavior">
         <item>Heç biri</item>
@@ -1134,12 +1134,12 @@
         <item>İndoneziyaca</item>
         <item>Hindcə</item>
         <item>Ərəbcə</item>
-        <item>Azərbaycanca</item>
         <item>Türkcə</item>
         <item>Rusca</item>
         <item>Portuqalca</item>
         <item>Çincə</item>
         <item>İtalyanca</item>
+        <item>Azərbaycanca</item>
     </string-array>
     <string-array name="casting_device_type_array" translatable="false">
         <item>FCast</item>
