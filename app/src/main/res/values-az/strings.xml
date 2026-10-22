@@ -44,14 +44,14 @@
     <string name="defaults">İlkin dəyərlər</string>
     <string name="home_screen">Əsas ekran</string>
     <string name="preferred_quality">Üstünlük verilən keyfiyyət</string>
-    <string name="preferred_quality_description">Video izləmək üçün defolt keyfiyyət</string>
+    <string name="preferred_quality_description">Video izləmək üçün ilkin keyfiyyət</string>
     <string name="update">Yenilə</string>
     <string name="refresh">Lentini yenilə</string>
     <string name="close">Bağla</string>
     <string name="never">Heç vaxt</string>
     <string name="import_options">Aşağıdakı mövcud idxal seçimlərindən hər hansı birini seçin.</string>
     <string name="there_is_an_update_available_do_you_wish_to_update">Mövcud yeniləmə var, yeniləmək istəyirsiniz?</string>
-    <string name="downloading_update">Yeniləmə yüklənir…</string>
+    <string name="downloading_update">Yeniləmə yüklənilir…</string>
     <string name="installing_update">Yeniləmə quraşdırılır…</string>
     <string name="done">Hazırdır</string>
     <string name="getHome" translatable="false">getHome</string>
@@ -75,7 +75,7 @@
     <string name="background">Arxa fon</string>
     <string name="background_revert">Video</string>
     <string name="add">Əlavə et</string>
-    <string name="download">Endir</string>
+    <string name="download">Yükləyin</string>
     <string name="share">Paylaş</string>
     <string name="view_all">Hamısına bax</string>
     <string name="creators">Yaradıcılar</string>
@@ -110,7 +110,7 @@
     <string name="confirm_delete_subscription">Bu abunəliyi silmək istədiyinizə əminsinizmi?</string>
     <string name="confirm_remove_source">Bu mənbənin silinməsi bəzi abunəliklərinizin həll edilməməsi ilə nəticələnəcək.</string>
     <string name="shuffle">Qarışdır</string>
-    <string name="play_all">Hamısını oxut</string>
+    <string name="play_all">Hamısını oynat</string>
     <string name="search_history">Axtarış tarixçəsi</string>
     <string name="app_error">Tətbiq xətası</string>
     <string name="developer">Tərtibatçı</string>
@@ -157,7 +157,7 @@
     <string name="stop_casting">Yayımı dayandır</string>
     <string name="start">Başlat</string>
     <string name="storage_space">Yaddaş sahəsi</string>
-    <string name="downloads">Endirmələr</string>
+    <string name="downloads">Yükləmələr</string>
     <string name="deselect_all">Hamısının seçimini ləğv et</string>
     <string name="select_all">Hamısını seç</string>
     <string name="add_casting_device">Yayım cihazı əlavə et</string>
@@ -166,7 +166,7 @@
     <string name="options">Seçimlər</string>
     <string name="export">İxrac et</string>
     <string name="delete">Sil</string>
-    <string name="loading_update">Yeniləmə yüklənir…</string>
+    <string name="loading_update">Yeniləmə yüklənilir…</string>
     <string name="polycentric_explanation">Onlayn videoları nəzərdən keçirərkən və şərh yazmaq istədikdə, istifadəsi asan və ehtiyaclarınıza yönəlmiş onlayn mövcudluğunuzu idarə etməyin yeni yolu olan Harbor-u sınamağı düşünün. Niyə Harbor profili yaratmaq əla seçimdir:\n\n 1. Nəzarət Səndədir: Harbor ilə məlumatlarınız tək bir şirkət tərəfindən idarə olunan tək bir yerdə saxlanılmır. Bunun əvəzinə, o, bir çox yerə yayılaraq onlayn varlığınız üzərində daha çox nəzarət imkanı verir. Məlumatlarınızın harada saxlanılacağına siz qərar verirsiniz və provayderlər arasında asanlıqla keçid edə və ya yenilərini əlavə edə bilərsiniz.\n\n 2. Məxfilik və Təhlükəsizlik: Harbor qabaqcıl təhlükəsizlik üsullarından istifadə edərək məlumatlarınızı təhlükəsiz saxlayır. Şəxsi məlumatlarınızın yaxşı qorunduğuna və yalnız paylaşmağı seçdiyiniz şəxslər tərəfindən əlçatan olduğuna etibar edə bilərsiniz.\n\n 3. Qüsursuz Şəbəkə: Harbor tək bir platformaya bağlı qalmadan başqaları ilə əlaqə saxlamağa və onların məzmunu ilə qarşılıqlı əlaqədə olmağa imkan verir. Əgər provayder etibarsız olarsa və ya girişi bloklamağa çalışarsa, Harbor klientiniz digər mənbələrdən avtomatik məlumat taparaq sizi əlaqədə saxlayacaq.\n\n 4. Ağıllı Axtarış və Tövsiyələr: Harbor axtarış və tövsiyələr üçün çoxsaylı mənbələrdən istifadə edir, heç bir provayderin gördüyünüz nəticələrə həddindən artıq təsir etməməsini təmin etməklə yanaşı, sizə yüksək səviyyəli performans təklif edir.\n\n 5. Uyğunlaşa bilən və Açıq: Harbor istifadəçilərinin ehtiyaclarına uyğunlaşan davamlı təkmilləşdirmələrə və yeni xüsusiyyətlərə imkan verən çevik və yeni inkişaflara açıq olmaq üçün nəzərdə tutulmuşdur.\n\n 6. Harbor profili yaratmaqla siz onlayn videolara şərhlər yaza və daha fərdiləşdirilmiş onlayn təcrübədən həzz ala bilərsiniz. Bu istifadəçi dostu həllin rəqəmsal həyatınıza necə nəzarət etdiyini özünüz görün. Bu gün Harbor-a qeydiyyatdan keçin!</string>
     <string name="publish">Dərc et</string>
     <string name="usage">İstifadə</string>
@@ -247,7 +247,7 @@
     <string name="donation">İanə</string>
     <string name="promotions">Aksiyalar</string>
     <string name="current_promotions_by_this_creator">Bu yaradıcının cari aksiyaları</string>
-    <string name="downloading">Endirilir</string>
+    <string name="downloading">Yüklənilir</string>
     <string name="videos">Videolar</string>
     <string name="clear_history">Tarixçəni təmizlə</string>
     <string name="nothing_to_import">İdxal ediləcək heç nə yoxdur</string>
@@ -328,22 +328,22 @@
     <string name="automatic_backup">Avtomatik ehtiyat nüsxə</string>
     <string name="background_behavior">Arxa fon davranışı</string>
     <string name="background_update">Arxa fon yeniləməsi</string>
-    <string name="background_download">Arxa fonda endirmə</string>
+    <string name="background_download">Arxa fonda yükləmə</string>
     <string name="backup">Ehtiyat nüsxə</string>
     <string name="browsing">Gəzmə</string>
     <string name="byte_range_concurrency">Bayt diapazonu eyniliyi</string>
-    <string name="byte_range_download">Bayt diapazonu endirməsi</string>
+    <string name="byte_range_download">Bayt diapazonu yükləməsi</string>
     <string name="casting">Yayım</string>
-    <string name="change_behavior_of_the_player">Pleyerin davranışını dəyişdir</string>
-    <string name="change_external_downloads_directory">Xarici Endirmələr qovluğunu dəyişdir</string>
-    <string name="clear_external_downloads_directory">Xarici Endirmələr qovluğunu təmizlə</string>
+    <string name="change_behavior_of_the_player">Oynadıcının davranışını dəyişdir</string>
+    <string name="change_external_downloads_directory">Xarici Yükləmələr qovluğunu dəyişdir</string>
+    <string name="clear_external_downloads_directory">Xarici Yükləmələr qovluğunu təmizlə</string>
     <string name="change_external_general_directory">Xarici Ümumi qovluğu dəyişdir</string>
     <string name="change_tabs_visible_on_the_home_screen">Əsas ekranda görünən vərəqləri dəyişdir</string>
     <string name="link_handling">Keçid idarəetməsi</string>
     <string name="allow_grayjay_to_handle_links">Grayjay-ə keçidləri idarə etməyə icazə ver</string>
     <string name="change_the_external_directory_for_general_files">Ümumi fayllar üçün xarici qovluğu dəyişdir</string>
-    <string name="clear_the_external_storage_for_download_files">Endirmə faylları üçün xarici yaddaşı təmizlə</string>
-    <string name="change_the_external_storage_for_download_files">Endirmə faylları üçün xarici yaddaşı dəyişdir</string>
+    <string name="clear_the_external_storage_for_download_files">Yükləmə faylları üçün xarici yaddaşı təmizlə</string>
+    <string name="change_the_external_storage_for_download_files">Yükləmə faylları üçün xarici yaddaşı dəyişdir</string>
     <string name="clear_cookies">Kukiləri təmizlə</string>
     <string name="clear_cookies_after_login">Girişdən sonra kukiləri təmizlə</string>
     <string name="clear_cookies_after_login_desc">Girişdən sonra veb-görünüşdəki bütün kukiləri silir, bu, müəyyən plaginlərin düzgün işləməsi üçün tələb oluna bilər.</string>
@@ -360,21 +360,21 @@
     <string name="configure_if_historical_time_bar_should_be_shown">Keçmiş vaxt çubuqlarının göstərilib-göstərilməyəcəyini konfiqurasiya edin</string>
     <string name="configure_casting">Yayımı konfiqurasiya et</string>
     <string name="configure_daily_backup_in_case_of_catastrophic_failure">Kütləvi nasazlıq baş verdikdə gündəlik ehtiyat nüsxəni konfiqurasiya edin</string>
-    <string name="configure_downloading_of_videos">Videoların endirilməsini konfiqurasiya et</string>
+    <string name="configure_downloading_of_videos">Videoların yüklənilməsini konfiqurasiya et</string>
     <string name="configure_how_your_home_tab_works_and_feels">Əsas vərəqinizin necə işlədiyini və hiss olunduğunu konfiqurasiya edin</string>
     <string name="configure_how_your_subscriptions_works_and_feels">Abunəliklərinizin necə işlədiyini və hiss olunduğunu konfiqurasiya edin</string>
-    <string name="configure_if_background_download_should_be_used">Arxa fonda endirmənin istifadə olunub-olunmayacağını konfiqurasiya edin</string>
+    <string name="configure_if_background_download_should_be_used">Arxa fonda yükləmənin istifadə olunub-olunmayacağını konfiqurasiya edin</string>
     <string name="configure_the_auto_updater">Avtomatik yeniləyicini konfiqurasiya et</string>
-    <string name="configure_when_updates_should_be_downloaded">Yeniləmələrin nə vaxt endirilməli olduğunu konfiqurasiya edin</string>
-    <string name="configure_when_videos_should_be_downloaded">Videoların nə vaxt endirilməli olduğunu, yalnız limitsiz şəbəkələrdə (wifi/ethernet) endirilib-endirilməyəcəyini konfiqurasiya edin</string>
+    <string name="configure_when_updates_should_be_downloaded">Yeniləmələrin nə vaxt yüklənməli olduğunu konfiqurasiya edin</string>
+    <string name="configure_when_videos_should_be_downloaded">Videoların nə vaxt yüklənməli olduğunu, yalnız limitsiz şəbəkələrdə (wifi/ethernet) yüklənib-yüklənməyəcəyini konfiqurasiya edin</string>
     <string name="creates_a_zip_file_with_your_data_which_can_be_imported_by_opening_it_with_grayjay">Grayjay ilə açılaraq idxal edilə bilən məlumatlarınızla zip faylı yaradır</string>
-    <string name="default_audio_quality">Defolt səs keyfiyyəti</string>
-    <string name="default_playback_speed">Defolt oxutma sürəti</string>
-    <string name="default_video_quality">Defolt video keyfiyyəti</string>
+    <string name="default_audio_quality">İlkin səs keyfiyyəti</string>
+    <string name="default_playback_speed">İlkin oynatma sürəti</string>
+    <string name="default_video_quality">İlkin video keyfiyyəti</string>
     <string name="deletes_license_keys_from_app">Lisenziya açarlarını tətbiqdən silir</string>
-    <string name="download_when">Nə vaxt endir</string>
+    <string name="download_when">Nə vaxt yükləsin</string>
     <string name="enable_video_cache">Video keşini aktivləşdir</string>
-    <string name="use_downloaded_ca_bundle">Endirilmiş CA dəstindən istifadə et</string>
+    <string name="use_downloaded_ca_bundle">Yüklənilmiş CA dəstin istifadə et</string>
     <string name="use_downloaded_ca_bundle_description">Köhnəlmiş kök sertifikatları olan cihazlarda kömək edə bilər.</string>
     <string name="enable_casting">Yayımı aktivləşdir</string>
     <string name="experimental_background_update_for_subscriptions_cache">Abunəliklər keşi üçün eksperimental arxa fon yeniləməsi</string>
@@ -416,9 +416,9 @@
     <string name="local_connections">Dinləyicini bağla</string>
     <string name="local_connections_description">Cihazın birbaşa qoşulmasına icazə ver</string>
     <string name="gesture_controls">Jest idarəetmələri</string>
-    <string name="volume_slider">Səs sürgüsü</string>
+    <string name="volume_slider">Səs sürüşdürücü</string>
     <string name="volume_slider_descr">Səs səviyyəsini dəyişmək üçün sürüşdürmə jestini aktivləşdir</string>
-    <string name="brightness_slider">Parlaqlıq sürgüsü</string>
+    <string name="brightness_slider">Parlaqlıq sürüşdürücü</string>
     <string name="brightness_slider_descr">Parlaqlığı dəyişmək üçün sürüşdürmə jestini aktivləşdir</string>
     <string name="toggle_full_screen">Tam ekrana keç</string>
     <string name="toggle_full_screen_descr">Tam ekrana keçmək üçün sürüşdürmə jestini aktivləşdir</string>
@@ -441,15 +441,15 @@
     <string name="stability_threshold_time">Sabitlik həddi vaxtı</string>
     <string name="stability_threshold_time_description">Fırlanmanı işə salmaq üçün orientasiyanın eyni olmalı olduğu müddəti təyin edin</string>
     <string name="prefer_webm">Webm video kodeklərinə üstünlük ver</string>
-    <string name="prefer_webm_description">Pleyer mp4 kodekləri (h264/AAC) əvəzinə Webm kodeklərinə (vp9/opus) üstünlük verərsə, daha pis uyğunluqla nəticələnə bilər.</string>
+    <string name="prefer_webm_description">Oynadıcı mp4 kodekləri (h264/AAC) əvəzinə Webm kodeklərinə (vp9/opus) üstünlük verərsə, daha pis uyğunluqla nəticələnə bilər.</string>
     <string name="full_autorotate_lock">Tam avtomatik fırlanma kilidi</string>
     <string name="full_autorotate_lock_description">Fırlanma kilidi işə salındıqda hər hansı fırlanmanın qarşısını alın (hatta landşaft və tərs landşaft arasında keçid edərkən belə).</string>
     <string name="prefer_webm_audio">Webm səs kodeklərinə üstünlük ver</string>
-    <string name="prefer_webm_audio_description">Pleyer mp4 kodekləri (AAC) əvəzinə Webm kodeklərinə (opus) üstünlük verərsə, daha pis uyğunluqla nəticələnə bilər.</string>
+    <string name="prefer_webm_audio_description">Oynadıcı mp4 kodekləri (AAC) əvəzinə Webm kodeklərinə (opus) üstünlük verərsə, daha pis uyğunluqla nəticələnə bilər.</string>
     <string name="allow_under_cutout">Kəsmə altında videoya icazə ver</string>
     <string name="allow_under_cutout_description">Tam ekran rejimində videonun ekran kəsməsinin altına getməsinə icazə ver.\nYenidən başlatmaq tələb oluna bilər</string>
-    <string name="autoplay">Növbəti videonu defolt olaraq avtomatik oxut</string>
-    <string name="autoplay_description">Hər dəfə video izlədiyiniz zaman növbəti videonu avtomatik oxutma defolt olaraq aktivləşdiriləcək</string>
+    <string name="autoplay">Növbəti videonu ilkin olaraq avtomatik oynat</string>
+    <string name="autoplay_description">Hər dəfə video izlədiyiniz zaman növbəti videonu avtomatik oynat ilkin olaraq aktivləşdiriləcək</string>
     <string name="allow_full_screen_portrait">Üfüqi videoları izləyərkən tam ekran portretə icazə ver</string>
     <string name="delete_watchlist_on_finish">İzləndikdən sonra WatchLater-dən sil</string>
     <string name="delete_watchlist_on_finish_description">Əsasən izlədiyiniz videodan çıxdıqdan sonra o, daha sonra izlə siyahısından silinəcək.</string>
@@ -459,14 +459,14 @@
     <string name="shorts_fit_video_description">Görünüşü düzgün doldurmaq əvəzinə videonu görünüşə uyğunlaşdıracaq.</string>
     <string name="shorts_fit_video_warning">Bu tənzimləmə Grayjay-i yenidən başlatmağınızı tələb edəcək.</string>
     <string name="seek_offset">Keçid müddəti</string>
-    <string name="min_playback_speed">Minimum oxutma sürəti</string>
+    <string name="min_playback_speed">Minimum oynatma sürəti</string>
     <string name="min_playback_speed_description">Minimum mövcud sürət</string>
-    <string name="max_playback_speed">Maksimum oxutma sürəti</string>
+    <string name="max_playback_speed">Maksimum oynatma sürəti</string>
     <string name="max_playback_speed_description">Maksimum mövcud sürət</string>
-    <string name="hold_playback_speed">Oxutma sürətini saxla</string>
-    <string name="hold_playback_speed_description">Videoya basıb saxlayarkən oxutma sürəti</string>
-    <string name="step_playback_speed">Oxutma sürəti addım ölçüsü</string>
-    <string name="step_playback_speed_description">Oxutma sürətlərinin addım ölçüsü, daha yüksək oxutma sürətlərinə təsir etməyə bilər.</string>
+    <string name="hold_playback_speed">Oynatma sürətini saxla</string>
+    <string name="hold_playback_speed_description">Videoya basıb saxlayarkən oynatma sürəti</string>
+    <string name="step_playback_speed">Oynatma sürəti addım ölçüsü</string>
+    <string name="step_playback_speed_description">Oynatma sürətlərinin addım ölçüsü, daha yüksək oynatma sürətlərinə təsir etməyə bilər.</string>
     <string name="seek_offset_description">İrəli sar / Geri sar müddəti</string>
     <string name="background_switch_audio">Arxa fonda səsə keç</string>
     <string name="subscription_group_menu">Qruplar</string>
@@ -490,7 +490,7 @@
     <string name="manage_your_polycentric_identity">Harbor kimliyinizi idarə et</string>
     <string name="manual_check">Əl ilə yoxlama</string>
     <string name="manually_check_for_updates">Yeniləmələri əl ilə yoxla</string>
-    <string name="number_of_concurrent_threads_to_multiply_download_speeds_from_throttled_sources">Məhdudlaşdırılmış mənbələrdən endirmə sürətini çoxaltmaq üçün eyni vaxtda işləyən axınların sayı</string>
+    <string name="number_of_concurrent_threads_to_multiply_download_speeds_from_throttled_sources">Məhdudlaşdırılmış mənbələrdən yükləmə sürətini çoxaltmaq üçün eyni vaxtda işləyən axınların sayı</string>
     <string name="payment">Ödəniş</string>
     <string name="payment_status">Ödəniş statusu</string>
     <string name="relay_server">Sinxronlaşdırma reley serveri</string>
@@ -509,29 +509,29 @@
     <string name="bypass_rotation_prevention_description">Video olmayan görünüşlərdə fırlanmaya icazə verir.\nXƏBƏRDARLIQ: Bunun üçün nəzərdə tutulmayıb</string>
     <string name="bypass_rotation_prevention_warning">Bu gözlənilməz davranışa səbəb ola bilər və əsasən sınaqdan keçirilməyib.</string>
     <string name="changing_this_field_requires_restart">Bu sahənin dəyişdirilməsi tətbiqin yenidən başladılmasını tələb edəcək.</string>
-    <string name="player">Pleyer</string>
+    <string name="player">Oynadıcı</string>
     <string name="plugins">Plaginlər</string>
     <string name="preferred_casting_quality">Üstünlük verilən yayım keyfiyyəti</string>
-    <string name="preferred_casting_quality_description">Xarici cihaza yayımlayarkən defolt keyfiyyət</string>
+    <string name="preferred_casting_quality_description">Xarici cihaza yayımlayarkən ilkin keyfiyyət</string>
     <string name="preferred_metered_quality">Üstünlük verilən ölçülmüş keyfiyyət</string>
-    <string name="preferred_metered_quality_description">Mobil şəbəkə kimi ölçülmüş bağlantılarda olarkən defolt keyfiyyət</string>
+    <string name="preferred_metered_quality_description">Mobil şəbəkə kimi ölçülmüş bağlantılarda olarkən ilkin keyfiyyət</string>
     <string name="preferred_preview_quality">Üstünlük verilən önizləmə keyfiyyəti</string>
-    <string name="preferred_preview_quality_description">Lentdə videonun önizləməsini edərkən defolt keyfiyyət</string>
+    <string name="preferred_preview_quality_description">Lentdə videonun önizləməsini edərkən ilkin keyfiyyət</string>
     <string name="primary_language">Əsas dil</string>
     <string name="sticky_subtitles">Subtitrləri qoru</string>
-    <string name="sticky_subtitles_description">Subtitr dili seçildikdən sonra yeni video oxutulduqda ən yaxşı uyğunluğu axtar</string>
+    <string name="sticky_subtitles_description">Subtitr dili seçildikdən sonra yeni video oynadıldıqda ən yaxşı uyğunluğu axtar</string>
     <string name="prefer_original_audio">Orijinal səsə üstünlük ver</string>
     <string name="prefer_original_audio_description">Məlum olduqda üstünlük verilən dil əvəzinə orijinal səsdən istifadə et</string>
-    <string name="default_comment_section">Defolt şərh bölməsi</string>
+    <string name="default_comment_section">İlkin şərh bölməsi</string>
     <string name="hide_recommendations">Tövsiyələri gizlət</string>
     <string name="hide_recommendations_description">Tövsiyələr vərəqini tamamilə gizlət.</string>
-    <string name="default_recommendations">Defolt olaraq tövsiyələr</string>
-    <string name="default_recommendations_description">Şərhlər əvəzinə defolt olaraq tövsiyələri göstər.</string>
+    <string name="default_recommendations">İlkin olaraq tövsiyələr</string>
+    <string name="default_recommendations_description">Şərhlər əvəzinə ilkin olaraq tövsiyələri göstər.</string>
     <string name="bad_reputation_comments_fading">Pis reputasiyalı şərhlərin solması</string>
     <string name="bad_reputation_comments_fading_description">Çox pis reputasiyaya malik şərhlərin solub-solmayacağı. Söndürmək təcrübəni pisləşdirə bilər.</string>
     <string name="reinstall_embedded_plugins">Yerləşdirilmiş plaginləri yenidən quraşdır</string>
     <string name="remove_cached_version">Keşlənmiş versiyanı sil</string>
-    <string name="remove_last_downloaded_version">Sonuncu endirilmiş versiyanı sil</string>
+    <string name="remove_last_downloaded_version">Sonuncu yüklənildi versiyanı sil</string>
     <string name="clear_hidden">Gizliləri təmizlə</string>
     <string name="clear_hidden_description">Bütün gizli yaradıcıları və videoları silir, onları yenidən göstərir</string>
     <string name="reset_announcements">Elanları sıfırla</string>
@@ -541,9 +541,9 @@
     <string name="resume_after_preview">Önizləmədən sonra davam et</string>
     <string name="review_the_current_and_past_changelogs">Cari və keçmiş dəyişiklik qeydlərini nəzərdən keçirin</string>
     <string name="restart_after_audio_focus_loss">Səs fokusunu itirdikdən sonra yenidən başlat</string>
-    <string name="restart_playback_when_gaining_audio_focus_after_a_loss">İtki baş verdikdən sonra səs fokusunu qazanarkən oxutmanı yenidən başlat</string>
+    <string name="restart_playback_when_gaining_audio_focus_after_a_loss">İtki baş verdikdən sonra səs fokusunu qazanarkən oynatmanı yenidən başlat</string>
     <string name="restart_after_connectivity_loss">Bağlantı itkisindən sonra yenidən başlat</string>
-    <string name="restart_playback_when_gaining_connectivity_after_a_loss">İtki baş verdikdən sonra bağlantını bərpa edərkən oxutmanı yenidən başlat</string>
+    <string name="restart_playback_when_gaining_connectivity_after_a_loss">İtki baş verdikdən sonra bağlantını bərpa edərkən oynatmanı yenidən başlat</string>
     <string name="chapter_update_fps_title">Fəsil yeniləmə FPS-i</string>
     <string name="chapter_update_fps_description">Fəsil yeniləməsinin dəqiqliyini dəyişdirin, daha yüksək olması daha çox məhsuldarlıq tələb edə bilər</string>
     <string name="set_automatic_backup">Avtomatik ehtiyat nüsxəni konfiqurasiya et</string>
@@ -578,16 +578,16 @@
     <string name="licenses_cleared_might_require_app_restart">Lisenziyalar təmizləndi, tətbiqin yenidən başladılması tələb oluna bilər</string>
     <string name="attempts_to_fetch_2_pages_from_getHome">getHome-dan 2 səhifə gətirməyə çalışır</string>
     <string name="background_subscription_testing">Arxa fon abunəlik sınağı</string>
-    <string name="clear_all_downloaded">Bütün endirilənləri təmizlə</string>
-    <string name="clear_downloads">Endirmələri təmizlə</string>
+    <string name="clear_all_downloaded">Bütün yüklənilənləri təmizlə</string>
+    <string name="clear_downloads">Yükləmələri təmizlə</string>
     <string name="clear_all_cookies_from_the_cookieManager">CookieManager-dən bütün kukiləri təmizlə</string>
     <string name="crash_me">Məni çökdür</string>
     <string name="crashes_the_application_on_purpose">Tətbiqi qəsdən çökdürür</string>
     <string name="delete_announcements">Elanları sil</string>
     <string name="delete_unresolved">Həll olunmamışları sil</string>
     <string name="delete_all_announcements">Bütün elanları sil</string>
-    <string name="deletes_all_downloaded_videos_and_related_files">Bütün endirilmiş videoları və əlaqəli faylları silir</string>
-    <string name="deletes_all_ongoing_downloads">Davam edən bütün endirmələri silir</string>
+    <string name="deletes_all_downloaded_videos_and_related_files">Bütün yüklənilən videoları və əlaqəli faylları silir</string>
+    <string name="deletes_all_ongoing_downloads">Davam edən bütün yükləmələri silir</string>
     <string name="deletes_all_unresolved_source_files">Bütün həll olunmamış mənbə fayllarını silir</string>
     <string name="developer_mode">Tərtibatçı rejimi</string>
     <string name="allow_all_certificates">Bütün sertifikatlara icazə ver</string>
@@ -603,8 +603,8 @@
     <string name="removes_all_subscriptions">Bütün abunəlikləri silir</string>
     <string name="settings_related_to_development_server_be_careful_as_it_may_open_your_phone_to_security_vulnerabilities">Tərtibat serveri ilə əlaqəli tənzimləmələr, telefonunuzu təhlükəsizlik boşluqlarına açıq qoya biləcəyi üçün diqqətli olun</string>
     <string name="start_server">Serveri başlat</string>
-    <string name="test_playback">Oxutmanı sınaqdan keçir</string>
-    <string name="test_playback_desc">Videoları oxutmağa davam edir</string>
+    <string name="test_playback">Oynatmanı sınaqdan keçir</string>
+    <string name="test_playback_desc">Videoları oynatmağa davam edir</string>
     <string name="subscriptions_cache_5000">Abunəliklər keşi 5000</string>
     <string name="history_cache_100">Tarixçə keşi 100</string>
     <string name="start_server_on_boot">Açılışda serveri başlat</string>
@@ -710,8 +710,8 @@
     <string name="hide">Gizlət</string>
     <string name="hide_from_home">Əsas səhifədən gizlət</string>
     <string name="hide_creator_from_home">Yaradıcını əsas səhifədən gizlət</string>
-    <string name="play_feed_as_queue">Lenti növbə kimi oxut</string>
-    <string name="play_entire_feed">Bütün lenti oxut</string>
+    <string name="play_feed_as_queue">Lenti növbə kimi oynat</string>
+    <string name="play_entire_feed">Bütün lenti oynat</string>
     <string name="queued">Növbəyə gözlədilir</string>
     <string name="already_queued">Artıq növbədədir</string>
     <string name="used">İstifadə olunub</string>
@@ -736,7 +736,7 @@
     <string name="failed_to_load_playlist">Oxutma siyahısı yüklənmədi</string>
     <string name="please_wait_for_playlist_to_finish_loading">Zəhmət olmasa oxutma siyahısının yüklənməsinin bitməsini gözləyin</string>
     <string name="playlist_copied_as_local_playlist">Oxutma siyahısı yerli oxutma siyahısı kimi kopyalandı</string>
-    <string name="are_you_sure_you_want_to_delete_the_downloaded_videos">Endirilmiş videoları silmək istədiyinizə əminsinizmi?</string>
+    <string name="are_you_sure_you_want_to_delete_the_downloaded_videos">Yüklənilmiş videoları silmək istədiyinizə əminsinizmi?</string>
     <string name="create_new_playlist">Yeni oxutma siyahısı yarat</string>
     <string name="create_new_subgroup">Yeni qrup yarat</string>
     <string name="expected_media_content_found">Gözlənilən media məzmunu tapıldı</string>
@@ -781,17 +781,17 @@
     <string name="watching_now">indi izlənilir</string>
     <string name="views">baxış</string>
     <string name="planned_in">Burada planlaşdırılıb:</string>
-    <string name="failed_to_get_playback_tracker">Oxutma izləyicisi əldə edilmədi</string>
+    <string name="failed_to_get_playback_tracker">Oynatma izləyicisi əldə edilmədi</string>
     <string name="exception_retrieving_live_events">Canlı tədbirlər əldə edilərkən istisna baş verdi:</string>
     <string name="exception_retrieving_live_chat_window">Canlı söhbət pəncərəsi əldə edilərkən istisna baş verdi:</string>
     <string name="live_chat_failed_to_load">Canlı söhbət yüklənmədi</string>
     <string name="unsupported_cast_format">Dəstəklənməyən yayım formatı</string>
     <string name="drm_content_cannot_be_cast">DRM qorunan məzmun yayımlana bilməz.</string>
     <string name="failed_to_load_media">Media yüklənmədi</string>
-    <string name="offline_playback">Oflayn oxutma</string>
+    <string name="offline_playback">Oflayn oynatma</string>
     <string name="media_error">Media xətası</string>
     <string name="the_media_source_encountered_an_unauthorized_error_this_might_be_solved_by_a_plugin_reload_would_you_like_to_reload_experimental">Media mənbəyi icazəsiz xəta ilə qarşılaşdı.\nBu, plaginin yenidən yüklənməsi ilə həll oluna bilər.\nYenidən yükləmək istəyirsinizmi?\n(Eksperimental)</string>
-    <string name="playback_rate">Oxutma sürəti</string>
+    <string name="playback_rate">Oynatma sürəti</string>
     <string name="quality">Keyfiyyət</string>
     <string name="offline_video">Oflayn video</string>
     <string name="offline_audio">Oflayn səs</string>
@@ -809,12 +809,12 @@
     <string name="pauses_the_video">Videonun oxunmasını dayandırır</string>
     <string name="resumes_the_video">Videonun oxunmasını davam etdirir</string>
     <string name="video_without_source">Mənbəsiz video</string>
-    <string name="there_was_a_in_your_queue_videoname_by_authorname_without_the_required_source_being_enabled_playback_was_skipped">Növbənizdə tələb olunan mənbə aktivləşdirilmədən video var idi [{videoName}], müəllif [{authorName}]. Oxutma atlandı.</string>
+    <string name="there_was_a_in_your_queue_videoname_by_authorname_without_the_required_source_being_enabled_playback_was_skipped">Növbənizdə tələb olunan mənbə aktivləşdirilmədən video var idi [{videoName}], müəllif [{authorName}]. Oynatma atlandı.</string>
     <string name="failed_to_load_video_scriptimplementationexception">Video yüklənmədi (ScriptImplementationException)</string>
     <string name="invalid_video">Etibarsız video</string>
-    <string name="there_was_an_invalid_video_in_your_queue_videoname_by_authorname_playback_was_skipped">Növbənizdə etibarsız video var idi [{videoName}], müəllif [{authorName}], oxutma atlandı.</string>
+    <string name="there_was_an_invalid_video_in_your_queue_videoname_by_authorname_playback_was_skipped">Növbənizdə etibarsız video var idi [{videoName}], müəllif [{authorName}], oynatma atlandı.</string>
     <string name="age_restricted_video">Yaş məhdudiyyətli video</string>
-    <string name="there_was_an_age_restricted_video_in_your_queue_videoname_by_authorname_this_video_was_not_accessible_and_playback_was_skipped">Növbənizdə yaş məhdudiyyətli video var idi [{videoName}], müəllif [{authorName}], bu videoya giriş mümkün olmadı və oxutma atlandı.</string>
+    <string name="there_was_an_age_restricted_video_in_your_queue_videoname_by_authorname_this_video_was_not_accessible_and_playback_was_skipped">Növbənizdə yaş məhdudiyyətli video var idi [{videoName}], müəllif [{authorName}], bu videoya giriş mümkün olmadı və oynatma atlandı.</string>
     <string name="failed_to_load_video_scriptexception">Video yüklənmədi (ScriptException)</string>
     <string name="failed_to_load_video">Video yüklənmədi</string>
     <string name="not_yet_available_retrying_in_time_s">Hələ əlçatan deyil, {time}s ərzində yenidən cəhd edilir</string>
@@ -855,19 +855,19 @@
     <string name="would_you_like_to_restore_this_backup">Bu ehtiyat nüsxəni bərpa etmək istəyirsinizmi?</string>
     <string name="override">Ləğv et / Əvəzlə</string>
     <string name="data_retry">Məlumatı yenidən cəhd et</string>
-    <string name="no_downloads_available">Mövcud endirmə yoxdur</string>
-    <string name="no_downloadable_sources_yet">Endirilə bilən mənbə hələ ki yoxdur</string>
+    <string name="no_downloads_available">Mövcud yükləmə yoxdur</string>
+    <string name="no_downloadable_sources_yet">Yüklənilə bilən mənbə hələ ki yoxdur</string>
     <string name="none">Heç biri</string>
     <string name="audio_only">Yalnız səs</string>
-    <string name="download_video">Videonu endir</string>
+    <string name="download_video">Videonu yükləyin</string>
     <string name="fetching_video_details">Video təfərrüatları gətirilir</string>
-    <string name="failed_to_fetch_details_for_download">Endirmə üçün təfərrüatlar gətirilmədi</string>
+    <string name="failed_to_fetch_details_for_download">Yükləmə üçün təfərrüatlar gətirilmədi</string>
     <string name="target_resolution">Hədəf çözünürlük</string>
     <string name="target_bitrate">Hədəf bitreyt</string>
     <string name="low_bitrate">Aşağı bitreyt</string>
     <string name="high_bitrate">Yüksək bitreyt</string>
     <string name="actions">Əməliyyatlar</string>
-    <string name="download_the_video">Videonu endir</string>
+    <string name="download_the_video">Videonu yükləyin</string>
     <string name="video_options">Video seçimləri</string>
     <string name="change_pins">Sancaqları dəyiş</string>
     <string name="decide_which_buttons_should_be_pinned">Hansı düymələrin sancılacağına qərar verin</string>
@@ -883,9 +883,9 @@
     <string name="add_to_new_playlist">Yeni oxutma siyahısına əlavə et</string>
     <string name="url_handling">URL idarəetməsi</string>
     <string name="allow_grayjay_to_handle_specific_urls">Grayjay-ə xüsusi URL-ləri idarə etməyə icazə verilsin?</string>
-    <string name="allow_grayjay_to_handle_specific_urls_please_set_it_as_default_in_the_app_settings">\"Bəli\" düyməsini sıxdığınız zaman Grayjay tənzimləmələri açılacaq.\n\nOrada keçid edin:\n1. \"Defolt olaraq aç\" və ya \"Defolt olaraq təyin et\" bölməsinə.\nBu seçimi birbaşa və ya cihazınızdan asılı olaraq \"Qabaqcıl\" tənzimləmələr altından tapa bilərsiniz.\n\n2. Grayjay üçün \"Dəstəklənən keçidləri aç\" seçin.\n\n(bəzi cihazlarda bu, əsas tənzimləmələrdə \"Defolt tətbiqlər\" altında siyahıya alınır və müvafiq kateqoriyalar üçün Grayjay seçilir)</string>
+    <string name="allow_grayjay_to_handle_specific_urls_please_set_it_as_default_in_the_app_settings">\"Bəli\" düyməsini sıxdığınız zaman Grayjay tənzimləmələri açılacaq.\n\nOrada keçid edin:\n1. \"İlkin olaraq aç\" və ya \"İlkin olaraq təyin et\" bölməsinə.\nBu seçimi birbaşa və ya cihazınızdan asılı olaraq \"Qabaqcıl\" tənzimləmələr altından tapa bilərsiniz.\n\n2. Grayjay üçün \"Dəstəklənən keçidləri aç\" seçin.\n\n(bəzi cihazlarda bu, əsas tənzimləmələrdə \"İlkin tətbiqlər\" altında siyahıya alınır və müvafiq kateqoriyalar üçün Grayjay seçilir)</string>
     <string name="failed_to_show_settings">Tənzimləmələr göstərilmədi</string>
-    <string name="play_store_version_does_not_support_default_url_handling">Play Store versiyası defolt URL idarəetməsini dəstəkləmir.</string>
+    <string name="play_store_version_does_not_support_default_url_handling">Play Store versiyası ilkin URL idarəetməsini dəstəkləmir.</string>
     <string name="these_are_all_commentcount_comments_you_have_made_in_grayjay">Bunlar Grayjay-də yazdığınız bütün {commentCount} şərhlərdir.</string>
     <string name="tutorial">Öyrətim</string>
     <string name="go_back_to_casting_add_dialog">Yayım əlavə etmə dialoquna qayıt</string>
@@ -934,7 +934,7 @@
     <string name="cd_button_settings">Tənzimləmələr</string>
     <string name="cd_image_group">Qrup şəkli</string>
     <string name="cd_button_edit">Redaktə et</string>
-    <string name="cd_button_download">Endir</string>
+    <string name="cd_button_download">Yükləyin</string>
     <string name="cd_minimize_close">Bağla</string>
     <string name="cd_minimize_pause">Fasilə</string>
     <string name="cd_minimize_play">Oynat</string>
@@ -949,7 +949,7 @@
     <string name="cd_donation_author_image">İanə müəllifinin şəkli</string>
     <string name="cd_edit_image">Şəkli redaktə et</string>
     <string name="cd_button_add">Əlavə et</string>
-    <string name="cd_download_indicator">Endirmə göstəricisi</string>
+    <string name="cd_download_indicator">Yükləmə göstəricisi</string>
     <string name="cd_drag_drop">Sürüklə və burax</string>
     <string name="cd_button_add_to_watch_later">Daha sonra izlə siyahısına əlavə et</string>
     <string name="cd_button_close">Bağla</string>
@@ -960,7 +960,7 @@
     <string name="cd_button_previous">Əvvəlki</string>
     <string name="cd_button_next">Növbəti</string>
     <string name="cd_button_fullscreen">Tam ekran</string>
-    <string name="cd_button_autoplay">Avtomatik oxut</string>
+    <string name="cd_button_autoplay">Avtomatik oynat</string>
     <string name="cd_update_spinner">Yeniləmə fırladıcısı</string>
     <string name="cd_button_play">Oynat</string>
     <string name="cd_button_pause">Fasilə</string>
@@ -1062,8 +1062,8 @@
     <string-array name="downloads_sortby_array">
         <item>Ad (Artan)</item>
         <item>Ad (Azalan)</item>
-        <item>Endirmə tarixi (Ən köhnə)</item>
-        <item>Endirmə tarixi (Ən yeni)</item>
+        <item>Yükləmə tarihi (Ən köhnə)</item>
+        <item>Yükləmə tarihi (Ən yeni)</item>
         <item>Buraxılış tarixi (Ən köhnə)</item>
         <item>Buraxılış tarixi (Ən yeni)</item>
         <item>Ölçü (Ən kiçik)</item>
@@ -1104,7 +1104,7 @@
     <string-array name="player_background_behavior">
         <item>Heç biri</item>
         <item>Oxumağa davam et</item>
-        <item>Pleyer örtüyü</item>
+        <item>Oynadıcı örtüyü</item>
     </string-array>
     <string-array name="resume_after_preview">
         <item>Başlanğıcdan başla</item>
