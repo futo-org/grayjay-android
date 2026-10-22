@@ -965,6 +965,10 @@
     <string name="pairing_claimer_success">Pair successful!</string>
     <string name="pairing_failed">Pairing failed.</string>
     <string name="pairing_expired">The pairing link expired.</string>
+    <string name="pairing_expired_waiting">The pairing link expired before this device was approved.</string>
+    <string name="pairing_expired_waiting_details">If you approved this device on your other device, try pairing again.</string>
+    <string name="pairing_poll_failed_retrying">Couldn\'t check for approval. Retrying…</string>
+    <string name="pairing_poll_claimers_failed_retrying">Couldn\'t check for devices. Retrying…</string>
     <string name="pairing_identity_exists">This identity is already on this device.</string>
     <string name="pairing_go_back">Go back</string>
     <string name="pairing_issuer_instructions">On your other device, choose \"Pair with existing device\". From there, you can scan the QR code shown here, or paste the pairing link after copying it.</string>

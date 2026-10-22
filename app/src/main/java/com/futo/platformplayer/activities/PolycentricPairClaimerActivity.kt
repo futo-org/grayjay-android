@@ -31,6 +31,7 @@ import com.google.zxing.integration.android.IntentIntegrator
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -53,6 +54,8 @@ class PolycentricPairClaimerActivity : AppCompatActivity() {
     private lateinit var _layoutWaiting: View
     private lateinit var _fingerprint: HarborEmojiFingerprintView
     private lateinit var _textClaimerKey: TextView
+    private lateinit var _textWaitingError: TextView
+    private lateinit var _textWaitingCountdown: TextView
     private lateinit var _layoutResult: View
     private lateinit var _imageResult: ImageView
     private lateinit var _textResult: TextView
@@ -94,6 +97,8 @@ class PolycentricPairClaimerActivity : AppCompatActivity() {
         _layoutWaiting = findViewById(R.id.layout_waiting)
         _fingerprint = findViewById(R.id.fingerprint)
         _textClaimerKey = findViewById(R.id.text_claimer_key)
+        _textWaitingError = findViewById(R.id.text_waiting_error)
+        _textWaitingCountdown = findViewById(R.id.text_waiting_countdown)
         _layoutResult = findViewById(R.id.layout_result)
         _imageResult = findViewById(R.id.image_result)
         _textResult = findViewById(R.id.text_result)
@@ -175,6 +180,11 @@ class PolycentricPairClaimerActivity : AppCompatActivity() {
             is PairingIdentityExistsException -> getString(R.string.pairing_identity_exists) to null
             else -> getString(R.string.pairing_failed) to (e.message ?: e.javaClass.simpleName)
         }
+        showFailure(summary, details)
+    }
+
+    /** Shows a failure with a button that undoes the pairing and returns to the entry panel. */
+    private fun showFailure(summary: String, details: String?) {
         showResult(R.drawable.ic_pair_fail, summary, details, R.string.pairing_go_back) {
             cancelClaimer()
             showPanel(_layoutEntry)
@@ -245,10 +255,12 @@ class PolycentricPairClaimerActivity : AppCompatActivity() {
 
             _fingerprint.setPublicKey(key)
             _textClaimerKey.text = publicKeyToString(key)
+            _textWaitingError.visibility = View.GONE
             showPanel(_layoutWaiting)
 
             if (!awaitAuthorization(info, preview.session.expiresAt)) {
-                throw PairingExpiredException()
+                showFailure(getString(R.string.pairing_expired_waiting), getString(R.string.pairing_expired_waiting_details))
+                return@launchStep
             }
 
             showLoading(R.string.pairing_completing_setup)
@@ -261,25 +273,48 @@ class PolycentricPairClaimerActivity : AppCompatActivity() {
     }
 
     /**
-     * Polls until the issuer authorizes our key. Returns false if the session expires first.
-     * Other errors are logged and claiming is retried.
+     * Polls until the issuer authorizes our key, showing the time left and any failed polls.
+     * Returns false if the session expires first. Throws the last error once
+     * [MAX_POLL_FAILURES] polls in a row have failed.
      */
-    private suspend fun awaitAuthorization(info: PairingInfo, expiresAt: Long): Boolean = withContext(Dispatchers.IO) {
-        while (System.currentTimeMillis() < expiresAt) {
-            try {
-                if (StatePolycentric.instance.pollPairingAuthorization(info)) {
-                    return@withContext true
+    private suspend fun awaitAuthorization(info: PairingInfo, expiresAt: Long): Boolean = coroutineScope {
+        val countdown = launch { showCountdown(expiresAt) }
+        try {
+            var failures = 0
+            while (System.currentTimeMillis() < expiresAt) {
+                try {
+                    if (withContext(Dispatchers.IO) { StatePolycentric.instance.pollPairingAuthorization(info) }) {
+                        return@coroutineScope true
+                    }
+                    failures = 0
+                    _textWaitingError.visibility = View.GONE
+                } catch (e: PairingExpiredException) {
+                    return@coroutineScope false
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Throwable) {
+                    failures++
+                    Logger.w(TAG, "Failed to poll for pairing authorization ($failures in a row).", e)
+                    if (failures >= MAX_POLL_FAILURES) {
+                        throw e
+                    }
+                    _textWaitingError.text = getString(R.string.pairing_poll_failed_retrying) + "\n" + (e.message ?: e.javaClass.simpleName)
+                    _textWaitingError.visibility = View.VISIBLE
                 }
-            } catch (e: PairingExpiredException) {
-                return@withContext false
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Throwable) {
-                Logger.w(TAG, "Failed to poll for pairing authorization.", e)
+                delay(POLL_INTERVAL_MS)
             }
-            delay(POLL_INTERVAL_MS)
+            false
+        } finally {
+            countdown.cancel()
         }
-        false
+    }
+
+    private suspend fun showCountdown(expiresAt: Long) {
+        while (true) {
+            val remaining = ((expiresAt - System.currentTimeMillis()) / 1000).coerceAtLeast(0)
+            _textWaitingCountdown.text = getString(R.string.pairing_valid_for, "%02d:%02d".format(remaining / 60, remaining % 60))
+            delay(1000)
+        }
     }
 
     private fun finishWithSuccess() {
@@ -306,6 +341,7 @@ class PolycentricPairClaimerActivity : AppCompatActivity() {
     companion object {
         private const val TAG = "PolycentricPairClaimerActivity"
         private const val POLL_INTERVAL_MS = 2000L
+        private const val MAX_POLL_FAILURES = 5
         private const val PAIR_ENABLE_DELAY_MS = 1000L
 
         /** A pairing link or code to start with, skipping the entry panel. */

@@ -283,6 +283,29 @@
                         android:fontFamily="@font/inter_light"
                         android:textSize="12dp" />
                 </LinearLayout>
+
+                <TextView
+                    android:id="@+id/text_waiting_error"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:fontFamily="@font/inter_light"
+                    android:textAlignment="center"
+                    android:textColor="@color/pastel_red"
+                    android:textSize="12dp"
+                    android:visibility="gone"
+                    tools:text="Couldn't check for approval. Retrying…"
+                    tools:visibility="visible" />
+
+                <TextView
+                    android:id="@+id/text_waiting_countdown"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:fontFamily="monospace"
+                    android:textColor="@color/gray_ac"
+                    android:textSize="13dp"
+                    tools:text="Valid for 04:59" />
             </LinearLayout>
 
             <TextView

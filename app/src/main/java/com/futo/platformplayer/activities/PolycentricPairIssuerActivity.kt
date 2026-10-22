@@ -49,6 +49,7 @@ class PolycentricPairIssuerActivity : AppCompatActivity() {
     private lateinit var _layoutSession: View
     private lateinit var _imageQR: ImageView
     private lateinit var _textCountdown: TextView
+    private lateinit var _textPollError: TextView
     private lateinit var _layoutApproval: View
     private lateinit var _fingerprint: HarborEmojiFingerprintView
     private lateinit var _textClaimerKey: TextView
@@ -90,6 +91,7 @@ class PolycentricPairIssuerActivity : AppCompatActivity() {
         _layoutSession = findViewById(R.id.layout_session)
         _imageQR = findViewById(R.id.image_qr)
         _textCountdown = findViewById(R.id.text_countdown)
+        _textPollError = findViewById(R.id.text_poll_error)
         _layoutApproval = findViewById(R.id.layout_approval)
         _fingerprint = findViewById(R.id.fingerprint)
         _textClaimerKey = findViewById(R.id.text_claimer_key)
@@ -230,9 +232,14 @@ class PolycentricPairIssuerActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Polls for claimers joining the session, showing any failed polls. Ends the session with the
+     * last error once [MAX_POLL_FAILURES] polls in a row have failed.
+     */
     private fun startPolling(session: PairingSessionManager.PairingSession) {
         val info = session.pairingInfo
         _pollJob = lifecycleScope.launch {
+            var failures = 0
             while (isActive) {
                 delay(POLL_INTERVAL_MS)
                 if (_approving) {
@@ -247,9 +254,20 @@ class PolycentricPairIssuerActivity : AppCompatActivity() {
                     showError(e)
                     return@launch
                 } catch (e: Throwable) {
-                    Logger.w(TAG, "Failed to poll for pairing claimers.", e)
+                    failures++
+                    Logger.w(TAG, "Failed to poll for pairing claimers ($failures in a row).", e)
+                    if (failures >= MAX_POLL_FAILURES) {
+                        if (!_finished && !_approving) {
+                            showError(e)
+                        }
+                        return@launch
+                    }
+                    _textPollError.text = getString(R.string.pairing_poll_claimers_failed_retrying) + "\n" + (e.message ?: e.javaClass.simpleName)
+                    _textPollError.visibility = View.VISIBLE
                     continue
                 }
+                failures = 0
+                _textPollError.visibility = View.GONE
 
                 if (_finished || _approving) {
                     continue
@@ -333,6 +351,7 @@ class PolycentricPairIssuerActivity : AppCompatActivity() {
     companion object {
         private const val TAG = "PolycentricPairIssuerActivity"
         private const val POLL_INTERVAL_MS = 2000L
+        private const val MAX_POLL_FAILURES = 5
 
         /** Whether an instance exists, so the launcher icon can bring it back. See [MainActivity]. */
         var isOpen = false
