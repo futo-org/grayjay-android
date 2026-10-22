@@ -52,6 +52,10 @@ import com.futo.platformplayer.polycentric.getIdentityProfile
 import com.futo.platformplayer.polycentric.updateProfile
 import com.futo.platformplayer.polycentric.logout
 import com.futo.platformplayer.polycentric.deleteActiveIdentity
+import com.futo.platformplayer.polycentric.getServers
+import com.futo.platformplayer.polycentric.canEditServers
+import com.futo.platformplayer.polycentric.addServer
+import com.futo.platformplayer.polycentric.removeServer
 import com.futo.polycentric.core.PolycentricProfile
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -95,6 +99,9 @@ class StatePolycentric {
      * background.
      */
     val onIdentitiesChanged = Event0()
+
+    /** Emitted on the main thread after the active identity's server list changes. */
+    val onServersChanged = Event0()
 
     fun load(context: Context) {
         if (!enabled) {
@@ -277,6 +284,41 @@ class StatePolycentric {
     suspend fun logout() = mutateIdentity { it.logout() }
 
     suspend fun deleteIdentity() = mutateIdentity { it.deleteActiveIdentity() }
+
+    suspend fun getServers(): List<String> {
+        ensureEnabled()
+        val adapter = awaitAdapter() ?: throw IllegalStateException("Harbor is disabled")
+        return adapter.getServers()
+    }
+
+    suspend fun canEditServers(): Boolean {
+        ensureEnabled()
+        val adapter = awaitAdapter() ?: throw IllegalStateException("Harbor is disabled")
+        return adapter.canEditServers()
+    }
+
+    /**
+     * Adds a server to the active identity's server list. Throws
+     * [org.futo.polycentric.core.ServerAlreadyAddedException] when it is already listed.
+     */
+    suspend fun addServer(url: String) {
+        mutateIdentity { it.addServer(url) }
+        withContext(Dispatchers.Main) { onServersChanged.emit() }
+    }
+
+    /**
+     * Removes a server from the active identity's server list. The last server is prevented from
+     * being removed.
+     */
+    suspend fun removeServer(url: String) {
+        mutateIdentity {
+            if (it.getServers().size <= 1) {
+                throw IllegalStateException(StateApp.instance.context.getString(R.string.harbor_server_last_required))
+            }
+            it.removeServer(url)
+        }
+        withContext(Dispatchers.Main) { onServersChanged.emit() }
+    }
 
 
     fun getChannelUrls(url: String, channelId: PlatformID? = null, cacheOnly: Boolean = false, doCacheNull: Boolean = false): List<String> {

@@ -236,6 +236,11 @@
             android:screenOrientation="portrait"
             android:theme="@style/Theme.FutoVideo.NoActionBarFitsSystem" />
         <activity
+            android:name=".activities.PolycentricServersActivity"
+            android:exported="false"
+            android:screenOrientation="sensorPortrait"
+            android:theme="@style/Theme.FutoVideo.NoActionBarFitsSystem" />
+        <activity
             android:name=".activities.QRCodeFullscreenActivity"
             android:screenOrientation="sensorPortrait"
             android:theme="@style/Theme.FutoVideo.NoActionBar" />
