@@ -990,6 +990,7 @@
         <item>Arabisch (AR)</item>
         <item>Italienisch (IT)</item>
         <item>Türkisch (TR)</item>
+        <item>Aserbaidschanisch (AZ)</item>
     </string-array>
     <string-array name="chapter_fps">
         <item>24</item>
@@ -1037,5 +1038,6 @@
         <item>Portugiesisch</item>
         <item>Chinesisch</item>
         <item>Italienisch</item>
+        <item>Aserbaidschanisch</item>
     </string-array>
 </resources>
