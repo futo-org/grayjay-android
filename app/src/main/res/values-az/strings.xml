@@ -28,9 +28,9 @@
     <string name="install_failed_device_installer_broken">Sistem quraşdırıcısı başladılmadı. Cihazınızın ROM-u avtomatik yeniləmələrlə uyğun gəlmir.</string>
     <string name="cancel">Ləğv et</string>
     <string name="enable_daily_backup">Gündəlik ehtiyat nüsxəni idarə et</string>
-    <string name="automatic_backup_unencrypted_explanation">Buradan avtomatik ehtiyat nüsxələrinizi aktivləşdirin və ya söndürün</string>
+    <string name="automatic_backup_unencrypted_explanation">Buradan avtomatik ehtiyat nüsxələrinizi aktivləşdirin və ya bağlayın</string>
     <string name="continue_anyway">Yenə də davam et</string>
-    <string name="automatic_backup_disabled">Avtomatik ehtiyat nüsxə söndürülüb</string>
+    <string name="automatic_backup_disabled">Avtomatik ehtiyat nüsxə bağlanıb</string>
     <string name="automatic_backup_enabled">Avtomatik ehtiyat nüsxə aktivləşdirilib</string>
     <string name="failed_to_retrieve_data_are_you_connected">Məlumatlar əldə edilmədi, qoşulmusunuzmu?</string>
     <string name="settings">Tənzimləmələr</string>
@@ -72,7 +72,7 @@
     <string name="sort_by">Sıralama meyarı</string>
     <string name="subscribe">Abunə ol</string>
     <string name="unsubscribe">Abunəlikdən çıx</string>
-    <string name="background">Arxa fon</string>
+    <string name="background">Arxa plan</string>
     <string name="background_revert">Video</string>
     <string name="add">Əlavə et</string>
     <string name="download">Yükləyin</string>
@@ -93,10 +93,10 @@
     <string name="experimental_cast_description">Eksperimental yayım backend-indən istifadə et (yenidən başlatmaq tələb olunur)</string>
     <string name="discover">Kəşf et</string>
     <string name="find_new_video_sources_to_add">Əlavə etmək üçün yeni video mənbələri tapın</string>
-    <string name="these_sources_have_been_disabled">Bu mənbələr deaktiv edilib</string>
+    <string name="these_sources_have_been_disabled">Bu mənbələr bağlanıb</string>
     <string name="these_creators_in_group">Bunlar bu qrup üçün görünən yaradıcılardır.</string>
     <string name="these_creators_not_in_group">Bu yaradıcılar bu qrupda deyil.</string>
-    <string name="disabled">Deaktiv edilib</string>
+    <string name="disabled">Bağlanıb</string>
     <string name="watch_later">Daha sonra izlə</string>
     <string name="no_results">Burada baxılacaq heç nə yoxdur</string>
     <string name="no_results_shorts">Aktivləşdirilmiş mənbələrdə heç bir qısa video nəticəsi yoxdur.</string>
@@ -203,7 +203,7 @@
     <string name="import_profile">Profili idxal et</string>
     <string name="you_re_apparantly_a_developer">Görünür, tərtibatçısınız</string>
     <string name="developer_settings">Tərtibatçı tənzimləmələri</string>
-    <string name="migration">Miqrasiya</string>
+    <string name="migration">Köçürülmə</string>
     <string name="set_a_password_for_your_daily_backup">Gündəlik ehtiyat nüsxəniz üçün parol təyin edin</string>
     <string name="set_a_password_used_to_encrypt_your_daily_backup_that_is_written_to_external_storage">Xarici yaddaşa yazılan gündəlik ehtiyat nüsxənizi şifrələmək üçün istifadə olunan parol təyin edin.</string>
     <string name="backup_password">Ehtiyat nüsxə parolu</string>
@@ -234,7 +234,7 @@
     <string name="my_playlist_name">Mənim oxutma siyahımın adı</string>
     <string name="do_you_want_to_import_this_store">Bu mağazanı idxal etmək istəyirsiniz?</string>
     <string name="sources_required_need_to_be_enabled">Tələb olunan mənbələr aktivləşdirilməlidir</string>
-    <string name="items_require_migration_or_are_corrupted_would_you_like_to_restore_them_from_backup_now">Elementlərin miqrasiyası tələb olunur və ya zədələniblər, onları ehtiyat nüsxədən indi bərpa etmək istəyirsinizmi?</string>
+    <string name="items_require_migration_or_are_corrupted_would_you_like_to_restore_them_from_backup_now">Elementlərin köçürülməsi tələb olunur və ya zədələniblər, onları ehtiyat nüsxədən indi bərpa etmək istəyirsinizmi?</string>
     <string name="if_ignored_you_will_be_asked_again_next_startup">Məhəl qoyulmazsa, növbəti başladıqda yenidən soruşulacaqsınız.</string>
     <string name="ignore">Məhəl qoyma</string>
     <string name="view_changelog">Dəyişiklik qeydinə bax</string>
@@ -266,7 +266,7 @@
     <string name="under_construction">Tikinti gedir</string>
     <string name="under">ALTINDA</string>
     <string name="construction">TİKİNTİ</string>
-    <string name="disable">Deaktiv et</string>
+    <string name="disable">Bağla</string>
     <string name="the_following_content_cannot_be_opened_in_grayjay_due_to_a_missing_plugin">Aşağıdakı məzmun çatışmayan plagin səbəbindən Grayjay-də açıla bilməz.</string>
     <string name="locked_content_description">Bu məzmun kilidlənib</string>
     <string name="unknown">Naməlum</string>
@@ -315,19 +315,19 @@
     <string name="also_removes_any_data_related_plugin_like_login_or_settings">Həmçinin giriş və ya tənzimləmələr kimi məlumatlarla əlaqəli hər hansı plagini silir</string>
     <string name="announcement">Elan</string>
     <string name="notifications">Bildirişlər</string>
-    <string name="check_disabled_plugin_updates">Deaktiv edilmiş plaginlər üçün yeniləmələri yoxla</string>
-    <string name="check_disabled_plugin_updates_description">Deaktiv edilmiş plaginlər üçün yeniləmələri yoxla</string>
+    <string name="check_disabled_plugin_updates">Bağlanmış plaginlər üçün yeniləmələri yoxla</string>
+    <string name="check_disabled_plugin_updates_description">Bağlanmış plaginlər üçün yeniləmələri yoxla</string>
     <string name="planned_content_notifications">Planlaşdırılmış məzmun bildirişləri</string>
     <string name="planned_content_notifications_description">Aşkar edilmiş planlaşdırılmış məzmunu bildiriş kimi planlaşdırır ki, bu da bu məzmun üçün daha dəqiq bildirişlərlə nəticələnir.</string>
     <string name="attempt_to_utilize_byte_ranges">Bayt diapazonlarından istifadə etməyə cəhd edin</string>
     <string name="auto_update">Avtomatik yenilə</string>
     <string name="always_allow_reverse_landscape_auto_rotate">Həmişə əks landşaft avtomatik fırlanmasına icazə ver</string>
-    <string name="always_allow_reverse_landscape_auto_rotate_description">Tam ekran rejimində sistem tənzimləmələrində avtomatik fırlanmanı söndürsəniz belə, həmişə iki landşaft orientasiyası arasında avtomatik fırlanma olacaq.</string>
+    <string name="always_allow_reverse_landscape_auto_rotate_description">Tam ekran rejimində sistem tənzimləmələrində avtomatik fırlanmanı bağlasanız belə, həmişə iki landşaft orientasiyası arasında avtomatik fırlanma olacaq.</string>
     <string name="simplify_sources">Mənbələri sadələşdir</string>
     <string name="simplify_sources_description">Yalnız daha uyğun mənbələrin görünməsi üçün mənbələri çözünürlüyə görə təkrarsızlaşdır.</string>
     <string name="automatic_backup">Avtomatik ehtiyat nüsxə</string>
-    <string name="background_behavior">Arxa fon davranışı</string>
-    <string name="background_update">Arxa fon yeniləməsi</string>
+    <string name="background_behavior">Arxa plan davranışı</string>
+    <string name="background_update">Arxa plan yeniləməsi</string>
     <string name="background_download">Arxa fonda yükləmə</string>
     <string name="backup">Ehtiyat nüsxə</string>
     <string name="browsing">Gəzmə</string>
@@ -348,7 +348,7 @@
     <string name="clear_cookies_after_login">Girişdən sonra kukiləri təmizlə</string>
     <string name="clear_cookies_after_login_desc">Girişdən sonra veb-görünüşdəki bütün kukiləri silir, bu, müəyyən plaginlərin düzgün işləməsi üçün tələb oluna bilər.</string>
     <string name="clear_cookies_on_logout">Çıxış edərkən kukiləri təmizlə</string>
-    <string name="test_background_worker">Arxa fon işçisini sınaqdan keçir</string>
+    <string name="test_background_worker">Arxa plan işçisini sınaqdan keçir</string>
     <string name="test_background_worker_description"></string>
     <string name="clear_payment">Ödənişi təmizlə</string>
     <string name="configure_sync_server">Sinxronlaşdırma serverini konfiqurasiya et</string>
@@ -377,7 +377,7 @@
     <string name="use_downloaded_ca_bundle">Yüklənilmiş CA dəstin istifadə et</string>
     <string name="use_downloaded_ca_bundle_description">Köhnəlmiş kök sertifikatları olan cihazlarda kömək edə bilər.</string>
     <string name="enable_casting">Yayımı aktivləşdir</string>
-    <string name="experimental_background_update_for_subscriptions_cache">Abunəliklər keşi üçün eksperimental arxa fon yeniləməsi</string>
+    <string name="experimental_background_update_for_subscriptions_cache">Abunəliklər keşi üçün eksperimental arxa plan yeniləməsi</string>
     <string name="export_data">Məlumatları ixrac et</string>
     <string name="import_data">Məlumatları idxal et</string>
     <string name="import_data_description">İdxal etmək üçün fayl seçin, müxtəlif faylları dəstəkləyir (birbaşa açmağa alternativ)</string>
@@ -388,7 +388,7 @@
     <string name="may_require_restart">Yenidən başlatma tələb oluna bilər</string>
     <string name="fetch_on_app_boot">Tətbiq açıldıqda gətir</string>
     <string name="fetch_on_tab_opened">Vərəq açıldıqda gətir</string>
-    <string name="fetch_on_tab_opened_description">Vərəq açıldıqda yeni nəticələri gətir (hələ nəticə yoxdursa, problemləriniz yoxdursa söndürmək tələb olunmur)</string>
+    <string name="fetch_on_tab_opened_description">Vərəq açıldıqda yeni nəticələri gətir (hələ nəticə yoxdursa, problemləriniz yoxdursa bağlamaq tələb olunmur)</string>
     <string name="always_reload_from_cache">Həmişə keşdən yenidən yüklə</string>
     <string name="always_reload_from_cache_description">Bu tövsiyə edilmir, lakin bəzi problemlər üçün mümkün həlldir.</string>
     <string name="peek_channel_contents">Kanal məzmununa göz gəzdir</string>
@@ -405,14 +405,14 @@
     <string name="connect_discovered_description">Cihazın mDNS istifadə edərək məlum cütləşdirilmiş cihazları axtarmasına və onlarla əlaqə yaratmasına icazə ver</string>
     <string name="connect_last">Sonuncuya qoşul</string>
     <string name="connect_last_description">Cihazın son məlum son nöqtələrə avtomatik qoşulmasına icazə ver</string>
-    <string name="discover_through_relay">Releyi aktivləşdir</string>
-    <string name="discover_through_relay_description">Cihazın kəşfiyyat/əlaqənin releni üçün releydən istifadə etməsinə icazə ver</string>
-    <string name="pair_through_relay">Reley cütləşdirməsi</string>
-    <string name="pair_through_relay_description">Cihazın reley vasitəsilə cütləşdirilməsinə icazə ver</string>
-    <string name="connect_through_relay">Reley əlaqəsi quruldu</string>
-    <string name="connect_through_relay_description">Cihazın reley bağlantısından istifadə edərək qoşulmasına icazə ver</string>
-    <string name="connect_local_direct_through_relay">Reley birbaşa bağlantısı</string>
-    <string name="connect_local_direct_through_relay_description">Cihazın reley tərəfindən dərc edilmiş məlumatlardan istifadə edərək birbaşa qoşulmasına icazə ver</string>
+    <string name="discover_through_relay">relayı aktivləşdir</string>
+    <string name="discover_through_relay_description">Cihazın kəşfiyyat/əlaqənin releni üçün relaydən istifadə etməsinə icazə ver</string>
+    <string name="pair_through_relay">relay cütləşdirməsi</string>
+    <string name="pair_through_relay_description">Cihazın relay vasitəsilə cütləşdirilməsinə icazə ver</string>
+    <string name="connect_through_relay">relay əlaqəsi quruldu</string>
+    <string name="connect_through_relay_description">Cihazın relay bağlantısından istifadə edərək qoşulmasına icazə ver</string>
+    <string name="connect_local_direct_through_relay">relay birbaşa bağlantısı</string>
+    <string name="connect_local_direct_through_relay_description">Cihazın relay tərəfindən dərc edilmiş məlumatlardan istifadə edərək birbaşa qoşulmasına icazə ver</string>
     <string name="local_connections">Dinləyicini bağla</string>
     <string name="local_connections_description">Cihazın birbaşa qoşulmasına icazə ver</string>
     <string name="gesture_controls">Jest idarəetmələri</string>
@@ -493,7 +493,7 @@
     <string name="number_of_concurrent_threads_to_multiply_download_speeds_from_throttled_sources">Məhdudlaşdırılmış mənbələrdən yükləmə sürətini çoxaltmaq üçün eyni vaxtda işləyən axınların sayı</string>
     <string name="payment">Ödəniş</string>
     <string name="payment_status">Ödəniş statusu</string>
-    <string name="relay_server">Sinxronlaşdırma reley serveri</string>
+    <string name="relay_server">Sinxronlaşdırma relay serveri</string>
     <string name="bypass_rotation_prevention">Fırlanma qarşısının alınmasından yan keç</string>
     <string name="playlist_delete_confirmation">Oxutma siyahısının silinməsi təsdiqi</string>
     <string name="playlist_delete_confirmation_description">Media oxutma siyahısından silinərkən təsdiq dialoqunu göstər</string>
@@ -505,7 +505,7 @@
     <string name="enable_polycentric">Harbor-u aktivləşdir</string>
     <string name="polycentric_local_cache">Harbor yerli keşini aktivləşdir</string>
     <string name="polycentric_local_cache_description">Yüklənmə vaxtını azaltmaq üçün Polycentric nəticələri cihazda keşləyir, dəyişdirmək tətbiqin yenidən başladılmasını tələb edir</string>
-    <string name="can_be_disabled_when_you_are_experiencing_issues">Problemlərlə qarşılaşdıqda söndürülə bilər</string>
+    <string name="can_be_disabled_when_you_are_experiencing_issues">Problemlərlə qarşılaşdıqda bağlana bilər</string>
     <string name="bypass_rotation_prevention_description">Video olmayan görünüşlərdə fırlanmaya icazə verir.\nXƏBƏRDARLIQ: Bunun üçün nəzərdə tutulmayıb</string>
     <string name="bypass_rotation_prevention_warning">Bu gözlənilməz davranışa səbəb ola bilər və əsasən sınaqdan keçirilməyib.</string>
     <string name="changing_this_field_requires_restart">Bu sahənin dəyişdirilməsi tətbiqin yenidən başladılmasını tələb edəcək.</string>
@@ -527,8 +527,8 @@
     <string name="hide_recommendations_description">Tövsiyələr vərəqini tamamilə gizlət.</string>
     <string name="default_recommendations">İlkin olaraq tövsiyələr</string>
     <string name="default_recommendations_description">Şərhlər əvəzinə ilkin olaraq tövsiyələri göstər.</string>
-    <string name="bad_reputation_comments_fading">Pis reputasiyalı şərhlərin solması</string>
-    <string name="bad_reputation_comments_fading_description">Çox pis reputasiyaya malik şərhlərin solub-solmayacağı. Söndürmək təcrübəni pisləşdirə bilər.</string>
+    <string name="bad_reputation_comments_fading">Pis adlı şərhlərin solması</string>
+    <string name="bad_reputation_comments_fading_description">Çox pis ada malik şərhlərin solub-solmayacağı. Bağlamaq təcrübəni pisləşdirə bilər.</string>
     <string name="reinstall_embedded_plugins">Yerləşdirilmiş plaginləri yenidən quraşdır</string>
     <string name="remove_cached_version">Keşlənmiş versiyanı sil</string>
     <string name="remove_last_downloaded_version">Sonuncu yüklənildi versiyanı sil</string>
@@ -577,7 +577,7 @@
     <string name="not_paid">Ödənilməyib</string>
     <string name="licenses_cleared_might_require_app_restart">Lisenziyalar təmizləndi, tətbiqin yenidən başladılması tələb oluna bilər</string>
     <string name="attempts_to_fetch_2_pages_from_getHome">getHome-dan 2 səhifə gətirməyə çalışır</string>
-    <string name="background_subscription_testing">Arxa fon abunəlik sınağı</string>
+    <string name="background_subscription_testing">Arxa plan abunəlik sınağı</string>
     <string name="clear_all_downloaded">Bütün yüklənilənləri təmizlə</string>
     <string name="clear_downloads">Yükləmələri təmizlə</string>
     <string name="clear_all_cookies_from_the_cookieManager">CookieManager-dən bütün kukiləri təmizlə</string>
@@ -809,12 +809,12 @@
     <string name="pauses_the_video">Videonun oxunmasını dayandırır</string>
     <string name="resumes_the_video">Videonun oxunmasını davam etdirir</string>
     <string name="video_without_source">Mənbəsiz video</string>
-    <string name="there_was_a_in_your_queue_videoname_by_authorname_without_the_required_source_being_enabled_playback_was_skipped">Növbənizdə tələb olunan mənbə aktivləşdirilmədən video var idi [{videoName}], müəllif [{authorName}]. Oynatma atlandı.</string>
+    <string name="there_was_a_in_your_queue_videoname_by_authorname_without_the_required_source_being_enabled_playback_was_skipped">Növbənizdə tələb olunan mənbə aktivləşdirilmədən video var idi [{videoName}], müəllif [{authorName}]. Oynatma ötürüldü.</string>
     <string name="failed_to_load_video_scriptimplementationexception">Video yüklənmədi (ScriptImplementationException)</string>
     <string name="invalid_video">Etibarsız video</string>
-    <string name="there_was_an_invalid_video_in_your_queue_videoname_by_authorname_playback_was_skipped">Növbənizdə etibarsız video var idi [{videoName}], müəllif [{authorName}], oynatma atlandı.</string>
+    <string name="there_was_an_invalid_video_in_your_queue_videoname_by_authorname_playback_was_skipped">Növbənizdə etibarsız video var idi [{videoName}], müəllif [{authorName}], oynatma ötürüldü.</string>
     <string name="age_restricted_video">Yaş məhdudiyyətli video</string>
-    <string name="there_was_an_age_restricted_video_in_your_queue_videoname_by_authorname_this_video_was_not_accessible_and_playback_was_skipped">Növbənizdə yaş məhdudiyyətli video var idi [{videoName}], müəllif [{authorName}], bu videoya giriş mümkün olmadı və oynatma atlandı.</string>
+    <string name="there_was_an_age_restricted_video_in_your_queue_videoname_by_authorname_this_video_was_not_accessible_and_playback_was_skipped">Növbənizdə yaş məhdudiyyətli video var idi [{videoName}], müəllif [{authorName}], bu videoya giriş mümkün olmadı və oynatma ötürüldü.</string>
     <string name="failed_to_load_video_scriptexception">Video yüklənmədi (ScriptException)</string>
     <string name="failed_to_load_video">Video yüklənmədi</string>
     <string name="not_yet_available_retrying_in_time_s">Hələ əlçatan deyil, {time}s ərzində yenidən cəhd edilir</string>
@@ -887,7 +887,7 @@
     <string name="failed_to_show_settings">Tənzimləmələr göstərilmədi</string>
     <string name="play_store_version_does_not_support_default_url_handling">Play Store versiyası ilkin URL idarəetməsini dəstəkləmir.</string>
     <string name="these_are_all_commentcount_comments_you_have_made_in_grayjay">Bunlar Grayjay-də yazdığınız bütün {commentCount} şərhlərdir.</string>
-    <string name="tutorial">Öyrətim</string>
+    <string name="tutorial">Təlim</string>
     <string name="go_back_to_casting_add_dialog">Yayım əlavə etmə dialoquna qayıt</string>
     <string name="view_a_video_about_how_to_cast">Necə yayımlamaq lazım olduğu barədə videoya baxın</string>
     <string name="view_the_fcast_technical_documentation">FCast texniki sənədlərinə baxın</string>
@@ -898,7 +898,7 @@
     <string name="fcast_website">FCast veb-saytı</string>
     <string name="fcast_technical_documentation">FCast texniki sənədləri</string>
     <string name="login_to_view_your_comments">Şərhlərinizə baxmaq üçün daxil olun</string>
-    <string name="polycentric_is_disabled">Harbor söndürülüb</string>
+    <string name="polycentric_is_disabled">Harbor bağlanıb</string>
     <string name="polycentric_migration_complete">Polycentric profiliniz Harbor-a köçürüldü. Profil şəklinizi yenidən yükləməli olacaqsınız.</string>
     <string name="polycentric_migration_complete_multiple">Polycentric profilləriniz Harbor-a köçürüldü. Profil şəkillərinizi yenidən yükləməli olacaqsınız.</string>
     <string name="polycentric_migration_failed">Polycentric profiliniz Harbor-a köçürülə bilmədi</string>
@@ -906,14 +906,14 @@
     <string name="polycentric_migration_delete">Sil və yenisini yarat</string>
     <string name="play_pause">Oynat Fasilə</string>
     <string name="position">Mövqe</string>
-    <string name="tutorials">Öyrətimlər</string>
+    <string name="tutorials">Təlimlər</string>
     <string name="do_you_want_to_see_the_tutorials_you_can_find_them_at_any_time_through_the_more_button">Öyrətimləri görmək istəyirsiniz? Onları istənilən vaxt daha çox düyməsi vasitəsilə tapa bilərsiniz.</string>
     <string name="add_creator">Yaradıcılar əlavə et</string>
     <string name="select">Seç</string>
     <string name="zoom">Yaxınlaşdır</string>
     <string name="check_to_see_if_an_update_is_available">Yeniləmənin olub-olmadığını yoxlayın.</string>
     <string name="scroll_to_top">Yuxarı sürüşdür</string>
-    <string name="disable_battery_optimization">Batareya optimizasiyasını söndür</string>
+    <string name="disable_battery_optimization">Batareya optimizasiyasını bağlayın</string>
     <string name="click_to_go_to_battery_optimization_settings_disabling_battery_optimization_will_prevent_the_os_from_killing_media_sessions">Batareya optimizasiyası tənzimləmələrinə keçmək üçün klikləyin. Batareya optimizasiyasının söndürülməsi ƏS-in media seanslarını sonlandırmasının qarşısını alacaq.</string>
     <string name="contribute_personal_subscriptions_list">Şəxsi abunəliklər siyahısına töhfə ver</string>
     <string name="contribute_personal_subscriptions_list_description">\nCari yaradıcı abunəlikləri siyahınızı FUTO-ya töhfə vermək istərdinizmi?\n\nMəlumatlar Grayjay məxfilik siyasətinə uyğun olaraq idarə olunacaq. Yəni siyahı anonimləşdiriləcək və abunəliklərin kimə məxsus olduğuna dair heç bir istinad olmadan saxlanılacaq.\n\nMəqsəd Grayjay və FUTO-nun Grayjay daxilində bəyənə biləcəyiniz yeni yaradıcıları tapmağı asanlaşdırmaq üçün çarpaz platforma yaradıcı tövsiyə sistemi qurmaq üçün bu məlumatlardan istifadə etməsidir.</string>
@@ -956,7 +956,7 @@
     <string name="cd_thumbnail_player_unmute">Səsi aç</string>
     <string name="cd_button_minimize">Kiçilt</string>
     <string name="cd_button_rotate_lock">Fırlanmanı kilidlə</string>
-    <string name="cd_button_loop">Dövrə</string>
+    <string name="cd_button_loop">Təkrarla</string>
     <string name="cd_button_previous">Əvvəlki</string>
     <string name="cd_button_next">Növbəti</string>
     <string name="cd_button_fullscreen">Tam ekran</string>
@@ -1035,7 +1035,7 @@
         <item>Heç vaxt</item>
     </string-array>
     <string-array name="enabled_disabled_array">
-        <item>Deaktiv edilib</item>
+        <item>Bağlanıb</item>
         <item>Aktivləşdirilib</item>
     </string-array>
     <string-array name="when_download">
@@ -1044,7 +1044,7 @@
         <item>Həmişə</item>
     </string-array>
     <string-array name="background_download">
-        <item>Deaktiv edilib</item>
+        <item>Bağlanıb</item>
         <item>Aktivləşdirilib</item>
     </string-array>
     <string-array name="comments_sortby_array">
@@ -1175,7 +1175,7 @@
         <item>5.0</item>
     </string-array>
     <string-array name="hold_playback_speeds">
-        <item>Deaktiv edilib</item>
+        <item>Bağlanıb</item>
         <item>1.25</item>
         <item>1.5</item>
         <item>1.75</item>
