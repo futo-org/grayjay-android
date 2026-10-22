@@ -1,5 +1,6 @@
 package com.futo.platformplayer.polycentric
 
+import androidx.annotation.VisibleForTesting
 import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
@@ -10,7 +11,6 @@ import com.futo.platformplayer.api.media.structures.IPager
 import kotlinx.coroutines.runBlocking
 import org.futo.polycentric.core.Collections
 import org.futo.polycentric.core.getAttributionFeed
-import org.futo.polycentric.core.getEvent
 import org.futo.polycentric.core.getIdentityFeed
 import org.futo.polycentric.core.getPostThread
 import polycentric.v2.Content
@@ -75,10 +75,15 @@ private fun staticCommentPager(comments: List<IPlatformComment>): IPager<IPlatfo
         override fun getResults(): List<IPlatformComment> = comments
     }
 
-/** Fetch a single comment by its event key. */
-suspend fun PolycentricAdapter.getComment(key: EventKey): PolycentricPlatformComment? {
-    val bundle = client.getEvent(key.identity, key.collection, key.sequence) ?: return null
-    return toComment(contextUrlOf(bundle) ?: "", bundle) { fetchLocalAuthor(it) }
+/**
+ * Fetch the comment at [key] together with a page of replies. Returns null when the thread does not
+ * include the comment itself.
+ */
+suspend fun PolycentricAdapter.getThread(key: EventKey, contextUrl: String, omitLabels: List<String> = emptyList()): Pair<PolycentricPlatformComment, IPager<IPlatformComment>>? {
+    val resp = client.getPostThread(key, omitLabels = omitLabels) ?: return null
+    val comments = toComments(resp.thread, resp.event_hints) { contextUrl }
+    val comment = comments.firstOrNull { it.key == key } ?: return null
+    return comment to staticCommentPager(comments.filter { it.key != key })
 }
 
 /** Return a list of the active identity's comments, in reverse-chronological order. */
@@ -141,23 +146,29 @@ private suspend fun PolycentricAdapter.fetchPage(url: String, cursor: String?, o
  * the response's [hints]. Authors without a profile hint show as "Unknown".
  */
 private fun PolycentricAdapter.toComments(bundles: List<EventBundle>, hints: List<EventHint>, contextUrl: (EventBundle) -> String): List<PolycentricPlatformComment> {
-    val labelMap = decodeLabels(hints)
     val profiles = decodeProfiles(hints)
+    val labelMap = decodeLabels(hints, profiles)
     return bundles.mapNotNull { toComment(contextUrl(it), it, labelMap) { identity -> authorLink(identity, profiles[identity]) } }
 }
 
 /**
  * Turn a generic event bundle retrieved from polycentric-core into a [PolycentricPlatformComment],
  * if it is a `Post` or `PostReply` event. The comment's author is produced by [author] from the
- * author's identity.
+ * author's identity. Its labels are those in [labelMap] plus any moderation labels directly
+ * attached to the post by the author.
  */
-private fun PolycentricAdapter.toComment(contextUrl: String, bundle: EventBundle, labelMap: Map<String, List<String>> = emptyMap(), author: (String) -> PlatformAuthorLink): PolycentricPlatformComment? {
+@VisibleForTesting
+internal fun toComment(contextUrl: String, bundle: EventBundle, labelMap: Map<String, List<CommentLabel>> = emptyMap(), author: (String) -> PlatformAuthorLink): PolycentricPlatformComment? {
     val signed = bundle.signed_event ?: return null
     val event = Event.ADAPTER.decode(signed.event_bytes)
     val key = event.key ?: return null
     val contentBytes = bundle.serialized_content?.content_bytes ?: return null
     val post = Content.ADAPTER.decode(contentBytes).post ?: return null
     val meta = bundle.meta
+    // Labels fetched from the post (attached by the author), rather than event hints
+    val selfLabels = post.labels
+        .filter { ModerationLabels.isModerationLabel(it) }
+        .map { CommentLabel(it, key.identity) }
     return PolycentricPlatformComment(
         contextUrl = contextUrl,
         author = author(key.identity),
@@ -168,7 +179,7 @@ private fun PolycentricAdapter.toComment(contextUrl: String, bundle: EventBundle
         root = post.reply?.root,
         parent = post.reply?.parent,
         replyCount = meta?.reply_count ?: 0,
-        labels = labelMap[labelKeyOf(key)].orEmpty(),
+        labels = (labelMap[labelKeyOf(key)].orEmpty() + selfLabels).distinctBy { it.value to it.labeledBy },
     )
 }
 
@@ -198,17 +209,24 @@ private fun PolycentricAdapter.contextUrlOf(bundle: EventBundle): String? {
 
 /**
  * Decode the moderation labels carried in a feed's `event_hints` field. Each label event targets an
- * event key. We return a mapping from keys to label values.
+ * event key and is signed by its labeler, whose name is looked up in [profiles]. We return a
+ * mapping from keys to labels, deduplicated on (value, labeler).
  */
-private fun PolycentricAdapter.decodeLabels(hints: List<EventHint>): Map<String, List<String>> {
-    val map = HashMap<String, MutableList<String>>()
+@VisibleForTesting
+internal fun decodeLabels(hints: List<EventHint>, profiles: Map<String, ProfileUpdate> = emptyMap()): Map<String, List<CommentLabel>> {
+    val map = HashMap<String, LinkedHashSet<CommentLabel>>()
     for (hint in hints) {
-        val contentBytes = hint.event_bundle?.serialized_content?.content_bytes ?: continue
+        val bundle = hint.event_bundle ?: continue
+        val contentBytes = bundle.serialized_content?.content_bytes ?: continue
+        val signed = bundle.signed_event ?: continue
+        val labeler = runCatching { Event.ADAPTER.decode(signed.event_bytes).key?.identity }.getOrNull() ?: continue
         val labels = runCatching { Content.ADAPTER.decode(contentBytes).labels }.getOrNull() ?: continue
         val target = labels.event_key ?: continue
-        map.getOrPut(labelKeyOf(target)) { mutableListOf() }.addAll(labels.label_values)
+        val name = profiles[labeler]?.name
+        map.getOrPut(labelKeyOf(target)) { LinkedHashSet() }
+            .addAll(labels.label_values.map { CommentLabel(it, labeler, name) })
     }
-    return map
+    return map.mapValues { it.value.toList() }
 }
 
 /**

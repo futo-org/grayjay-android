@@ -10,6 +10,7 @@ import com.futo.platformplayer.activities.IWithResultLauncher
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.activities.ManageTabsActivity
 import com.futo.platformplayer.activities.PolycentricHomeActivity
+import com.futo.platformplayer.activities.PolycentricModerationActivity
 import com.futo.platformplayer.activities.PolycentricProfileActivity
 import com.futo.platformplayer.activities.SyncHomeActivity
 import com.futo.platformplayer.api.http.ManagedHttpClient
@@ -648,6 +649,14 @@ class Settings : FragmentedStorageFileJson() {
 
         @FormField(R.string.bad_reputation_comments_fading, FieldForm.TOGGLE, R.string.bad_reputation_comments_fading_description, 0)
         var badReputationCommentsFading: Boolean = true;
+
+        @FormField(R.string.harbor_moderation, FieldForm.BUTTON, R.string.harbor_moderation_description, 1)
+        @FormFieldButton(R.drawable.ic_warning)
+        fun openHarborModeration() {
+            StateApp.instance.activity?.let {
+                it.startActivity(Intent(it, PolycentricModerationActivity::class.java));
+            }
+        }
 
     }
 

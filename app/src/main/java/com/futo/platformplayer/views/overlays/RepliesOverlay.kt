@@ -19,6 +19,7 @@ import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.toHumanNowDiffString
+import com.futo.platformplayer.views.ModerationWarnView
 import com.futo.platformplayer.views.behavior.NonScrollingTextView
 import com.futo.platformplayer.views.comments.AddCommentView
 import com.futo.platformplayer.views.others.CreatorThumbnail
@@ -38,6 +39,7 @@ class RepliesOverlay : LinearLayout {
     private val _textMetadata: TextView;
     private val _creatorThumbnail: CreatorThumbnail;
     private val _layoutParentComment: ConstraintLayout;
+    private val _moderationWarn: ModerationWarnView;
     private var _readonly = false;
     private var _loading = true;
     private var _parentComment: IPlatformComment? = null;
@@ -56,6 +58,7 @@ class RepliesOverlay : LinearLayout {
         _textAuthor = findViewById(R.id.text_author)
         _creatorThumbnail = findViewById(R.id.image_thumbnail)
         _layoutParentComment = findViewById(R.id.layout_parent_comment)
+        _moderationWarn = findViewById(R.id.moderation_warn)
         _loaderOverlay = findViewById(R.id.loader_overlay)
         setLoading(false);
 
@@ -96,6 +99,11 @@ class RepliesOverlay : LinearLayout {
             handleParentClick(p)
         }
 
+        _moderationWarn.onShow.subscribe {
+            val p = _parentComment ?: return@subscribe
+            bindParentModeration(p)
+        }
+
         _topbar.onClose.subscribe(this, onClose::emit);
     }
 
@@ -128,12 +136,18 @@ class RepliesOverlay : LinearLayout {
             _creatorThumbnail.setThumbnail(parentComment.author.thumbnail, false);
             val polycentricPlatformComment = if (parentComment is PolycentricPlatformComment) parentComment else null
             _creatorThumbnail.setHarborAvailableForIdentity(polycentricPlatformComment != null, false, polycentricPlatformComment?.key?.identity);
+            bindParentModeration(parentComment)
         }
 
         _topbar.setInfo(context.getString(R.string.Replies), metadata);
         _commentsList.load(readonly, loader);
         _onCommentAdded = onCommentAdded;
         _parentComment = parentComment;
+    }
+
+    /** Cover the parent comment's body with a content warning if its labels call for one. */
+    private fun bindParentModeration(parentComment: IPlatformComment) {
+        _textBody.visibility = if (_moderationWarn.bind(parentComment)) View.GONE else View.VISIBLE
     }
 
     /**
@@ -151,7 +165,7 @@ class RepliesOverlay : LinearLayout {
 
         StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
             try {
-                val parent = StatePolycentric.instance.getComment(parentKey)
+                val (parent, replies) = StatePolycentric.instance.getThread(parentKey, parentComment.contextUrl)
                     ?: throw IllegalStateException("Comment not found.")
 
                 val replyCount = parent.replyCount ?: 0;
@@ -163,7 +177,7 @@ class RepliesOverlay : LinearLayout {
                 withContext(Dispatchers.Main) {
                     setLoading(false)
 
-                    load(false, metadata, parent.contextUrl, parent, { StatePolycentric.instance.getReplies(parent) })
+                    load(false, metadata, parent.contextUrl, parent, { replies })
                 }
             } catch (e: Throwable) {
                 withContext(Dispatchers.Main) {

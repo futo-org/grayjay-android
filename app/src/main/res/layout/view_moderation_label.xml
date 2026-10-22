@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="20dp"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/text_label_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/inter_semibold"
+        android:textColor="@color/white"
+        android:textSize="15sp"
+        tools:text="Hate" />
+
+    <TextView
+        android:id="@+id/text_label_description"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:fontFamily="@font/inter_regular"
+        android:textColor="@color/gray_ac"
+        android:textSize="13sp"
+        tools:text="Hate speech or incitement against groups" />
+
+    <com.futo.platformplayer.views.others.RadioGroupView
+        android:id="@+id/radio_level"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:layout_marginStart="-4dp" />
+</LinearLayout>
