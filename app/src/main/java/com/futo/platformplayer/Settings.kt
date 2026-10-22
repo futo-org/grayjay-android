@@ -205,6 +205,7 @@ class Settings : FragmentedStorageFileJson() {
                 10 -> "ar";
                 11 -> "it";
                 12 -> "tr";
+                13 -> "az";
                 else -> null
             }
         }
@@ -406,6 +407,7 @@ class Settings : FragmentedStorageFileJson() {
                 13 -> "pt";
                 14 -> "zh";
                 15 -> "it";
+                16 -> "az";
                 else -> null
             }
         }

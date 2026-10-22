@@ -1099,6 +1099,7 @@
         <item>Arabic (AR)</item>
         <item>Italian (IT)</item>
         <item>Turkish (TR)</item>
+        <item>Azerbaijani (AZ)</item>
     </string-array>
     <string-array name="player_background_behavior">
         <item>None</item>
@@ -1138,6 +1139,7 @@
         <item>Portuguese</item>
         <item>Chinese</item>
         <item>Italian</item>
+        <item>Azerbaijani</item>
     </string-array>
     <string-array name="casting_device_type_array" translatable="false">
         <item>FCast</item>

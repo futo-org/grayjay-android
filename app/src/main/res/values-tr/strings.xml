@@ -981,6 +981,7 @@
         <item>Arapça (AR)</item>
         <item>İtalyanca (IT)</item>
         <item>Türkçe (TR)</item>
+        <item>Azerbaycanca (AZ)</item>
     </string-array>
     <string-array name="player_background_behavior">
         <item>Hiç</item>
@@ -1020,6 +1021,7 @@
         <item>Portekizce</item>
         <item>Çince</item>
         <item>İtalyanca</item>
+        <item>Azerbaycanca</item>
     </string-array>
     <string-array name="casting_device_type_array" translatable="false">
         <item>FCast</item>
