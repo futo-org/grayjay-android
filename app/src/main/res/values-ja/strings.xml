@@ -683,6 +683,7 @@
     <string-array name="feed_style">
         <item>プレビュー</item>
         <item>リスト</item>
+        <item>アクセシビリティ</item>
     </string-array>
     <string-array name="player_background_behavior">
         <item>なし</item>
