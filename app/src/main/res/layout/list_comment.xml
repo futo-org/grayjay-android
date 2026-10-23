@@ -185,7 +185,7 @@
                 android:layout_height="wrap_content"
                 android:contentDescription="@string/cd_button_replies"
                 app:pillIcon="@drawable/ic_forum"
-                app:pillText="55 Replies"
+                app:pillText="55"
                 android:layout_marginStart="2dp" />
 
             <Space android:layout_width="0dp"
@@ -197,20 +197,13 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="@drawable/background_pill_pred"
-                android:paddingTop="8dp"
-                android:paddingBottom="8dp"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
+                android:padding="7dp"
                 android:layout_marginStart="12dp">
-                <TextView
-                    android:id="@+id/pill_text"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:textColor="@color/white"
-                    android:textSize="13dp"
-                    android:gravity="center_vertical"
-                    android:fontFamily="@font/inter_light"
-                    android:text="@string/delete" />
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:contentDescription="@string/cd_button_delete"
+                    app:srcCompat="@drawable/ic_trash_18dp" />
             </FrameLayout>
         </LinearLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
