@@ -119,7 +119,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/inter_regular"
-                android:text="After you've installed Harbor you can export this profile to Harbor using the Export button."
+                android:text="@string/pairing_profile_cta"
                 android:textSize="12dp"
                 android:linksClickable="true"
                 android:paddingLeft="20dp"
@@ -162,6 +162,15 @@
                     android:layout_marginTop="8dp"
                     app:buttonIcon="@drawable/ic_settings"
                     app:buttonText="@string/harbor_moderation_settings" />
+
+                <com.futo.platformplayer.views.buttons.BigButton
+                    android:id="@+id/button_pair_device"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:buttonText="@string/pairing_pair_a_device"
+                    app:buttonSubText="@string/pairing_pair_a_device_description"
+                    app:buttonIcon="@drawable/ic_qr"
+                    android:layout_marginTop="8dp" />
 
                 <com.futo.platformplayer.views.buttons.BigButton
                     android:id="@+id/button_export"

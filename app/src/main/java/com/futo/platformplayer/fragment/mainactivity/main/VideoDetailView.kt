@@ -187,6 +187,7 @@ import java.time.OffsetDateTime
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.roundToLong
+import com.futo.platformplayer.polycentric.toAttributedContent
 
 @UnstableApi
 class VideoDetailView : ConstraintLayout {
@@ -1639,7 +1640,7 @@ class VideoDetailView : ConstraintLayout {
             }
         }
 
-        _addCommentView.setContext(video.url, null, video.name)
+        _addCommentView.setContext(video.url, null, video.toAttributedContent())
         _player.setMetadata(video.name, video.author.name);
 
         if (video is TutorialFragment.TutorialVideo) {

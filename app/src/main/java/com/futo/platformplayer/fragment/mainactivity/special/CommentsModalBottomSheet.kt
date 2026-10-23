@@ -46,6 +46,7 @@ import com.futo.platformplayer.views.segments.CommentsList
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.futo.platformplayer.polycentric.toAttributedContent
 
 
 class CommentsModalBottomSheet : BottomSheetDialogFragment() {
@@ -179,7 +180,7 @@ class CommentsModalBottomSheet : BottomSheetDialogFragment() {
             StateMeta.instance.setLastCommentSection(1)
         }
 
-        addCommentView.setContext(video.url, null, video.name)
+        addCommentView.setContext(video.url, null, video.toAttributedContent())
 
         if (Settings.instance.comments.recommendationsDefault && !Settings.instance.comments.hideRecommendations) {
             setTabIndex(2, true)

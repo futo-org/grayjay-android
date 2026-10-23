@@ -14,9 +14,15 @@ import polycentric.v2.Reaction
 
 /**
  * Adapter functions for ratings (known in Harbor/Polycentric as reactions). In Harbor, reactions
- * each are represented in an emoji, but for Grayjay, we only display whether the reaction is
- * positive or negative, ignoring the emoji assigned.
+ * each are represented in an emoji. Grayjay publishes likes and dislikes as Harbor's thumbs up and
+ * thumbs down reactions, but only displays whether a reaction is positive or negative, ignoring
+ * the emoji assigned.
  */
+
+private const val LIKE_EMOJI = "👍"
+private const val DISLIKE_EMOJI = "👎"
+
+private fun ratingEmoji(positive: Boolean) = if (positive) LIKE_EMOJI else DISLIKE_EMOJI
 
 /**
  * Set rating on a video URL. Truthy `positive` sets a like, falsy sets a dislike, and null clears
@@ -31,7 +37,7 @@ suspend fun PolycentricAdapter.setVideoRating(videoUrl: String, videoTitle: Stri
     }
     if (positive != null) {
         publish(
-            Content(attributed_to_reaction = AttributedToReaction(attributed_to = attributionLink(url, videoTitle), positive = positive)),
+            Content(attributed_to_reaction = AttributedToReaction(attributed_to = attributionLink(url, videoTitle), emoji = ratingEmoji(positive), positive = positive)),
             Collections.INTERACTIONS,
         )
     }
@@ -48,7 +54,7 @@ suspend fun PolycentricAdapter.setCommentRating(comment: PolycentricPlatformComm
     }
     if (positive != null) {
         publish(
-            Content(reaction = Reaction(event_key = comment.key, positive = positive)),
+            Content(reaction = Reaction(event_key = comment.key, emoji = ratingEmoji(positive), positive = positive)),
             Collections.INTERACTIONS,
         )
     }
