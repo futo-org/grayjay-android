@@ -1,6 +1,6 @@
-# PlatformPlayer
+# Grayjay
 
-The FUTO media app endeavours creating infrastructure for creators to have their content hosted by someone else but at the same time having creators retain full ownership of their content. We want creators to feel like they are publishing to the world, and we want multiple indexers competing with each other to do a good job connecting consumers to creators and their content.
+Grayjay endeavours creating infrastructure for creators to have their content hosted by someone else but at the same time having creators retain full ownership of their content. We want creators to feel like they are publishing to the world, and we want multiple indexers competing with each other to do a good job connecting consumers to creators and their content.
 
 One part of the solution is to create an application that allows users to search through all available media websites and giving creators the tools for direct monetization of their content by allowing users to directly donate to the content creator.
 
@@ -20,7 +20,7 @@ technologies that frustrate centralization and industry consolidation.
 
 ## What does the app do?
 
-The FUTO media app is a player that exposes multiple video websites as sources in the app. These sources can be easily configured and third-party sources can also manually be added. This is done through the sources UI.
+Grayjay is a player that exposes multiple video websites as sources in the app. These sources can be easily configured and third-party sources can also manually be added. This is done through the sources UI.
 
 <table border="0">
  <tr>
@@ -63,7 +63,7 @@ When a user enters a search term into the search bar,  the query is posted to th
 
 ### Channels
 
-Channels allow users to view the creators content, read more about them or support them by donating, purchasing from their store or buying a membership. The FUTO media app only links to other stores and the app does not play an intermediate role in the actual purchase process. This way, creators can directly monetize their own content in the way they like.
+Channels allow users to view the creators content, read more about them or support them by donating, purchasing from their store or buying a membership. Grayjay only links to other stores and the app does not play an intermediate role in the actual purchase process. This way, creators can directly monetize their own content in the way they like.
 
 Creators are able to configure their profile using NeoPass.
 
