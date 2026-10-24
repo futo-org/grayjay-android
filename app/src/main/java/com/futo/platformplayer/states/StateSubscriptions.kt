@@ -16,7 +16,6 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.ImportCache
 import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.models.SubscriptionGroup
-import com.futo.platformplayer.resolveChannelUrl
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringDateMapStorage
 import com.futo.platformplayer.stores.StringStorage
@@ -38,7 +37,6 @@ import java.time.ZoneOffset
 import java.util.concurrent.ForkJoinPool
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
-import kotlin.streams.asSequence
 
 /***
  * Used to maintain subscriptions
@@ -383,7 +381,7 @@ class StateSubscriptions {
             };
         } ?: subs;
         return SubscriptionFetchAlgorithm.getAlgorithm(_algorithmSubscriptions, StateApp.instance.scope)
-            .countRequests(emulatedSubs.associateWith { StatePolycentric.instance.getChannelUrls(it.channel.url, it.channel.id, true) });
+            .countRequests(emulatedSubs.associateWith { listOf(it.channel.url) });
     }
 
     fun getSubscriptionsFeedWithExceptions(allowFailure: Boolean = false, withCacheFallback: Boolean = false, cacheScope: CoroutineScope, onProgress: ((Int, Int)->Unit)? = null, onNewCacheHit: ((Subscription, IPlatformContent)->Unit)? = null, subGroup: SubscriptionGroup? = null): Pair<IPager<IPlatformContent>, List<Throwable>> {
@@ -413,25 +411,7 @@ class StateSubscriptions {
             };
         } ?: subs;
 
-
-        val usePolycentric = true;
-        val lock = Object();
-        var polycentricBudget: Int = 10;
-        val subUrls = emulatedSubs.parallelStream().map {
-            if(usePolycentric) {
-                val result = StatePolycentric.instance.getChannelUrlsWithUpdateResult(it.channel.url, it.channel.id, polycentricBudget <= 0, true);
-                if(result.first) {
-                    synchronized(lock) {
-                        polycentricBudget--;
-                    }
-                }
-                Pair(it, result.second);
-            }
-            else
-                Pair(it, listOf(it.channel.url));
-        }.asSequence()
-            .toList()
-            .associate { it };
+        val subUrls = emulatedSubs.associateWith { listOf(it.channel.url) };
 
         val result = algo.getSubscriptions(subUrls);
         return Pair(result.pager, result.exceptions);

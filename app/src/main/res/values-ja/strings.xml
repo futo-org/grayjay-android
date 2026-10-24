@@ -151,18 +151,11 @@
     <string name="ignore">無視</string>
     <string name="view_changelog">変更履歴を表示</string>
     <string name="i_already_paid">すでに支払いました</string>
-    <string name="memberships">メンバーシップ</string>
-    <string name="a_monthly_recurring_payment_with_often">よくある月額定額制の支払い</string>
-    <string name="additional_perks">追加の特典。</string>
-    <string name="a_one_time_payment_to_support_the_creator">クリエーターを支援するための一回限りの支払い</string>
-    <string name="donation">寄付</string>
     <string name="downloading">ダウンロード中</string>
     <string name="videos">動画</string>
     <string name="clear_history">履歴をクリア</string>
     <string name="nothing_to_import">インポートするものがありません</string>
     <string name="enabling_lots_of_sources_can_reduce_the_loading_speed_of_your_application">多くのソースを有効にすると、アプリケーションの読み込み速度が低下する可能性があります。</string>
-    <string name="support">サポート</string>
-    <string name="store">ストア</string>
     <string name="live_chat">ライブチャット</string>
     <string name="remove">削除</string>
     <string name="space_videos">動画</string>
@@ -209,7 +202,6 @@
     <string name="view_a_more_in_depth_video">より詳細なビデオを見る</string>
     <string name="technical_documentation">技術文書</string>
     <string name="view_the_technical_documentation">技術文書を表示</string>
-    <string name="visit_my_store">私のストアを訪れる</string>
     <string name="make_a_backup_of_your_identity">あなたのアイデンティティのバックアップを作成</string>
     <string name="sign_out_of_this_identity">このアイデンティティからサインアウト</string>
     <string name="delete_this_profile">このプロフィールを削除</string>

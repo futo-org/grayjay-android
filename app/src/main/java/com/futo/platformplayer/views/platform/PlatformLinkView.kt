@@ -12,7 +12,6 @@ import androidx.core.content.ContextCompat.startActivity
 import com.futo.platformplayer.R
 import com.futo.platformplayer.polycentric.PolycentricAdapter
 import com.futo.platformplayer.states.StatePlatform
-import com.futo.polycentric.core.ClaimType
 
 
 class PlatformLinkView : LinearLayout {

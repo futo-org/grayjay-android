@@ -323,9 +323,6 @@ class StatePlatform {
         return getClientOrNull(id) ?: throw IllegalArgumentException("Client with id $id does not exist");
     }
 
-    fun getClientsByClaimType(claimType: Int): List<IPlatformClient> {
-        return getEnabledClients().filter { it.isClaimTypeSupported(claimType) };
-    }
     fun getClientByClaimTypeOrNull(claimType: Int): IPlatformClient? {
         return getEnabledClients().firstOrNull { it.isClaimTypeSupported(claimType) };
     }
@@ -1022,23 +1019,6 @@ class StatePlatform {
     fun getChannelUrlByClaim(claimType: Int, claimValues: Map<Int, String>): String? {
         val client = getClientByClaimTypeOrNull(claimType) ?: return null;
         return client.getChannelUrlByClaim(claimType, claimValues);
-    }
-    fun resolveChannelUrlByClaimTemplates(claimType: Int, claimValues: Map<Int, String>): String? {
-        for(client in getClientsByClaimType(claimType).filter { it is JSClient }) {
-            val url = (client as JSClient).resolveChannelUrlByClaimTemplates(claimType, claimValues);
-            if(!url.isNullOrEmpty())
-                return url;
-        }
-        return null;
-    }
-
-    fun resolveChannelUrlsByClaimTemplates(claimType: Int, claimValues: Map<Int, String>): List<String> {
-        val urls = arrayListOf<String>();
-        for(client in getClientsByClaimType(claimType).filter { it is JSClient }) {
-            val res = (client as JSClient).resolveChannelUrlsByClaimTemplates(claimType, claimValues);
-            urls.addAll(res);
-        }
-        return urls;
     }
 
     fun hasEnabledPlaylistClient(url: String) : Boolean = getEnabledClients().any { _instantClientPool.getClientPooled(it).isPlaylistUrl(url) };

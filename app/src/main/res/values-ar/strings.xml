@@ -171,18 +171,11 @@
     <string name="sources_required_need_to_be_enabled">المصادر المطلوبة يجب تفعيلها</string>
     <string name="view_changelog">عرض سجل التغييرات</string>
     <string name="i_already_paid">لقد دفعت بالفعل</string>
-    <string name="memberships">عضويات</string>
-    <string name="a_monthly_recurring_payment_with_often">دفعة متكررة شهرياً مع مزايا إضافية بشكل متكرر</string>
-    <string name="additional_perks">مزايا إضافية</string>
-    <string name="a_one_time_payment_to_support_the_creator">دفعة واحدة لدعم المبدع</string>
-    <string name="donation">تبرع</string>
     <string name="downloading">جاري التحميل</string>
     <string name="videos">فيديوهات</string>
     <string name="clear_history">مسح السجل</string>
     <string name="nothing_to_import">لا شيء لاستيراده</string>
     <string name="enabling_lots_of_sources_can_reduce_the_loading_speed_of_your_application">تفعيل العديد من المصادر يمكن أن يقلل من سرعة تحميل التطبيق</string>
-    <string name="support">دعم</string>
-    <string name="store">متجر</string>
     <string name="live_chat">دردشة مباشرة</string>
     <string name="remove">إزالة</string>
     <string name="space_videos">فيديوهات</string>
@@ -229,7 +222,6 @@
     <string name="view_a_more_in_depth_video">عرض فيديو أكثر تفصيليًا</string>
     <string name="technical_documentation">التوثيق التقني</string>
     <string name="view_the_technical_documentation">عرض التوثيق التقني</string>
-    <string name="visit_my_store">زيارة متجري</string>
     <string name="announcement">إعلان</string>
     <string name="attempt_to_utilize_byte_ranges">محاولة استخدام مدى البايت</string>
     <string name="auto_update">تحديث تلقائي</string>

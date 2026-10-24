@@ -135,7 +135,7 @@ class RepliesOverlay : LinearLayout {
 
             _creatorThumbnail.setThumbnail(parentComment.author.thumbnail, false);
             val polycentricPlatformComment = if (parentComment is PolycentricPlatformComment) parentComment else null
-            _creatorThumbnail.setHarborAvailableForIdentity(polycentricPlatformComment != null, false, polycentricPlatformComment?.key?.identity);
+            _creatorThumbnail.setHarborAvailable(polycentricPlatformComment != null, false, polycentricPlatformComment?.key?.identity);
             bindParentModeration(parentComment)
         }
 

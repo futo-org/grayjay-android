@@ -3,7 +3,6 @@ package com.futo.platformplayer.fragment.mainactivity.main
 import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Animatable
-import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -23,7 +22,6 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.polycentric.toHarborErrorMessage
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
-import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.models.Thumbnails
 import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComment
 import com.futo.platformplayer.api.media.models.post.IPlatformPost
@@ -42,7 +40,6 @@ import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.toHumanNowDiffString
 import com.futo.platformplayer.toHumanNumber
-import com.futo.platformplayer.views.adapters.ChannelTab
 import com.futo.platformplayer.views.adapters.feedtypes.PreviewPostView
 import com.futo.platformplayer.views.comments.AddCommentView
 import com.futo.platformplayer.views.others.CreatorThumbnail
@@ -51,8 +48,6 @@ import com.futo.platformplayer.views.pills.PillRatingLikesDislikes
 import com.futo.platformplayer.views.platform.PlatformIndicator
 import com.futo.platformplayer.views.segments.CommentsList
 import com.futo.platformplayer.views.subscriptions.SubscribeButton
-import com.futo.polycentric.core.ApiMethods
-import com.futo.polycentric.core.PolycentricProfile
 import com.google.android.flexbox.FlexboxLayout
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.shape.CornerFamily
@@ -106,7 +101,6 @@ class PostDetailFragment : MainFragment {
         private var _isLoading = false;
         private var _post: IPlatformPostDetails? = null;
         private var _postOverview: IPlatformPost? = null;
-        private var _polycentricProfile: PolycentricProfile? = null;
         private var _version = 0;
         private var _isRepliesVisible: Boolean = false;
         private var _repliesAnimator: ViewPropertyAnimator? = null;
@@ -120,10 +114,6 @@ class PostDetailFragment : MainFragment {
         private val _textContent: TextView;
         private val _platformIndicator: PlatformIndicator;
         private val _buttonShare: ImageButton;
-
-        private val _buttonSupport: LinearLayout;
-        private val _buttonStore: LinearLayout;
-        private val _layoutMonetization: LinearLayout;
 
         private val _layoutRating: LinearLayout;
         private val _imageLikeIcon: ImageView;
@@ -163,17 +153,6 @@ class PostDetailFragment : MainFragment {
                 UIDialogs.showGeneralRetryErrorDialog(context, context.getString(R.string.failed_to_load_post), it, ::fetchPost, null, _fragment);
             } else TaskHandler(IPlatformPostDetails::class.java) { _fragment.lifecycleScope };
 
-        private val _taskLoadPolycentricProfile = TaskHandler<PlatformID, PolycentricProfile?>(StateApp.instance.scopeGetter, {
-            if (!StatePolycentric.instance.enabled)
-                return@TaskHandler null
-
-            ApiMethods.getPolycentricProfileByClaim(ApiMethods.SERVER, ApiMethods.FUTO_TRUST_ROOT, it.claimFieldType.toLong(), it.claimType.toLong(), it.value!!)
-        })
-            .success { it -> setPolycentricProfile(it, animate = true) }
-            .exception<Throwable> {
-                Logger.w(TAG, "Failed to load claims.", it);
-            };
-
         constructor(context: Context) : super(context) {
             inflate(context, R.layout.fragview_post_detail, this);
 
@@ -188,10 +167,6 @@ class PostDetailFragment : MainFragment {
             _textContent = findViewById(R.id.text_content);
             _platformIndicator = findViewById(R.id.platform_indicator);
             _buttonShare = findViewById(R.id.button_share);
-
-            _buttonSupport = findViewById(R.id.button_support);
-            _buttonStore = findViewById(R.id.button_store);
-            _layoutMonetization = findViewById(R.id.layout_monetization);
 
             _layoutRating = findViewById(R.id.layout_rating);
             _imageLikeIcon = findViewById(R.id.image_like_icon);
@@ -265,25 +240,6 @@ class PostDetailFragment : MainFragment {
             _buttonPlatform.setOnClickListener {
                 updateCommentType(true)
             }
-            _layoutMonetization.visibility = View.GONE;
-
-            _buttonSupport.setOnClickListener {
-                val author = _post?.author ?: _postOverview?.author;
-                author?.let { _fragment.navigate<ChannelFragment>(it).selectTab(ChannelTab.SUPPORT); };
-            };
-
-            _buttonStore.setOnClickListener {
-                _polycentricProfile?.systemState?.store?.let {
-                    try {
-                        val uri = Uri.parse(it);
-                        val intent = Intent(Intent.ACTION_VIEW);
-                        intent.data = uri;
-                        context.startActivity(intent);
-                    } catch (e: Throwable) {
-                        Logger.e(TAG, "Failed to open URI: '${it}'.", e);
-                    }
-                }
-            };
 
             _addCommentView.onCommentAdded.subscribe {
                 _commentsList.addComment(it);
@@ -416,7 +372,6 @@ class PostDetailFragment : MainFragment {
         fun clear() {
             _commentsList.cancel();
             _taskLoadPost.cancel();
-            _taskLoadPolycentricProfile.cancel();
             _version++;
 
             updateCommentType(null)
@@ -431,7 +386,6 @@ class PostDetailFragment : MainFragment {
             _textMeta.text = "";
             _textContent.text = "";
             setPlatformRating(null);
-            _polycentricProfile = null;
             _rating.visibility = View.GONE;
             updatePolycentricRating();
             setRepliesOverlayVisible(isVisible = false, animate = false);
@@ -458,7 +412,6 @@ class PostDetailFragment : MainFragment {
 
             //Fetch only when not already called in setPostOverview
             if (_postOverview == null) {
-                fetchPolycentricProfile();
                 updatePolycentricRating();
                 _addCommentView.setContext(value.url, null, value.toAttributedContent());
             }
@@ -484,7 +437,6 @@ class PostDetailFragment : MainFragment {
             _addCommentView.setContext(value.url, null, value.toAttributedContent());
 
             updatePolycentricRating();
-            fetchPolycentricProfile();
             fetchPost();
         }
 
@@ -584,12 +536,6 @@ class PostDetailFragment : MainFragment {
             }
         }
 
-        private fun fetchPolycentricProfile() {
-            val author = _post?.author ?: _postOverview?.author ?: return;
-                setPolycentricProfile(null, animate = false);
-                _taskLoadPolycentricProfile.run(author.id);
-        }
-
         private fun setChannelMeta(value: IPlatformPost?) {
             val subscribers = value?.author?.subscribers;
             if(subscribers != null && subscribers > 0) {
@@ -611,20 +557,6 @@ class PostDetailFragment : MainFragment {
             _commentsList.cancel();
             _taskLoadPost.cancel();
             _repliesOverlay.cleanup();
-        }
-
-        private fun setPolycentricProfile(polycentricProfile: PolycentricProfile?, animate: Boolean) {
-            _polycentricProfile = polycentricProfile;
-
-            val pp = _polycentricProfile;
-            if (pp == null) {
-                _layoutMonetization.visibility = View.GONE;
-                _creatorThumbnail.setHarborAvailable(false, animate, null);
-                return;
-            }
-
-            _layoutMonetization.visibility = View.VISIBLE;
-            _creatorThumbnail.setHarborAvailable(true, animate, pp.system.toProto());
         }
 
         private fun fetchPost() {
