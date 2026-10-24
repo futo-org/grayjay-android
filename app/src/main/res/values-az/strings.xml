@@ -429,7 +429,7 @@
     <string name="stability_threshold_time">Sabitlik həddi vaxtı</string>
     <string name="stability_threshold_time_description">Fırlanmanı işə salmaq üçün orientasiyanın eyni olmalı olduğu müddəti təyin edin</string>
     <string name="prefer_webm">Webm video kodeklərinə üstünlük ver</string>
-    <string name="prefer_webm_description">Oynadıcı mp4 kodekləri (h264/AAC) əvəzinə Webm kodeklərinə (vp9/opus) üstünlük verərsə, daha pis uyğunluqla nəticələnə bilər.</string>
+    <string name="prefer_webm_description">Oynadıcı mp4 kodekləri (h264/AAC) əvəzinə Webm kodeklərinə (vp9/opus) üstünlük verərsə, daha pis uyğunluqlə nəticələnə bilər.</string>
     <string name="full_autorotate_lock">Tam avtomatik fırlanma kilidi</string>
     <string name="full_autorotate_lock_description">Fırlanma kilidi işə salındıqda hər hansı fırlanmanın qarşısını alın (hatta landşaft və tərs landşaft arasında keçid edərkən belə).</string>
     <string name="prefer_webm_audio">Webm səs kodeklərinə üstünlük ver</string>
@@ -468,8 +468,8 @@
     <string name="show_home_filters_description">Əsas səhifə filtrlərinin əsas səhifənin üzərində göstərilib-göstərilməyəcəyi</string>
     <string name="show_home_filters_plugin_names">Əsas səhifə filtri plagin adları</string>
     <string name="show_home_filters_plugin_names_description">Əsas səhifə filtrlərinin tam plagin adlarını və ya sadəcə ikonaları göstərəcəyi</string>
-    <string name="log_level">Loq səviyyəsi</string>
-    <string name="logging">Loqlama</string>
+    <string name="log_level">Qeyd səviyyəsi</string>
+    <string name="logging">Qeyd etmə</string>
     <string name="license_status">Lisenziya statusu</string>
     <string name="view_license_status">Lisenziya statusuna bax</string>
     <string name="sync_grayjay">Grayjay-i sinxronlaşdır</string>
@@ -558,10 +558,10 @@
     <string name="show_issues">Problemləri göstər</string>
     <string name="specify_how_many_threads_are_used_to_fetch_channels">Kanalları gətirmək üçün neçə axından istifadə olunduğunu təyin edin</string>
     <string name="submit_feedback">Rəy bildir</string>
-    <string name="submit_logs">Loqları göndər</string>
+    <string name="submit_logs">Qeydləri göndər</string>
     <string name="clear_channel_cache">Kanal keşini təmizlə</string>
     <string name="clear_channel_cache_description">Abunəlik kanalı keşindən bütün məzmunu silir</string>
-    <string name="submit_logs_to_help_us_narrow_down_issues">Problemləri daraltmağımıza kömək etmək üçün loqları göndərin</string>
+    <string name="submit_logs_to_help_us_narrow_down_issues">Problemləri daraltmağımıza kömək etmək üçün qeydləri göndərin</string>
     <string name="subscription_concurrency">Abunəlik eyniliyi</string>
     <string name="track_playtime_locally">Oynatma vaxtını yerli olaraq izlə</string>
     <string name="track_playtime_locally_description">Abunəliklərin sıralanması və yerli yaradıcı tövsiyələri üçün istifadə olunan abunəliklərin oynatma vaxtını yerli olaraq izləyin.</string>
@@ -574,7 +574,7 @@
     <string name="version_type">Versiya növü</string>
     <string name="dev_info_channel_cache_size">Kanal keş ölçüsü (Başlanğıc)</string>
     <string name="when_watching_a_video_in_preview_mode_resume_at_the_position_when_opening_the_video_code">Önizləmə rejimində videoya baxarkən video kodunu açarkən mövqedən davam edin</string>
-    <string name="please_enable_logging_to_submit_logs">Loqları göndərmək üçün zəhmət olmasa loqlamanı aktivləşdirin</string>
+    <string name="please_enable_logging_to_submit_logs">Qeydləri göndərmək üçün zəhmət olmasa qeyd etməni aktivləşdirin</string>
     <string name="embedded_plugins_reinstalled_a_reboot_is_recommended">Yerləşdirilmiş plaginlər yenidən quraşdırıldı, yenidən başlatma tövsiyə olunur</string>
     <string name="announcements_reset">Elanlar sıfırlandı.</string>
     <string name="failed_to_show_store">Mağaza göstərilmədi.</string>
@@ -657,8 +657,8 @@
     <string name="not_implemented_yet">Hələ tətbiq olunmayıb..</string>
     <string name="unknown_context">Naməlum kontekst</string>
     <string name="something_went_wrong_missing_stack_trace">Nəsə səhv oldu… stek izi çatışmır?</string>
-    <string name="logs_already_submitted">Loqlar artıq göndərilib.</string>
-    <string name="no_logs_found">Heç bir loq tapılmadı.</string>
+    <string name="logs_already_submitted">Qeydlər artıq göndərilib.</string>
+    <string name="no_logs_found">Heç bir qeyd tapılmadı.</string>
     <string name="failed_automated_share_share_manually">Avtomatlaşdırılmış paylaşım uğursuz oldu, əl ilə paylaşım?</string>
     <string name="shared_id">Paylaşıldı {id}</string>
     <string name="unhandled_exception_in_vs">VS-də idarə olunmayan istisna</string>
