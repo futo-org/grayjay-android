@@ -53,7 +53,6 @@ import com.futo.platformplayer.services.DownloadService
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.v2.ManagedStore
 import com.futo.platformplayer.views.ToastView
-import com.futo.polycentric.core.ApiMethods
 import com.futo.platformplayer.polycentric.ModerationsManager
 import kotlinx.coroutines.*
 import java.io.File
@@ -521,11 +520,6 @@ class StateApp {
             } catch (t: Throwable) {
                 Logger.e(TAG, "Failed to initialize Libcurl", t);
             }
-        }
-
-        if(Settings.instance.other.polycentricLocalCache) {
-            Logger.i(TAG, "Initialize Polycentric Disk Cache")
-            _cacheDirectory?.let { ApiMethods.initCache(it) };
         }
 
         if(Settings.instance.plugins.shouldClearWebviewCookies()) {

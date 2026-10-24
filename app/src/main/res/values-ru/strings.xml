@@ -183,18 +183,11 @@
     <string name="ignore">Игнорировать</string>
     <string name="view_changelog">Просмотр истории изменений</string>
     <string name="i_already_paid">Я уже оплатил</string>
-    <string name="memberships">Членства</string>
-    <string name="a_monthly_recurring_payment_with_often">Ежемесячный повторяющийся платеж с частыми</string>
-    <string name="additional_perks">дополнительными привилегиями.</string>
-    <string name="a_one_time_payment_to_support_the_creator">Одноразовый платеж для поддержки создателя</string>
-    <string name="donation">Пожертвование</string>
     <string name="downloading">Загрузка</string>
     <string name="videos">Видео</string>
     <string name="clear_history">Очистить историю</string>
     <string name="nothing_to_import">Нечего импортировать</string>
     <string name="enabling_lots_of_sources_can_reduce_the_loading_speed_of_your_application">Включение большого количества источников может уменьшить скорость загрузки вашего приложения.</string>
-    <string name="support">Поддержка</string>
-    <string name="store">Магазин</string>
     <string name="live_chat">Онлайн чат</string>
     <string name="remove">Удалить</string>
     <string name="space_videos">Видео</string>
@@ -241,7 +234,6 @@
     <string name="view_a_more_in_depth_video">Посмотреть более подробное видео</string>
     <string name="technical_documentation">Техническая документация</string>
     <string name="view_the_technical_documentation">Просмотреть техническую документацию</string>
-    <string name="visit_my_store">Посетить мой магазин</string>
     <string name="make_a_backup_of_your_identity">Создать резервную копию вашей учетной записи</string>
     <string name="sign_out_of_this_identity">Выйти из этой учетной записи</string>
     <string name="delete_this_profile">Удалить этот профиль</string>

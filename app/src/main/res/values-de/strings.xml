@@ -176,18 +176,11 @@
     <string name="ignore">Ignorieren</string>
     <string name="view_changelog">Änderungsprotokoll ansehen</string>
     <string name="i_already_paid">Ich habe bereits bezahlt</string>
-    <string name="memberships">Mitgliedschaften</string>
-    <string name="a_monthly_recurring_payment_with_often">Eine monatlich wiederkehrende Zahlung mit häufig</string>
-    <string name="additional_perks">zusätzlichen Vorteilen.</string>
-    <string name="a_one_time_payment_to_support_the_creator">Eine einmalige Zahlung zur Unterstützung des Erstellers</string>
-    <string name="donation">Spende</string>
     <string name="downloading">Herunterladen</string>
     <string name="videos">Videos</string>
     <string name="clear_history">Verlauf löschen</string>
     <string name="nothing_to_import">Nichts zu importieren</string>
     <string name="enabling_lots_of_sources_can_reduce_the_loading_speed_of_your_application">Das Aktivieren vieler Quellen kann die Ladezeit Ihrer Anwendung verlangsamen.</string>
-    <string name="support">Unterstützung</string>
-    <string name="store">Shop</string>
     <string name="live_chat">Live-Chat</string>
     <string name="remove">Entfernen</string>
     <string name="space_videos">Videos</string>
@@ -233,7 +226,6 @@
     <string name="view_a_more_in_depth_video">Ein ausführlicheres Video ansehen</string>
     <string name="technical_documentation">Technische Dokumentation</string>
     <string name="view_the_technical_documentation">Die technische Dokumentation ansehen</string>
-    <string name="visit_my_store">Meinen Shop besuchen</string>
     <string name="sign_out_of_this_identity">Von dieser Identität abmelden</string>
     <string name="delete_this_profile">Dieses Profil löschen</string>
     <string name="install_by_url">Durch URL installieren</string>
@@ -607,7 +599,6 @@
     <string name="failed_to_retrieve_playlists">Abrufen von Playlisten fehlgeschlagen.</string>
     <string name="subscribed_to">"Abonniert bei "</string>
     <string name="select_your_pins_in_order">Wählen Sie Ihre Pins in Reihenfolge aus</string>
-<string name="a_store_by_the_creator">Ein Shop vom Ersteller</string>
     <string name="add_creator">Ersteller hinzufügen</string>
     <string name="add_to_history">Zum Verlauf hinzufügen</string>
     <string name="add_to_new_playlist">Zu neuer Playlist hinzufügen</string>
@@ -722,7 +713,6 @@
     <string name="connect_last">Letzte Verbindung versuchen</string>
     <string name="connect_last_description">Gerät erlauben, sich automatisch mit dem zuletzt bekannten zu verbinden</string>
     <string name="create_new_subgroup">Neue Gruppe erstellen</string>
-    <string name="current_promotions_by_this_creator">Aktuelle Werbeaktionen dieses Erstellers</string>
     <string name="default_comment_section">Standard-Kommentarbereich</string>
     <string name="default_recommendations">Empfehlungen als Standard</string>
     <string name="default_recommendations_description">Empfehlungen standardmäßig anstelle von Kommentaren anzeigen.</string>
@@ -764,7 +754,6 @@
     <string name="login_to_view_your_comments">Melden Sie sich an, um Ihre Kommentare anzuzeigen</string>
     <string name="may_require_restart">Neustart möglicherweise erforderlich</string>
     <string name="membership">Mitgliedschaft</string>
-    <string name="merchandise">Fanartikel</string>
     <string name="networking">Netzwerk</string>
     <string name="new_playlist">Neue Playlist</string>
     <string name="no_sources_installed">Sie haben keine Quellen installiert. Bitte fügen Sie Quellen hinzu, um die App wie vorgesehen zu nutzen.</string>
@@ -785,8 +774,6 @@
     <string name="please_use_at_least_1_character">Bitte verwenden Sie mindestens 1 Zeichen</string>
     <string name="plus_tax">" + Steuer"</string>
     <string name="polycentric_is_disabled">Harbor ist deaktiviert</string>
-    <string name="polycentric_local_cache">Lokales Caching für Harbor aktivieren</string>
-    <string name="polycentric_local_cache_description">Speichert Harbor-Ergebnisse auf dem Gerät zwischen, um Ladezeiten zu verkürzen. Änderung erfordert App-Neustart</string>
     <string name="position">Position</string>
     <string name="prefer_webm">Webm-Video-Codecs bevorzugen</string>
     <string name="prefer_webm_audio">Webm-Audio-Codecs bevorzugen</string>
@@ -801,7 +788,6 @@
     <string name="privacy_mode">Privatsphärenmodus</string>
     <string name="progress_bar">Fortschrittsbalken</string>
     <string name="progress_bar_description">Ob ein historischer Fortschrittsbalken angezeigt werden soll</string>
-    <string name="promotions">Werbeaktionen</string>
     <string name="ratelimit">Ratenbegrenzung</string>
     <string name="ratelimit_description">Einstellungen zur Ratenbegrenzung des Verhaltens dieses Plugins</string>
     <string name="ratelimit_sub_setting">Abonnements ratenbegrenzen</string>

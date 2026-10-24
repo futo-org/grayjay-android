@@ -18,14 +18,11 @@ import android.widget.TextView
 import androidx.core.net.toUri
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
-import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.models.PlatformAuthorMembershipLink
 import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComment
 import com.futo.platformplayer.api.media.models.ratings.RatingLikeDislikes
 import com.futo.platformplayer.api.media.models.ratings.RatingLikes
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
-import com.futo.platformplayer.constructs.TaskHandler
-import com.futo.platformplayer.dp
 import com.futo.platformplayer.fixHtmlLinks
 import com.futo.platformplayer.fragment.mainactivity.main.BrowserFragment
 import com.futo.platformplayer.fragment.mainactivity.main.ChannelFragment
@@ -33,8 +30,6 @@ import com.futo.platformplayer.fragment.mainactivity.main.MainFragment
 import com.futo.platformplayer.getNowDiffSeconds
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.polycentric.PolycentricAdapter
-import com.futo.platformplayer.selectBestImage
-import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateMeta
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePolycentric
@@ -45,13 +40,8 @@ import com.futo.platformplayer.views.comments.AddCommentView
 import com.futo.platformplayer.views.others.CreatorThumbnail
 import com.futo.platformplayer.views.overlays.DescriptionOverlay
 import com.futo.platformplayer.views.overlays.RepliesOverlay
-import com.futo.platformplayer.views.overlays.SupportOverlay
 import com.futo.platformplayer.views.platform.PlatformIndicator
 import com.futo.platformplayer.views.segments.CommentsList
-import com.futo.polycentric.core.ApiMethods
-import com.futo.polycentric.core.Models
-import com.futo.polycentric.core.PolycentricProfile
-import com.futo.polycentric.core.toURLInfoSystemLinkUrl
 
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -66,7 +56,6 @@ class CommentsModalBottomSheet : BottomSheetDialogFragment() {
     private lateinit var containerContentMain: LinearLayout
     private lateinit var containerContentReplies: RepliesOverlay
     private lateinit var containerContentDescription: DescriptionOverlay
-    private lateinit var containerContentSupport: SupportOverlay
 
     private lateinit var title: TextView
     private lateinit var subTitle: TextView
@@ -89,7 +78,6 @@ class CommentsModalBottomSheet : BottomSheetDialogFragment() {
     private lateinit var commentsList: CommentsList
     private lateinit var addCommentView: AddCommentView
 
-    private var polycentricProfile: PolycentricProfile? = null
 
     private lateinit var buttonPolycentric: Button
     private lateinit var buttonPlatform: Button
@@ -101,13 +89,6 @@ class CommentsModalBottomSheet : BottomSheetDialogFragment() {
     lateinit var video: IPlatformVideoDetails
 
     private lateinit var behavior: BottomSheetBehavior<FrameLayout>
-
-    private val _taskLoadPolycentricProfile =
-        TaskHandler<PlatformID, PolycentricProfile?>(StateApp.instance.scopeGetter, { ApiMethods.getPolycentricProfileByClaim(
-            ApiMethods.SERVER, ApiMethods.FUTO_TRUST_ROOT, it.claimFieldType.toLong(), it.claimType.toLong(), it.value!!) }).success { setPolycentricProfile(it, animate = true) }
-            .exception<Throwable> {
-                Logger.w(TAG, "Failed to load claims.", it)
-            }
 
     override fun onCreateDialog(
         savedInstanceState: Bundle?,
@@ -125,8 +106,6 @@ class CommentsModalBottomSheet : BottomSheetDialogFragment() {
             bottomSheetDialog.findViewById(R.id.videodetail_container_replies)!!
         containerContentDescription =
             bottomSheetDialog.findViewById(R.id.videodetail_container_description)!!
-        containerContentSupport =
-            bottomSheetDialog.findViewById(R.id.videodetail_container_support)!!
 
         title = bottomSheetDialog.findViewById(R.id.videodetail_title)!!
         subTitle = bottomSheetDialog.findViewById(R.id.videodetail_meta)!!
@@ -261,9 +240,6 @@ class CommentsModalBottomSheet : BottomSheetDialogFragment() {
         subTitle.text = subTitleSegments.joinToString(" • ")
         creatorThumbnail.setThumbnail(video.author.thumbnail, false)
 
-        setPolycentricProfile(null, animate = false)
-        _taskLoadPolycentricProfile.run(video.author.id)
-
         when (video.rating) {
             is RatingLikeDislikes -> {
                 val r = video.rating as RatingLikeDislikes
@@ -295,23 +271,6 @@ class CommentsModalBottomSheet : BottomSheetDialogFragment() {
             }
         }
 
-        monetization.onSupportTap.subscribe {
-            containerContentSupport.setPolycentricProfile(polycentricProfile)
-            animateOpenOverlayView(containerContentSupport)
-        }
-
-        monetization.onStoreTap.subscribe {
-            polycentricProfile?.systemState?.store?.let {
-                try {
-                    val uri = it.toUri()
-                    val intent = Intent(Intent.ACTION_VIEW)
-                    intent.data = uri
-                    requireContext().startActivity(intent)
-                } catch (e: Throwable) {
-                    Logger.e(TAG, "Failed to open URI: '${it}'.", e)
-                }
-            }
-        }
         monetization.onUrlTap.subscribe {
             mainFragment!!.navigate<BrowserFragment>(it)
         }
@@ -330,28 +289,6 @@ class CommentsModalBottomSheet : BottomSheetDialogFragment() {
     override fun onDismiss(dialog: DialogInterface) {
         super.onDismiss(dialog)
         animateCloseOverlayView()
-    }
-
-    private fun setPolycentricProfile(profile: PolycentricProfile?, animate: Boolean) {
-        polycentricProfile = profile
-
-        val dp35 = 35.dp(requireContext().resources)
-        val avatar = profile?.systemState?.avatar?.selectBestImage(dp35 * dp35)
-            ?.let { it.toURLInfoSystemLinkUrl(profile.system.toProto(), it.process, profile.systemState.servers.toList()) }
-
-        if (avatar != null) {
-            creatorThumbnail.setThumbnail(avatar, animate)
-        } else {
-            creatorThumbnail.setThumbnail(video.author.thumbnail, animate)
-            creatorThumbnail.setHarborAvailable(profile != null, animate, profile?.system?.toProto())
-        }
-
-        val username = profile?.systemState?.username
-        if (username != null) {
-            channelName.text = username
-        }
-
-        monetization.setPolycentricProfile(profile)
     }
 
     private fun setTabIndex(index: Int?, forceReload: Boolean = false) {

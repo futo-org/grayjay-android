@@ -12,14 +12,12 @@ import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.dp
 import com.futo.platformplayer.logging.Logger
-import com.futo.platformplayer.selectBestImage
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.toHumanNumber
 import com.futo.platformplayer.views.adapters.AnyAdapter
 import com.futo.platformplayer.views.others.CreatorThumbnail
 import com.futo.platformplayer.views.platform.PlatformIndicator
 import com.futo.platformplayer.views.subscriptions.SubscribeButton
-import com.futo.polycentric.core.toURLInfoSystemLinkUrl
 
 class CreatorViewHolder(private val _viewGroup: ViewGroup, private val _tiny: Boolean) : AnyAdapter.AnyViewHolder<PlatformAuthorLink>(
     LayoutInflater.from(_viewGroup.context).inflate(R.layout.list_creator, _viewGroup, false)) {

@@ -56,7 +56,6 @@ import com.futo.platformplayer.UISlideOverlays
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.IPluginSourced
 import com.futo.platformplayer.api.media.LiveChatManager
-import com.futo.platformplayer.api.media.PlatformID
 import com.futo.platformplayer.api.media.exceptions.ContentNotAvailableYetException
 import com.futo.platformplayer.api.media.exceptions.NoPlatformClientException
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
@@ -119,7 +118,6 @@ import com.futo.platformplayer.helpers.VideoHelper
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Subscription
 import com.futo.platformplayer.receivers.MediaControlReceiver
-import com.futo.platformplayer.selectBestImage
 import com.futo.platformplayer.states.AnnouncementType
 import com.futo.platformplayer.states.StateAnnouncement
 import com.futo.platformplayer.states.StateApp
@@ -160,7 +158,6 @@ import com.futo.platformplayer.views.overlays.DescriptionOverlay
 import com.futo.platformplayer.views.overlays.LiveChatOverlay
 import com.futo.platformplayer.views.overlays.QueueEditorOverlay
 import com.futo.platformplayer.views.overlays.RepliesOverlay
-import com.futo.platformplayer.views.overlays.SupportOverlay
 import com.futo.platformplayer.views.overlays.WebviewOverlay
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuButtonList
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuGroup
@@ -177,9 +174,6 @@ import com.futo.platformplayer.views.video.FutoVideoPlayer
 import com.futo.platformplayer.views.video.FutoVideoPlayerBase
 import com.futo.platformplayer.views.videometa.UpNextView
 import com.futo.platformplayer.withMaxSizePx
-import com.futo.polycentric.core.ApiMethods
-import com.futo.polycentric.core.PolycentricProfile
-import com.futo.polycentric.core.toURLInfoSystemLinkUrl
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -293,7 +287,6 @@ class VideoDetailView : ConstraintLayout {
     private val _container_content_description: DescriptionOverlay;
     private val _container_content_liveChat: LiveChatOverlay;
     private val _container_content_browser: WebviewOverlay;
-    private val _container_content_support: SupportOverlay;
     private val _container_content_chapters: ChaptersOverlay;
 
     private var _container_content_current: View;
@@ -328,7 +321,6 @@ class VideoDetailView : ConstraintLayout {
         private set;
     private var _historicalPosition: Long = 0;
     private var _commentsCount = 0;
-    private var _polycentricProfile: PolycentricProfile? = null;
     private var _slideUpOverlay: SlideUpMenuOverlay? = null;
     private var _autoplayVideo: IPlatformVideo? = null
 
@@ -420,7 +412,6 @@ class VideoDetailView : ConstraintLayout {
         _container_content_replies = findViewById(R.id.videodetail_container_replies);
         _container_content_description = findViewById(R.id.videodetail_container_description);
         _container_content_liveChat = findViewById(R.id.videodetail_container_livechat);
-        _container_content_support = findViewById(R.id.videodetail_container_support);
         _container_content_browser = findViewById(R.id.videodetail_container_webview)
         _container_content_chapters = findViewById(R.id.videodetail_container_chapters);
 
@@ -500,23 +491,6 @@ class VideoDetailView : ConstraintLayout {
             }
         }
 
-        _monetization.onSupportTap.subscribe {
-            _container_content_support.setPolycentricProfile(_polycentricProfile);
-            switchContentView(_container_content_support);
-        };
-
-        _monetization.onStoreTap.subscribe {
-            _polycentricProfile?.systemState?.store?.let {
-                try {
-                    val uri = Uri.parse(it);
-                    val intent = Intent(Intent.ACTION_VIEW);
-                    intent.data = uri;
-                    context.startActivity(intent);
-                } catch (e: Throwable) {
-                    Logger.e(TAG, "Failed to open URI: '${it}'.", e);
-                }
-            }
-        };
         _monetization.onUrlTap.subscribe {
             fragment.navigate<BrowserFragment>(it);
             onMinimize.emit();
@@ -842,7 +816,6 @@ class VideoDetailView : ConstraintLayout {
             UISlideOverlays.showVideoOptionsOverlay(it, _overlayContainer);
         }
         _container_content_replies.onClose.subscribe { switchContentView(_container_content_main); };
-        _container_content_support.onClose.subscribe { switchContentView(_container_content_main); };
         _container_content_browser.onClose.subscribe { switchContentView(_container_content_main); };
         _container_content_chapters.onClose.subscribe { switchContentView(_container_content_main); };
 
@@ -1317,7 +1290,6 @@ class VideoDetailView : ConstraintLayout {
         _container_content_replies.cleanup();
         _container_content_queue.cleanup();
         _container_content_description.cleanup();
-        _container_content_support.cleanup();
         StatePlayer.instance.autoplayChanged.remove(this)
         StateCasting.instance.onActiveDevicePlayChanged.remove(this);
         StateCasting.instance.onActiveDeviceTimeChanged.remove(this);
@@ -1487,8 +1459,6 @@ class VideoDetailView : ConstraintLayout {
         _creatorThumbnail.setThumbnail(video.author.thumbnail, false);
         _channelName.text = video.author.name;
 
-        setPolycentricProfile(null, animate = false);
-        _taskLoadPolycentricProfile.run(video.author.id);
 
         _player.clear();
 
@@ -1721,8 +1691,6 @@ class VideoDetailView : ConstraintLayout {
         _creatorThumbnail.setThumbnail(video.author.thumbnail, false,
             video is LocalVideoDetails
         );
-        setPolycentricProfile(null, animate = false);
-        _taskLoadPolycentricProfile.run(video.author.id);
 
         _platform.setPlatformFromClientID(video.id.pluginId);
         val subTitleSegments: ArrayList<String> = ArrayList();
@@ -3527,28 +3495,6 @@ class VideoDetailView : ConstraintLayout {
         }
     }
 
-    private fun setPolycentricProfile(profile: PolycentricProfile?, animate: Boolean) {
-        _polycentricProfile = profile
-
-        val dp_35 = 35.dp(context.resources)
-        val avatar = profile?.systemState?.avatar?.selectBestImage(dp_35 * dp_35)
-            ?.let { it.toURLInfoSystemLinkUrl(profile.system.toProto(), it.process, profile.systemState.servers.toList()) }
-
-        if (avatar != null) {
-            _creatorThumbnail.setThumbnail(avatar, animate);
-        } else {
-            _creatorThumbnail.setThumbnail(video?.author?.thumbnail, animate);
-            _creatorThumbnail.setHarborAvailable(profile != null, animate, profile?.system?.toProto());
-        }
-
-        val username = profile?.systemState?.username
-        if (username != null) {
-            _channelName.text = username
-        }
-
-        _monetization.setPolycentricProfile(profile);
-    }
-
     fun setProgressBarOverlayed(isOverlayed: Boolean?) {
         Logger.v(TAG, "setProgressBarOverlayed(isOverlayed: ${isOverlayed ?: "null"})");
         isOverlayed?.let{ _cast.setProgressBarOverlayed(it) };
@@ -3744,17 +3690,6 @@ class VideoDetailView : ConstraintLayout {
         .exception<Throwable> {
             setRecommendations(null, it.message)
             Logger.w(TAG, "Failed to load recommendations.", it);
-        };
-
-    private val _taskLoadPolycentricProfile = TaskHandler<PlatformID, PolycentricProfile?>(StateApp.instance.scopeGetter, {
-        if (!StatePolycentric.instance.enabled)
-            return@TaskHandler null
-
-        ApiMethods.getPolycentricProfileByClaim(ApiMethods.SERVER, ApiMethods.FUTO_TRUST_ROOT, it.claimFieldType.toLong(), it.claimType.toLong(), it.value!!)
-    })
-        .success { it -> setPolycentricProfile(it, animate = true) }
-        .exception<Throwable> {
-            Logger.w(TAG, "Failed to load claims.", it);
         };
 
     private fun handleErrorOrCall(action: () -> Unit) {
