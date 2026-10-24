@@ -984,7 +984,7 @@
     <string name="pairing_issuer_success">Cütləşdirmə uğurlu oldu.</string>
     <string name="pairing_profile_cta">Harbor-u quraşdırdıqdan sonra Cihazı cütləşdir düyməsi ilə orada bu profilə daxil ola bilərsiniz.</string>
     <string name="pairing_issuer_success_details">Digər cihazınız tezliklə təsdiqi görməlidir.</string>
-    <string name="play_pause">Oynat Fasilə</string>
+    <string name="play_pause">Oynatma və Fasilə</string>
     <string name="position">Mövqe</string>
     <string name="tutorials">Təlimlər</string>
     <string name="do_you_want_to_see_the_tutorials_you_can_find_them_at_any_time_through_the_more_button">Öyrətimləri görmək istəyirsiniz? Onları istənilən vaxt daha çox düyməsi vasitəsilə tapa bilərsiniz.</string>
