@@ -954,7 +954,7 @@
     <string name="pairing_continue">Davam et</string>
     <string name="pairing_invalid_link">Etibarsız cütləşdirmə keçidi.</string>
     <string name="pairing_loading_session">Cütləşdirmə seansı yüklənir…</string>
-    <string name="pairing_joining_session">Cütləşdirmə seansına qoşulunur…</string>
+    <string name="pairing_joining_session">Cütləşdirmə seansına qoşulur…</string>
     <string name="pairing_creating_session">Cütləşdirmə seansı yaradılır…</string>
     <string name="pairing_is_this_you">Bu sizsiniz?</string>
     <string name="pairing_pair">Cütləşdir</string>
@@ -965,6 +965,10 @@
     <string name="pairing_claimer_success">Uğurla cütləşdirildi!</string>
     <string name="pairing_failed">Cütləşdirmə uğursuz oldu.</string>
     <string name="pairing_expired">Cütləşdirmə keçidinin vaxtı bitdi.</string>
+    <string name="pairing_expired_waiting">Bu cihaz təsdiqlənmədən öncə cütləşdirmə keçidinin vaxtı bitdi.</string>
+    <string name="pairing_expired_waiting_details">Əgər bu cihazı digər cihazınızda təsdiqləmisinizsə, yenidən cütləşdirməyə cəhd edin.</string>
+    <string name="pairing_poll_failed_retrying">Təsdiq yoxlanıla bilmədi. Yenidən cəhd edilir…</string>
+    <string name="pairing_poll_claimers_failed_retrying">Cihazlar yoxlanıla bilmədi. Yenidən cəhd edilir…</string>
     <string name="pairing_identity_exists">Bu kimlik artıq bu cihazdadır.</string>
     <string name="pairing_go_back">Geri qayıt</string>
     <string name="pairing_issuer_instructions">Digər cihazınızda \"Mövcud cihazla cütləşdir\" seçimini edin. Oradan burada göstərilən QR kodu skan edə və ya cütləşdirmə keçidini kopyaladıqdan sonra yapışdıra bilərsiniz.</string>
