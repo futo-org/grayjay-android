@@ -429,7 +429,7 @@
     <string name="stability_threshold_time">Sabitlik həddi vaxtı</string>
     <string name="stability_threshold_time_description">Fırlanmanı işə salmaq üçün orientasiyanın eyni olmalı olduğu müddəti təyin edin</string>
     <string name="prefer_webm">Webm video kodeklərinə üstünlük ver</string>
-    <string name="prefer_webm_description">Oynadıcı mp4 kodekləri (h264/AAC) əvəzinə Webm kodeklərinə (vp9/opus) üstünlük verərsə, daha pis uyğunluqlə nəticələnə bilər.</string>
+    <string name="prefer_webm_description">Oynadıcı mp4 kodekləri (h264/AAC) əvəzinə Webm kodeklərinə (vp9/opus) üstünlük verərsə, daha pis uyğunluqla nəticələnə bilər.</string>
     <string name="full_autorotate_lock">Tam avtomatik fırlanma kilidi</string>
     <string name="full_autorotate_lock_description">Fırlanma kilidi işə salındıqda hər hansı fırlanmanın qarşısını alın (hatta landşaft və tərs landşaft arasında keçid edərkən belə).</string>
     <string name="prefer_webm_audio">Webm səs kodeklərinə üstünlük ver</string>
@@ -439,7 +439,7 @@
     <string name="autoplay">Növbəti videonu ilkin olaraq avtomatik oynat</string>
     <string name="autoplay_description">Hər dəfə video izlədiyiniz zaman növbəti videonu avtomatik oynat ilkin olaraq aktivləşdiriləcək</string>
     <string name="allow_full_screen_portrait">Üfüqi videoları izləyərkən tam ekran portretə icazə ver</string>
-    <string name="delete_watchlist_on_finish">İzləndikdən sonra WatchLater-dən sil</string>
+    <string name="delete_watchlist_on_finish">İzləndikdən sonra Daha sonra izlə siyahısından sil</string>
     <string name="delete_watchlist_on_finish_description">Əsasən izlədiyiniz videodan çıxdıqdan sonra o, daha sonra izlə siyahısından silinəcək.</string>
     <string name="shorts_pregenerate">Shorts mənbələrini əvvəlcədən yarat</string>
     <string name="shorts_pregenerate_description">Qısa mənbələri (mümkün olduqda) bir video irəlidə yaradır</string>
