@@ -677,6 +677,8 @@
     <string name="failed_to_generate_qr_code">Failed to generate QR code</string>
     <string name="share_text">Share Text</string>
     <string name="copied_text">Copied Text</string>
+    <string name="copy_details">Copy details</string>
+    <string name="details_copied">Details copied</string>
     <string name="must_be_at_least_3_characters_long">Must be at least 3 characters long.</string>
     <string name="failed_to_create_profile">Failed to create profile.</string>
     <string name="failed_to_delete_profile">Failed to delete profile.</string>

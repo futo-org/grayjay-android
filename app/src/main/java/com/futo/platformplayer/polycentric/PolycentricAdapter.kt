@@ -1,6 +1,7 @@
 package com.futo.platformplayer.polycentric
 
 import com.futo.platformplayer.BuildConfig
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.states.StateApp
 import org.futo.polycentric.core.AndroidFileStoreDriver
 import org.futo.polycentric.core.Collections
@@ -152,4 +153,13 @@ class PolycentricAdapter(internal val client: PolycentricClient) {
 fun Throwable.toHarborErrorMessage(): String = when (this) {
     is IllegalStateException, is IllegalArgumentException -> message ?: "Harbor is unavailable"
     else -> "Could not reach Harbor" + (message?.let { " ($it)" } ?: "")
+}
+
+/**
+ * Shows "[prefix] [toHarborErrorMessage]" as a toast, with a button that copies the full error
+ * (including causes and stack trace) for bug reports.
+ */
+fun showHarborErrorToast(prefix: String, e: Throwable) {
+    val details = "Grayjay ${BuildConfig.VERSION_NAME}\n$prefix\n\n${e.stackTraceToString()}"
+    UIDialogs.appToastWithDetails(prefix + " " + e.toHarborErrorMessage(), details)
 }

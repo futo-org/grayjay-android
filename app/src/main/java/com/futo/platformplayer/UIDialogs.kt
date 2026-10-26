@@ -2,6 +2,8 @@ package com.futo.platformplayer
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
@@ -510,8 +512,25 @@ class UIDialogs {
         }
         fun appToastError(text: String, long: Boolean) {
             StateApp.withContext {
-                appToast(ToastView.Toast(text, long, it.getColor(R.color.pastel_red)));
+                appToast(ToastView.Toast(text, long, it.getColor(R.color.pastel_red), isError = true));
             };
+        }
+        /**
+         * Shows an in-app toast with a button that copies [details] to the clipboard, falling back
+         * to a system toast (without the button) outside of [MainActivity].
+         */
+        fun appToastWithDetails(text: String, details: String) {
+            StateApp.withContext {
+                if(it is MainActivity) {
+                    it.showAppToast(ToastView.Toast(text, true, isError = true, action = ToastView.Action(it.getString(R.string.copy_details)) {
+                        val clipboard = it.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        clipboard.setPrimaryClip(ClipData.newPlainText(it.getString(R.string.copy_details), details))
+                        toast(it, it.getString(R.string.details_copied))
+                    }));
+                }
+                else
+                    toast(text, true);
+            }
         }
         fun appToast(toast: ToastView.Toast) {
             StateApp.withContext {

@@ -15,11 +15,13 @@ class ToastView : LinearLayout {
     private val root: LinearLayout;
     private val title: TextView;
     private val text: TextView;
+    private val action: TextView;
     init {
         inflate(context, R.layout.toast, this);
         root = findViewById(R.id.root);
         title = findViewById(R.id.title);
         text = findViewById(R.id.text);
+        action = findViewById(R.id.action);
     }
 
     constructor(context: Context, attrs: AttributeSet? = null) : super(context, attrs) {
@@ -74,6 +76,16 @@ class ToastView : LinearLayout {
             text.setTextColor(toast.color);
         else
             text.setTextColor(Color.WHITE);
+
+        if(toast.action == null) {
+            action.isVisible = false;
+            action.setOnClickListener(null);
+        }
+        else {
+            action.text = toast.action.label;
+            action.setOnClickListener { toast.action.onClick() };
+            action.isVisible = true;
+        }
     }
     fun setToastAnimated(toast: Toast) {
         hide(true) {
@@ -86,6 +98,13 @@ class ToastView : LinearLayout {
         val msg: String,
         val long: Boolean,
         val color: Int? = null,
-        val title: String? = null
+        val title: String? = null,
+        val action: Action? = null,
+        val isError: Boolean = false
+    );
+
+    class Action(
+        val label: String,
+        val onClick: () -> Unit
     );
 }

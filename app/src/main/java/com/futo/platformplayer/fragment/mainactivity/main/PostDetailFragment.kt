@@ -19,7 +19,7 @@ import androidx.core.view.children
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
-import com.futo.platformplayer.polycentric.toHarborErrorMessage
+import com.futo.platformplayer.polycentric.showHarborErrorToast
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.models.Thumbnails
@@ -317,7 +317,7 @@ class PostDetailFragment : MainFragment {
                                     )
                                 } catch (e: Throwable) {
                                     Logger.w(TAG, "Failed to set video rating.", e)
-                                    UIDialogs.toast(context.getString(R.string.failed_to_set_rating) + " " + e.toHarborErrorMessage())
+                                    showHarborErrorToast(context.getString(R.string.failed_to_set_rating), e)
                                 }
                             }
                         };

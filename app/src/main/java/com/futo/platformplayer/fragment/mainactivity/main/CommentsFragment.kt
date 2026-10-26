@@ -17,7 +17,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.R
-import com.futo.platformplayer.polycentric.toHarborErrorMessage
+import com.futo.platformplayer.polycentric.showHarborErrorToast
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.PolycentricHomeActivity
 import com.futo.platformplayer.api.media.models.comments.IPlatformComment
@@ -196,7 +196,7 @@ class CommentsFragment : MainFragment() {
                             StatePolycentric.instance.deleteComment(comment)
                         } catch (e: Throwable) {
                             Logger.e(TAG, "Failed to delete comment.", e)
-                            UIDialogs.toast(context.getString(R.string.failed_to_delete_comment) + " " + e.toHarborErrorMessage())
+                            showHarborErrorToast(context.getString(R.string.failed_to_delete_comment), e)
                             return@launch
                         }
                     }
