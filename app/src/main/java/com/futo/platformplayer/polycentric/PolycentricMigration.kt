@@ -15,6 +15,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import okio.ByteString.Companion.toByteString
+import org.futo.polycentric.core.Collections
 import org.futo.polycentric.core.KeyTypes
 import org.futo.polycentric.core.StoredKeyPair
 import polycentric.v2.KeyType
@@ -33,6 +34,13 @@ import javax.crypto.spec.GCMParameterSpec
 private const val TAG = "PolycentricMigration"
 
 class MigratorLookupException(message: String, cause: Throwable? = null) : Exception(message, cause)
+
+/**
+ * The legacy key has already claimed its migrated identity on another device. Harbor expects a key
+ * per device, so this device should be paired instead.
+ */
+class LegacyKeyAlreadyClaimedException(val identity: String) :
+    Exception("Legacy key has already claimed identity $identity")
 
 @Serializable
 private class MigratorLookupResponse(
@@ -209,6 +217,13 @@ suspend fun PolycentricAdapter.claimMigratedIdentity(keyPair: StoredKeyPair, ide
         // Fetch the identity from an arbitrary server to start
         client.adoptServers((PolycentricAdapter.SEED_SERVERS + client.servers).distinct())
         Logger.i(TAG, "Claim servers: ${client.servers}")
+        // Any identity event signed by the legacy key is a claim from a device that already
+        // migrated. Claiming again would sign events with the same key from two devices, which we
+        // want to avoid.
+        if (isLegacyKeyClaimed(keyPair, identity)) {
+            Logger.w(TAG, "Legacy key $keyHex has already claimed $identity; not claiming again")
+            throw LegacyKeyAlreadyClaimedException(identity)
+        }
         client.setCurrentKeyPair(keyPair)
         // When we claim, we adopt the identity's servers
         val state = client.identityManager.claim(identity)
@@ -229,11 +244,23 @@ suspend fun PolycentricAdapter.claimMigratedIdentity(keyPair: StoredKeyPair, ide
     }
 }
 
-/** Delete a legacy keypair from this device, abandoning its migration. */
-suspend fun PolycentricAdapter.deleteLegacyKeyPair(keyPair: StoredKeyPair) {
-    client.keyPairManager.removeKeyPair(
-        PublicKey(key_type = KeyType.KEY_TYPE_ED25519, key = keyPair.publicKey.toByteString())
-    )
+/** Whether the identity chain on the current servers has an identity event signed by [keyPair]. */
+private suspend fun PolycentricAdapter.isLegacyKeyClaimed(keyPair: StoredKeyPair, identity: String): Boolean =
+    client.listEvents(
+        identity = identity,
+        collection = Collections.IDENTITY,
+        limit = 1,
+        signedBy = keyPair.toPublicKey(),
+    ).isNotEmpty()
+
+/**
+ * Stops tracking [keyPair] as a legacy key needing migration, while keeping the keypair on this
+ * device.
+ */
+fun markLegacyKeyMigrated(keyPair: StoredKeyPair) {
     legacyKeys.remove(keyPair.publicKey.toHexString())
     legacyKeys.saveBlocking()
 }
+
+private fun StoredKeyPair.toPublicKey() =
+    PublicKey(key_type = KeyType.KEY_TYPE_ED25519, key = publicKey.toByteString())

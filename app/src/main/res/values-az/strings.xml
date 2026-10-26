@@ -923,7 +923,6 @@
     <string name="polycentric_migration_complete_multiple">Polycentric profilləriniz Harbor-a köçürüldü. Profil şəkillərinizi yenidən yükləməli olacaqsınız.</string>
     <string name="polycentric_migration_failed">Polycentric profiliniz Harbor-a köçürülə bilmədi</string>
     <string name="polycentric_migration_not_found">Bu profil üçün heç bir Harbor hesabı tapılmadı.</string>
-    <string name="polycentric_migration_delete">Sil və yenisini yarat</string>
     <string name="harbor_moderation_settings">Moderasiya tənzimləmələri</string>
     <string name="harbor_moderation_settings_description">Polycentric şərhləri üçün moderasiya tənzimləmələrini təyin edin</string>
     <string name="harbor_servers">Serverlər</string>

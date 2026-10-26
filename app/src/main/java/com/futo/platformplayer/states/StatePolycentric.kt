@@ -7,7 +7,8 @@ import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.PolycentricCreateProfileActivity
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.polycentric.claimMigratedIdentity
-import com.futo.platformplayer.polycentric.deleteLegacyKeyPair
+import com.futo.platformplayer.polycentric.LegacyKeyAlreadyClaimedException
+import com.futo.platformplayer.polycentric.markLegacyKeyMigrated
 import com.futo.platformplayer.polycentric.recordLegacyKeys
 import com.futo.platformplayer.polycentric.legacyKeyPairs
 import com.futo.platformplayer.polycentric.lookupMigratedIdentity
@@ -134,13 +135,13 @@ class StatePolycentric {
         }
 
         val claimed = mutableListOf<String>()
-        var deleted = false
+        var createNew = false
         try {
             for (keyPair in adapter.legacyKeyPairs()) {
                 when (val outcome = migrateLegacyKeyPair(context, migratorUrl, keyPair)) {
                     is LegacyKeyOutcome.Claimed -> claimed.add(outcome.identity)
-                    LegacyKeyOutcome.Deleted -> deleted = true
-                    LegacyKeyOutcome.Skipped -> {}
+                    LegacyKeyOutcome.CreateNew -> createNew = true
+                    LegacyKeyOutcome.AlreadyClaimed, LegacyKeyOutcome.Skipped -> {}
                 }
             }
 
@@ -152,7 +153,7 @@ class StatePolycentric {
                     }
                 }
             }
-            Logger.i(TAG, "Legacy identity migration finished: claimed $claimed, deleted $deleted, active identity ${adapter.activeIdentity()}")
+            Logger.i(TAG, "Legacy identity migration finished: claimed $claimed, create new $createNew, active identity ${adapter.activeIdentity()}")
         } catch (e: CancellationException) {
             throw e
         } catch (e: Throwable) {
@@ -169,8 +170,8 @@ class StatePolycentric {
             if (claimed.isNotEmpty()) {
                 onIdentitiesChanged.emit()
             }
-            // If the user decided to delete old v1 identity, prompt to create a new v2 identity.
-            if (deleted && activeIdentity() == null) {
+            // If the user decided to skip migrating a v1 identity, prompt to create a new v2 identity.
+            if (createNew && activeIdentity() == null) {
                 StateApp.instance.activity?.let {
                     it.startActivity(Intent(it, PolycentricCreateProfileActivity::class.java))
                 }
@@ -180,7 +181,9 @@ class StatePolycentric {
 
     private sealed interface LegacyKeyOutcome {
         class Claimed(val identity: String) : LegacyKeyOutcome
-        object Deleted : LegacyKeyOutcome
+        object CreateNew : LegacyKeyOutcome
+        /** Another device with the same key migrated first; this device should pair instead. */
+        object AlreadyClaimed : LegacyKeyOutcome
         /** The user dismissed the failure prompt; the key is retried on a later start. */
         object Skipped : LegacyKeyOutcome
     }
@@ -201,6 +204,10 @@ class StatePolycentric {
                 return LegacyKeyOutcome.Claimed(identity)
             } catch (e: CancellationException) {
                 throw e
+            } catch (e: LegacyKeyAlreadyClaimedException) {
+                markLegacyKeyMigrated(keyPair)
+                UIDialogs.appToastError(context.getString(R.string.polycentric_migration_already_claimed), true)
+                return LegacyKeyOutcome.AlreadyClaimed
             } catch (e: Throwable) {
                 Logger.w(TAG, "Failed to migrate legacy identity.", e)
                 e
@@ -208,16 +215,16 @@ class StatePolycentric {
 
             when (promptMigrationFailure(error)) {
                 MigrationFailureChoice.RETRY -> continue
-                MigrationFailureChoice.DELETE -> {
-                    mutateIdentity { it.deleteLegacyKeyPair(keyPair) }
-                    return LegacyKeyOutcome.Deleted
+                MigrationFailureChoice.CREATE_NEW -> {
+                    markLegacyKeyMigrated(keyPair)
+                    return LegacyKeyOutcome.CreateNew
                 }
                 null -> return LegacyKeyOutcome.Skipped
             }
         }
     }
 
-    private enum class MigrationFailureChoice { RETRY, DELETE }
+    private enum class MigrationFailureChoice { RETRY, CREATE_NEW }
 
     /** Shows the migration error and waits for the user's choice; null when dismissed. */
     private suspend fun promptMigrationFailure(error: Throwable): MigrationFailureChoice? = withContext(Dispatchers.Main) {
@@ -232,8 +239,8 @@ class StatePolycentric {
             val dialog = UIDialogs.showDialog(activity, R.drawable.ic_error_pred,
                 activity.getString(R.string.polycentric_migration_failed),
                 error.message ?: error.javaClass.simpleName, null, -1,
-                UIDialogs.Action(activity.getString(R.string.polycentric_migration_delete), {
-                    choose(MigrationFailureChoice.DELETE)
+                UIDialogs.Action(activity.getString(R.string.polycentric_migration_create_new), {
+                    choose(MigrationFailureChoice.CREATE_NEW)
                 }, UIDialogs.ActionStyle.DANGEROUS),
                 UIDialogs.Action(activity.getString(R.string.retry), {
                     choose(MigrationFailureChoice.RETRY)
