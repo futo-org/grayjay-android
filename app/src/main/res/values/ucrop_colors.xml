@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Overrides uCrop's light defaults so the crop screen matches the app's dark UI. -->
+<resources>
+    <color name="ucrop_color_statusbar">@color/black</color>
+    <color name="ucrop_color_toolbar">@color/black</color>
+    <color name="ucrop_color_toolbar_widget">@color/white</color>
+    <color name="ucrop_color_crop_background">@color/black</color>
+    <color name="ucrop_color_widget">@color/white</color>
+    <color name="ucrop_color_widget_active">@color/colorPrimary</color>
+    <color name="ucrop_color_widget_background">@color/gray_1d</color>
+    <color name="ucrop_color_widget_rotate_angle">@color/gray_ac</color>
+    <color name="ucrop_color_inactive_controls_color">@color/gray_8c</color>
+    <color name="ucrop_color_progress_wheel_line">@color/gray_ac</color>
+</resources>
