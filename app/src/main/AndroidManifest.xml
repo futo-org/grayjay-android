@@ -215,6 +215,11 @@
             android:screenOrientation="sensorPortrait"
             android:theme="@style/Theme.FutoVideo.NoActionBarFitsSystem" />
         <activity
+            android:name="com.yalantis.ucrop.UCropActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.FutoVideo.UCrop"
+            tools:replace="android:theme" />
+        <activity
             android:name=".activities.ManageTabsActivity"
             android:screenOrientation="sensorPortrait"
             android:theme="@style/Theme.FutoVideo.NoActionBarFitsSystem" />
