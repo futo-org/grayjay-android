@@ -64,7 +64,6 @@ import com.futo.platformplayer.polycentric.approveClaimer
 import com.futo.platformplayer.polycentric.canIssuePairing
 import com.futo.platformplayer.polycentric.cancelClaimer
 import com.futo.platformplayer.polycentric.claimPaired
-import com.futo.platformplayer.polycentric.repairIdentityChains
 import com.futo.platformplayer.polycentric.isPairingExpiredError
 import com.futo.platformplayer.polycentric.joinPairing
 import com.futo.platformplayer.polycentric.pollAuthorization
@@ -125,21 +124,8 @@ class StatePolycentric {
 
         _backgroundScope.launch {
             awaitAdapter() ?: return@launch
-            repairLocalIdentityChains()
             migrateLegacyIdentities(context)
         }
-    }
-
-    /** Saves the identity chains that earlier claims left incomplete; see [PolycentricAdapter.repairIdentityChains]. */
-    private suspend fun repairLocalIdentityChains() {
-        try {
-            mutateIdentity { it.repairIdentityChains() }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Throwable) {
-            Logger.e(TAG, "Identity chain repair failed.", e)
-        }
-        withContext(Dispatchers.Main) { onServersChanged.emit() }
     }
 
     /**
