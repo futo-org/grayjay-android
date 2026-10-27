@@ -35,12 +35,13 @@ class PolycentricHomeActivity : AppCompatActivity() {
     private lateinit var _buttonHelp: ImageButton;
     private lateinit var _buttonNewProfile: BigButton;
     private lateinit var _buttonPairDevice: BigButton;
+    private lateinit var _buttonImportProfile: BigButton;
     private lateinit var _layoutButtons: LinearLayout;
     private lateinit var _scroll: ScrollView;
     private lateinit var _loader: LoaderView;
     private var _switching = false;
 
-    private val _pairResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+    private val _signInResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             startActivity(Intent(this, PolycentricProfileActivity::class.java));
             finish();
@@ -60,6 +61,7 @@ class PolycentricHomeActivity : AppCompatActivity() {
         _buttonHelp = findViewById(R.id.button_help);
         _buttonNewProfile = findViewById(R.id.button_new_profile);
         _buttonPairDevice = findViewById(R.id.button_pair_device);
+        _buttonImportProfile = findViewById(R.id.button_import_profile);
         _layoutButtons = findViewById(R.id.layout_buttons);
         _scroll = findViewById(R.id.scroll);
         _loader = findViewById(R.id.loader);
@@ -79,7 +81,11 @@ class PolycentricHomeActivity : AppCompatActivity() {
         };
 
         _buttonPairDevice.onClick.subscribe {
-            _pairResultLauncher.launch(Intent(this, PolycentricPairClaimerActivity::class.java));
+            _signInResultLauncher.launch(Intent(this, PolycentricPairClaimerActivity::class.java));
+        };
+
+        _buttonImportProfile.onClick.subscribe {
+            _signInResultLauncher.launch(Intent(this, PolycentricImportProfileActivity::class.java));
         };
 
         StatePolycentric.instance.onIdentitiesChanged.subscribe(this) {

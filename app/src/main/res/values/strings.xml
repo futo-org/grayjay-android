@@ -911,6 +911,8 @@
     <string name="polycentric_migration_not_found">No Harbor account was found for this profile.</string>
     <string name="polycentric_migration_already_claimed">Your Polycentric profile could not be moved to Harbor because it was already moved on another device. Pair this device from that device instead.</string>
     <string name="polycentric_migration_create_new">Create new</string>
+    <string name="import_polycentric_profile">Import Polycentric profile</string>
+    <string name="import_polycentric_profile_description">Move a profile exported from Polycentric to Harbor</string>
     <string name="harbor_moderation_settings">Moderation Settings</string>
     <string name="harbor_moderation_settings_description">Set moderation settings for polycentric comments</string>
     <string name="harbor_servers">Servers</string>

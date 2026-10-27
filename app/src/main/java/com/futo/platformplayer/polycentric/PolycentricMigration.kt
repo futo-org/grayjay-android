@@ -8,6 +8,7 @@ import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringArrayStorage
 import com.futo.platformplayer.stores.StringStorage
 import com.futo.platformplayer.toHexString
+import com.google.protobuf.InvalidProtocolBufferException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -20,8 +21,11 @@ import org.futo.polycentric.core.KeyTypes
 import org.futo.polycentric.core.StoredKeyPair
 import polycentric.v2.KeyType
 import polycentric.v2.PublicKey
+import java.io.IOException
 import java.security.Key
 import java.security.KeyStore
+import java.util.Base64
+import java.util.zip.GZIPInputStream
 import javax.crypto.Cipher
 import javax.crypto.spec.GCMParameterSpec
 
@@ -205,13 +209,18 @@ suspend fun PolycentricAdapter.legacyKeyPairs(): List<StoredKeyPair> {
 /**
  * Claim the identity that Harbor's Grayjay migrator created for a legacy v1 system key [keyPair].
  * Ensures that the previously active identity before the claim remains active after claiming.
- * Assumes the legacy key is set as an authorized rotation key of the v2 identity. Throws on a
- * failure of the claim process.
+ * Assumes the legacy key is set as an authorized rotation key of the v2 identity. Does nothing if
+ * the key is already bound to [identity]. Throws on a failure of the claim process.
  */
 suspend fun PolycentricAdapter.claimMigratedIdentity(keyPair: StoredKeyPair, identity: String) {
+    val keyHex = keyPair.publicKey.toHexString()
+    if (client.getIdentityKeyFor(keyPair) == identity) {
+        Logger.i(TAG, "Legacy key $keyHex already claimed $identity on this device")
+        return
+    }
+
     val priorKeyPair = client.currentKeyPair
     val priorIdentity = client.activeIdentityKey
-    val keyHex = keyPair.publicKey.toHexString()
     Logger.i(TAG, "Claiming $identity with legacy key $keyHex (prior key ${priorKeyPair?.publicKey?.toHexString()}, prior identity $priorIdentity)")
     try {
         // Fetch the identity from an arbitrary server to start
@@ -254,12 +263,92 @@ private suspend fun PolycentricAdapter.isLegacyKeyClaimed(keyPair: StoredKeyPair
     ).isNotEmpty()
 
 /**
- * Stops tracking [keyPair] as a legacy key needing migration, while keeping the keypair on this
- * device.
+ * Stops tracking [keyPair] as a legacy key needing migration, but does not delete the key.
  */
 fun markLegacyKeyMigrated(keyPair: StoredKeyPair) {
     legacyKeys.remove(keyPair.publicKey.toHexString())
     legacyKeys.saveBlocking()
+}
+
+class LegacyExportParseException(message: String, cause: Throwable? = null) : Exception(message, cause)
+
+private const val LEGACY_EXPORT_PREFIX = "polycentric://"
+private const val LEGACY_URL_TYPE_EXPORT_BUNDLE = 3L
+
+/**
+ * Parses a v1 profile export (a `polycentric://` link, optionally gzipped by v1 for large QR
+ * codes) into its Ed25519 seed. Throws [LegacyExportParseException] on invalid exports.
+ */
+fun parseLegacyExport(text: String): ByteArray {
+    val trimmed = text.trim()
+    if (!trimmed.startsWith(LEGACY_EXPORT_PREFIX)) {
+        throw LegacyExportParseException("Not a Polycentric profile export")
+    }
+
+    var data = try {
+        Base64.getUrlDecoder().decode(trimmed.substring(LEGACY_EXPORT_PREFIX.length).filterNot { it.isWhitespace() })
+    } catch (e: IllegalArgumentException) {
+        throw LegacyExportParseException("Polycentric profile export is not valid base64", e)
+    }
+
+    // Check for gzip
+    if (data.size >= 2 && data[0] == 0x1f.toByte() && data[1] == 0x8b.toByte()) {
+        data = try {
+            GZIPInputStream(data.inputStream()).use { it.readBytes() }
+        } catch (e: IOException) {
+            throw LegacyExportParseException("Polycentric profile export could not be decompressed", e)
+        }
+    }
+
+    val keyPair = try {
+        val urlInfo = LegacyURLInfo.parseFrom(data)
+        if (urlInfo.urlType != LEGACY_URL_TYPE_EXPORT_BUNDLE) {
+            throw LegacyExportParseException("Polycentric link is not a profile export")
+        }
+        LegacyExportBundle.parseFrom(urlInfo.body).keyPair
+    } catch (e: InvalidProtocolBufferException) {
+        throw LegacyExportParseException("Polycentric profile export is malformed", e)
+    }
+
+    val seed = keyPair.privateKey.toByteArray()
+    if (keyPair.keyType != PolycentricKeyStorage.KEY_TYPE_ED25519 || seed.size != 32) {
+        throw LegacyExportParseException("Polycentric profile export has an unsupported key")
+    }
+
+    val publicKey = keyPair.publicKey.toByteArray()
+    if (publicKey.isNotEmpty() && !PolycentricKeyStorage.deriveEd25519PublicKey(seed).contentEquals(publicKey)) {
+        throw LegacyExportParseException("Polycentric profile export has mismatched keys")
+    }
+
+    return seed
+}
+
+/**
+ * Stores the v1 key with [seed] on this device and records it for migration. Returns whether the
+ * key was newly added, such that a failed import can be undone with [forgetLegacyKey].
+ */
+fun importLegacyKey(seed: ByteArray, storage: PolycentricKeyStorage = PolycentricKeyStorage.instance): Boolean {
+    val publicKey = PolycentricKeyStorage.deriveEd25519PublicKey(seed)
+    val added = storage.getProcessSecrets().none { it.publicKey.contentEquals(publicKey) }
+    if (added) {
+        storage.addProcessSecret(publicKey, seed)
+    }
+    addLegacyKeys(listOf(publicKey))
+    Logger.i(TAG, "Imported legacy key ${publicKey.toHexString()} (added $added)")
+    return added
+}
+
+/** Removes the v1 key [publicKey] from this device and stops tracking it for migration. */
+fun forgetLegacyKey(publicKey: ByteArray, storage: PolycentricKeyStorage = PolycentricKeyStorage.instance) {
+    storage.removeProcessSecret(publicKey)
+    legacyKeys.remove(publicKey.toHexString())
+    legacyKeys.saveBlocking()
+}
+
+/** The stored keypair for [publicKey] and the identity it is bound to, if any. */
+suspend fun PolycentricAdapter.findKeyPair(publicKey: ByteArray): Pair<StoredKeyPair, String?>? {
+    val keyPair = client.keyPairManager.getKeys().firstOrNull { it.publicKey.contentEquals(publicKey) } ?: return null
+    return keyPair to client.getIdentityKeyFor(keyPair)
 }
 
 private fun StoredKeyPair.toPublicKey() =

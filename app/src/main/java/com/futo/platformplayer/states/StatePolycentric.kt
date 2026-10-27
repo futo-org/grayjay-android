@@ -12,6 +12,11 @@ import com.futo.platformplayer.polycentric.markLegacyKeyMigrated
 import com.futo.platformplayer.polycentric.recordLegacyKeys
 import com.futo.platformplayer.polycentric.legacyKeyPairs
 import com.futo.platformplayer.polycentric.lookupMigratedIdentity
+import com.futo.platformplayer.polycentric.findKeyPair
+import com.futo.platformplayer.polycentric.forgetLegacyKey
+import com.futo.platformplayer.polycentric.importLegacyKey
+import com.futo.platformplayer.polycentric.parseLegacyExport
+import com.futo.platformplayer.polycentric.PolycentricKeyStorage
 import com.futo.platformplayer.toHexString
 import java.util.concurrent.atomic.AtomicBoolean
 import com.futo.platformplayer.Settings
@@ -249,6 +254,59 @@ class StatePolycentric {
             dialog.setOnCancelListener { choose(null) }
             continuation.invokeOnCancellation { dialog.dismiss() }
         }
+    }
+
+    sealed interface LegacyImportResult {
+        class Migrated(val identity: String) : LegacyImportResult
+        /** The key was already migrated on this device. */
+        class AlreadyImported(val identity: String) : LegacyImportResult
+        /** The migrator has no identity for the key. */
+        object NotFound : LegacyImportResult
+        /** Another device with the same key migrated first; this device should pair instead. */
+        object AlreadyClaimed : LegacyImportResult
+    }
+
+    /**
+     * Imports a Polycentric v1 profile export, claims the identity Harbor's Grayjay migrator
+     * created for its key, and signs in to that identity. Throws on invalid exports and on lookup
+     * or claim failures, in which case the key is kept such that the import can be retried.
+     */
+    suspend fun importLegacyExport(text: String): LegacyImportResult {
+        val seed = parseLegacyExport(text)
+        val publicKey = PolycentricKeyStorage.deriveEd25519PublicKey(seed)
+        val adapter = requireAdapter()
+
+        adapter.findKeyPair(publicKey)?.second?.let { identity ->
+            switchIdentity(identity)
+            withContext(Dispatchers.Main) { onIdentitiesChanged.emit() }
+            return LegacyImportResult.AlreadyImported(identity)
+        }
+
+        val added = withContext(Dispatchers.IO) { importLegacyKey(seed) }
+        val keyPair = adapter.findKeyPair(publicKey)?.first
+            ?: throw IllegalStateException("Imported legacy key is not stored")
+        val identity = lookupMigratedIdentity(PolycentricAdapter.MIGRATOR_URL, publicKey)
+        if (identity == null) {
+            if (added) {
+                withContext(Dispatchers.IO) { forgetLegacyKey(publicKey) }
+            }
+            return LegacyImportResult.NotFound
+        }
+
+        try {
+            mutateIdentity {
+                it.claimMigratedIdentity(keyPair, identity)
+                it.switchIdentity(identity)
+            }
+        } catch (e: LegacyKeyAlreadyClaimedException) {
+            withContext(Dispatchers.IO) {
+                if (added) forgetLegacyKey(publicKey) else markLegacyKeyMigrated(keyPair)
+            }
+            return LegacyImportResult.AlreadyClaimed
+        }
+        Logger.i(TAG, "Imported and claimed migrated identity $identity")
+        withContext(Dispatchers.Main) { onIdentitiesChanged.emit() }
+        return LegacyImportResult.Migrated(identity)
     }
 
     fun ensureEnabled() {
