@@ -236,6 +236,7 @@ suspend fun PolycentricAdapter.claimMigratedIdentity(keyPair: StoredKeyPair, ide
         client.setCurrentKeyPair(keyPair)
         // When we claim, we adopt the identity's servers
         val state = client.identityManager.claim(identity)
+        persistClaimedIdentityChain(identity)
 
         Logger.i(TAG, "Claimed $identity: rotation keys ${state.rotationKeys.map { it.key.hex() }}, " +
             "signing keys ${state.signingKeys.map { it.key.hex() }}, servers ${state.servers}")
