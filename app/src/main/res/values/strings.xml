@@ -913,6 +913,7 @@
     <string name="polycentric_migration_create_new">Create new</string>
     <string name="import_polycentric_profile">Import Polycentric profile</string>
     <string name="import_polycentric_profile_description">Move a profile exported from Polycentric to Harbor</string>
+    <string name="choose_an_import_option">Choose an import option</string>
     <string name="harbor_moderation_settings">Moderation Settings</string>
     <string name="harbor_moderation_settings_description">Set moderation settings for polycentric comments</string>
     <string name="harbor_servers">Servers</string>
