@@ -132,19 +132,18 @@ class PolycentricImportProfileActivity : AppCompatActivity() {
             withContext(Dispatchers.Main) {
                 _loaderOverlay.hide()
                 _importing = false
+                val context = this@PolycentricImportProfileActivity
                 when (result) {
-                    is LegacyImportResult.Migrated -> {
-                        UIDialogs.appToast(getString(R.string.polycentric_migration_complete), long = true)
-                        openProfile()
-                    }
+                    is LegacyImportResult.Migrated ->
+                        UIDialogs.showDialogOk(context, R.drawable.ic_check, getString(R.string.polycentric_migration_complete)) { openProfile() }
                     is LegacyImportResult.AlreadyImported -> {
-                        UIDialogs.toast(this@PolycentricImportProfileActivity, getString(R.string.this_profile_is_already_imported))
+                        UIDialogs.toast(context, getString(R.string.this_profile_is_already_imported))
                         openProfile()
                     }
                     LegacyImportResult.NotFound ->
-                        UIDialogs.appToastError(getString(R.string.polycentric_migration_not_found), true)
+                        UIDialogs.showDialogOk(context, R.drawable.ic_error_pred, getString(R.string.polycentric_migration_not_found))
                     LegacyImportResult.AlreadyClaimed ->
-                        UIDialogs.appToastError(getString(R.string.polycentric_migration_already_claimed), true)
+                        UIDialogs.showDialogOk(context, R.drawable.ic_error_pred, getString(R.string.polycentric_migration_already_claimed))
                 }
             }
         }
