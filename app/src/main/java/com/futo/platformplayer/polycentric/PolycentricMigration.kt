@@ -254,14 +254,28 @@ suspend fun PolycentricAdapter.claimMigratedIdentity(keyPair: StoredKeyPair, ide
     }
 }
 
-/** Whether the identity chain on the current servers has an identity event signed by [keyPair]. */
-private suspend fun PolycentricAdapter.isLegacyKeyClaimed(keyPair: StoredKeyPair, identity: String): Boolean =
-    client.listEvents(
-        identity = identity,
-        collection = Collections.IDENTITY,
-        limit = 1,
-        signedBy = keyPair.toPublicKey(),
-    ).isNotEmpty()
+/**
+ * Whether the identity chain has an identity event signed by [keyPair]. A claim republishes the
+ * identity head with the claiming key to the identity's own servers, which can differ from the
+ * seed servers the migrator created the identity on, so both are checked.
+ */
+private suspend fun PolycentricAdapter.isLegacyKeyClaimed(keyPair: StoredKeyPair, identity: String): Boolean {
+    val servers = client.servers
+    try {
+        val identityServers = client.identityManager.fetchIdentityState(identity)?.servers.orEmpty()
+        client.adoptServers((servers + identityServers).distinct())
+        val claims = client.listEvents(
+            identity = identity,
+            collection = Collections.IDENTITY,
+            limit = 1,
+            signedBy = keyPair.toPublicKey(),
+        )
+        Logger.i(TAG, "Legacy key claim check of $identity on ${client.servers}: ${claims.size} claims")
+        return claims.isNotEmpty()
+    } finally {
+        client.adoptServers(servers)
+    }
+}
 
 /**
  * Stops tracking [keyPair] as a legacy key needing migration, but does not delete the key.
