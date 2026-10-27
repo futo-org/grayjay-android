@@ -188,6 +188,7 @@ import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.roundToLong
 import com.futo.platformplayer.polycentric.toAttributedContent
+import com.futo.platformplayer.views.video.thumbnails.ISeekThumbnailProvider
 
 @UnstableApi
 class VideoDetailView : ConstraintLayout {
@@ -212,6 +213,7 @@ class VideoDetailView : ConstraintLayout {
     private var _videoResumePositionMilliseconds : Long = 0L;
 
     private var _chapters: List<IChapter>? = null;
+    private var _thumbnailProvider: ISeekThumbnailProvider? = null;
 
     private val _player: FutoVideoPlayer;
     private val _cast: CastView;
@@ -1555,7 +1557,8 @@ class VideoDetailView : ConstraintLayout {
         }
 
         val me = this;
-        clearChapters()
+        clearChapters();
+        _player.setSeekThumbnailProvider(null);
         if (video is JSVideoDetails) {
             fragment.lifecycleScope.launch(Dispatchers.IO) {
                 try {
@@ -1573,6 +1576,13 @@ class VideoDetailView : ConstraintLayout {
                     /*withContext(Dispatchers.Main) {
                         UIDialogs.toast(context, "Failed to get chapters\n" + ex.message);
                     }*/
+                }
+                try {
+                    val thumbnailProvider = video?.getSeekThumbnailProvider()
+                    _player.setSeekThumbnailProvider(thumbnailProvider);
+                } catch (ex: Throwable) {
+                    Logger.e(TAG, "Failed to get thumbnail provider", ex);
+                    _player.setSeekThumbnailProvider(null);
                 }
                 try {
                     if (!StateApp.instance.privateMode) {
