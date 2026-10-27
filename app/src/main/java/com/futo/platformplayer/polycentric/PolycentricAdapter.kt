@@ -103,7 +103,7 @@ class PolycentricAdapter(internal val client: PolycentricClient) {
         /**
          * The initial servers of new identities.
          */
-        val SEED_SERVERS: List<String> = listOf("https://srv.staging.harbor.social")
+        val SEED_SERVERS: List<String> = listOf("https://srv.harbor.social")
 
         /**
          * Base URL of the Harbor web app, used to build the outbound links
@@ -111,16 +111,14 @@ class PolycentricAdapter(internal val client: PolycentricClient) {
          *
          * TODO: make this configurable alongside the seed server list.
          */
-        const val WEB_BASE_URL: String = "https://staging.harbor.social"
+        const val WEB_BASE_URL: String = "https://harbor.social"
 
         /**
          * Base URL of Harbor's `grayjay-migrator` lookup service, which maps legacy v1 system
          * keys to their migrated v2 identities. The v1 identity migration is skipped while unset.
          * Migrated identities live on [SEED_SERVERS] (the migrator's `IDENTITY_SERVERS`).
-         *
-         * TODO: set the production hostname
          */
-        val MIGRATOR_URL: String = "https://grayjay-migrator.staging.harbor.social"
+        val MIGRATOR_URL: String = "https://grayjay-migrator.harbor.social"
 
         /**
          * Construct a Harbor client using the Kotlin SDK, using Grayjay's
