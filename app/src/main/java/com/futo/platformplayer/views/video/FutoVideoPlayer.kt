@@ -216,6 +216,9 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         _loaderGame.visibility = View.GONE
         loaderGameVisibilityChanged.emit(false)
 
+        SeekBarTouchDelegate.expandSeekBarTouchArea(_time_bar);
+        SeekBarTouchDelegate.expandSeekBarTouchArea(_time_bar_fullscreen);
+
         _control_chapter.setOnClickListener {
             _currentChapter?.let {
                 onChapterClicked.emit(it);
