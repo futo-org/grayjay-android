@@ -21,13 +21,19 @@ import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSVideoSourceDescriptor
 import com.futo.platformplayer.api.media.structures.IPager
+import com.futo.platformplayer.engine.IV8PluginConfig
 import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.getOrDefault
+import com.futo.platformplayer.getOrNullList
 import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.getOrThrowNullable
 import com.futo.platformplayer.invokeV8
 import com.futo.platformplayer.requireSourcePlugin
 import com.futo.platformplayer.states.StateDeveloper
+import com.futo.platformplayer.views.video.thumbnails.ISeekThumbnailProvider
+import com.futo.platformplayer.views.video.thumbnails.SeekThumbnail
+import com.futo.platformplayer.views.video.thumbnails.SeekThumbnailFrame
+import com.futo.platformplayer.warnIfMainThread
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -37,6 +43,7 @@ class JSVideoDetails : JSVideo, IPlatformVideoDetails {
     private val _hasGetContentRecommendations: Boolean;
     private val _hasGetPlaybackTracker: Boolean;
     private val _hasGetVODEvents: Boolean;
+    private val _hasSeekThumbnails: Boolean;
 
     //Details
     override val description : String;
@@ -65,6 +72,7 @@ class JSVideoDetails : JSVideo, IPlatformVideoDetails {
         var parsedHasGetPlaybackTracker = false;
         var parsedHasGetContentRecommendations = false;
         var parsedHasGetVODEvents = false;
+        var parsedHasSeekThumbnails = false;
 
         plugin.busy {
             val contextName = "VideoDetails";
@@ -90,6 +98,7 @@ class JSVideoDetails : JSVideo, IPlatformVideoDetails {
             parsedHasGetPlaybackTracker = _content.has("getPlaybackTracker");
             parsedHasGetContentRecommendations = _content.has("getContentRecommendations");
             parsedHasGetVODEvents = _content.has("getVODEvents");
+            parsedHasSeekThumbnails = _content.has("getSeekThumbnailProvider");
         }
 
         description = parsedDescription ?: "";
@@ -103,6 +112,7 @@ class JSVideoDetails : JSVideo, IPlatformVideoDetails {
         _hasGetPlaybackTracker = parsedHasGetPlaybackTracker;
         _hasGetContentRecommendations = parsedHasGetContentRecommendations;
         _hasGetVODEvents = parsedHasGetVODEvents;
+        _hasSeekThumbnails = parsedHasSeekThumbnails;
     }
 
     override fun getPlaybackTracker(): IPlaybackTracker? {
@@ -190,5 +200,63 @@ class JSVideoDetails : JSVideo, IPlatformVideoDetails {
 
         return@busy JSVODEventPager(_plugin.config, _plugin,
             _content.invokeV8<V8ValueObject>("getVODEvents", arrayOf<Any>()));
+    }
+
+
+    fun getSeekThumbnailProvider(): ISeekThumbnailProvider? = _content.requireSourcePlugin("VideoDetails.getSeekThumbnailProvider").busy {
+        if(!_hasSeekThumbnails)
+            return@busy null;
+
+        return@busy JSSeekThumbnailProvider(_plugin.config, _plugin,
+            _content.invokeV8<V8ValueObject>("getSeekThumbnailProvider", arrayOf<Any>()));
+    }
+
+    class JSSeekThumbnailProvider: ISeekThumbnailProvider {
+        override val seekResolutionMs: Int;
+
+        private val _client: JSClient;
+        private val _config: IV8PluginConfig;
+        private val _obj: V8ValueObject;
+
+
+        constructor(config: SourcePluginConfig, client: JSClient, obj: V8ValueObject) {
+            warnIfMainThread("JSSeekThumbnailProvider.constructor");
+
+            var seekReso: Int? = 10000;
+            client.busy {
+                seekReso = obj.getOrDefault<Int>(config, "resolutionMs", "JSSeekThumbnailProvider.resolutionMs", null);
+            }
+            this._client = client;
+            this._config = client.config;
+            this._obj = obj;
+            this.seekResolutionMs = seekReso ?: 10000;
+        }
+
+
+        override suspend fun getThumbnail(positionMs: Long): SeekThumbnail? {
+            var url: String? = null;
+            var frames: MutableList<SeekThumbnailFrame>? = null;
+            _client.busy {
+                val result = _obj.invokeV8<V8ValueObject>("getThumbnail", arrayOf(positionMs));
+                url = result.getOrDefault(_config, "url", "JSSeekThumbnail.url", null);
+                val framesObjs = result.getOrNullList<V8ValueObject>(_config, "frames", "JSSeekThumbnail.frames");
+                if(framesObjs != null) {
+                    frames = mutableListOf()
+                    for(frame in framesObjs) {
+                        frames.add(SeekThumbnailFrame(
+                            frame.getOrDefault<Long>(_config, "time", "JSSeekThumbnail.Frame.time", null) ?: continue,
+                            frame.getOrDefault<Int>(_config, "x", "JSSeekThumbnail.Frame.x", null) ?: continue,
+                            frame.getOrDefault<Int>(_config, "y", "JSSeekThumbnail.Frame.y", null) ?: continue,
+                            frame.getOrDefault<Int>(_config, "w", "JSSeekThumbnail.Frame.w", null) ?: continue,
+                            frame.getOrDefault<Int>(_config, "h", "JSSeekThumbnail.Frame.h", null) ?: continue
+                        ))
+                    }
+                }
+            }
+            if(url == null)
+                return null; //Only support url sources for now.
+            return SeekThumbnail.Url(url!!, frames);
+        }
+
     }
 }

@@ -163,7 +163,7 @@ class StatePolycentric {
             val text = context.getString(
                 if (claimed.size > 1) R.string.polycentric_migration_complete_multiple else R.string.polycentric_migration_complete
             )
-            UIDialogs.toast(text, long = true)
+            UIDialogs.appToast(text, long = true)
         }
         withContext(Dispatchers.Main) {
             if (claimed.isNotEmpty()) {
