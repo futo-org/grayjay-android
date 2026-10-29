@@ -191,7 +191,7 @@
     <string name="send_your_identity_to_another_app">Kimliyinizi başqa tətbiqə göndərin</string>
     <string name="copy">Kopyala</string>
     <string name="copy_your_identity_to_clipboard">Kimliyinizi mübadilə buferinə kopyalayın</string>
-    <string name="polycentric">Polycentric</string>
+    <string name="polycentric">Harbor</string>
     <string name="harbor">Harbor</string>
     <string name="platform">Platforma</string>
     <string name="profile_name">Profil adı</string>
@@ -537,6 +537,7 @@
     <string name="the_author">müəllif</string>
     <string name="reinstall_embedded_plugins">Yerləşdirilmiş plaginləri yenidən quraşdır</string>
     <string name="remove_cached_version">Keşlənmiş versiyanı sil</string>
+    <string name="remove_the_last_downloaded_version">Son yüklənilmiş versiyanı sil</string>
     <string name="clear_hidden">Gizliləri təmizlə</string>
     <string name="clear_hidden_description">Bütün gizli yaradıcıları və videoları silir, onları yenidən göstərir</string>
     <string name="reset_announcements">Elanları sıfırla</string>
@@ -676,6 +677,8 @@
     <string name="failed_to_generate_qr_code">QR kod yaradılmadı</string>
     <string name="share_text">Mətni paylaş</string>
     <string name="copied_text">Kopyalanmış mətn</string>
+    <string name="copy_details">Təfərrüatları kopyala</string>
+    <string name="details_copied">Təfərrüatlar kopyalandı</string>
     <string name="must_be_at_least_3_characters_long">Ən azı 3 simvol uzunluğunda olmalıdır.</string>
     <string name="failed_to_create_profile">Profil yaradılmadı.</string>
     <string name="failed_to_delete_profile">Profil silinmədi.</string>
@@ -906,6 +909,11 @@
     <string name="polycentric_migration_complete_multiple">Polycentric profilləriniz Harbor-a köçürüldü. Profil şəkillərinizi yenidən yükləməli olacaqsınız.</string>
     <string name="polycentric_migration_failed">Polycentric profiliniz Harbor-a köçürülə bilmədi</string>
     <string name="polycentric_migration_not_found">Bu profil üçün heç bir Harbor hesabı tapılmadı.</string>
+    <string name="polycentric_migration_already_claimed">Polycentric profiliniz başqa cihazda köçürüldüyü üçün Harbor-a köçürülə bilmədi. Bunun əvəzinə bu cihazı həmin cihazdan cütləşdirin.</string>
+    <string name="polycentric_migration_create_new">Yeni yarat</string>
+    <string name="import_polycentric_profile">Polycentric profilini idxal et</string>
+    <string name="import_polycentric_profile_description">Polycentric-dən ixrac edilmiş profili Harbor-a köçür</string>
+    <string name="choose_an_import_option">İdxal seçimi seçin</string>
     <string name="harbor_moderation_settings">Moderasiya tənzimləmələri</string>
     <string name="harbor_moderation_settings_description">Polycentric şərhləri üçün moderasiya tənzimləmələrini təyin edin</string>
     <string name="harbor_servers">Serverlər</string>
