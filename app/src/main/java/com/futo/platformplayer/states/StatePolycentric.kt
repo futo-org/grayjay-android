@@ -7,10 +7,16 @@ import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.PolycentricCreateProfileActivity
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.polycentric.claimMigratedIdentity
-import com.futo.platformplayer.polycentric.deleteLegacyKeyPair
+import com.futo.platformplayer.polycentric.LegacyKeyAlreadyClaimedException
+import com.futo.platformplayer.polycentric.markLegacyKeyMigrated
 import com.futo.platformplayer.polycentric.recordLegacyKeys
 import com.futo.platformplayer.polycentric.legacyKeyPairs
 import com.futo.platformplayer.polycentric.lookupMigratedIdentity
+import com.futo.platformplayer.polycentric.findKeyPair
+import com.futo.platformplayer.polycentric.forgetLegacyKey
+import com.futo.platformplayer.polycentric.importLegacyKey
+import com.futo.platformplayer.polycentric.parseLegacyExport
+import com.futo.platformplayer.polycentric.PolycentricKeyStorage
 import com.futo.platformplayer.toHexString
 import java.util.concurrent.atomic.AtomicBoolean
 import com.futo.platformplayer.Settings
@@ -134,13 +140,13 @@ class StatePolycentric {
         }
 
         val claimed = mutableListOf<String>()
-        var deleted = false
+        var createNew = false
         try {
             for (keyPair in adapter.legacyKeyPairs()) {
                 when (val outcome = migrateLegacyKeyPair(context, migratorUrl, keyPair)) {
                     is LegacyKeyOutcome.Claimed -> claimed.add(outcome.identity)
-                    LegacyKeyOutcome.Deleted -> deleted = true
-                    LegacyKeyOutcome.Skipped -> {}
+                    LegacyKeyOutcome.CreateNew -> createNew = true
+                    LegacyKeyOutcome.AlreadyClaimed, LegacyKeyOutcome.Skipped -> {}
                 }
             }
 
@@ -152,7 +158,7 @@ class StatePolycentric {
                     }
                 }
             }
-            Logger.i(TAG, "Legacy identity migration finished: claimed $claimed, deleted $deleted, active identity ${adapter.activeIdentity()}")
+            Logger.i(TAG, "Legacy identity migration finished: claimed $claimed, create new $createNew, active identity ${adapter.activeIdentity()}")
         } catch (e: CancellationException) {
             throw e
         } catch (e: Throwable) {
@@ -169,8 +175,8 @@ class StatePolycentric {
             if (claimed.isNotEmpty()) {
                 onIdentitiesChanged.emit()
             }
-            // If the user decided to delete old v1 identity, prompt to create a new v2 identity.
-            if (deleted && activeIdentity() == null) {
+            // If the user decided to skip migrating a v1 identity, prompt to create a new v2 identity.
+            if (createNew && activeIdentity() == null) {
                 StateApp.instance.activity?.let {
                     it.startActivity(Intent(it, PolycentricCreateProfileActivity::class.java))
                 }
@@ -180,7 +186,9 @@ class StatePolycentric {
 
     private sealed interface LegacyKeyOutcome {
         class Claimed(val identity: String) : LegacyKeyOutcome
-        object Deleted : LegacyKeyOutcome
+        object CreateNew : LegacyKeyOutcome
+        /** Another device with the same key migrated first; this device should pair instead. */
+        object AlreadyClaimed : LegacyKeyOutcome
         /** The user dismissed the failure prompt; the key is retried on a later start. */
         object Skipped : LegacyKeyOutcome
     }
@@ -201,6 +209,10 @@ class StatePolycentric {
                 return LegacyKeyOutcome.Claimed(identity)
             } catch (e: CancellationException) {
                 throw e
+            } catch (e: LegacyKeyAlreadyClaimedException) {
+                markLegacyKeyMigrated(keyPair)
+                UIDialogs.appToastError(context.getString(R.string.polycentric_migration_already_claimed), true)
+                return LegacyKeyOutcome.AlreadyClaimed
             } catch (e: Throwable) {
                 Logger.w(TAG, "Failed to migrate legacy identity.", e)
                 e
@@ -208,16 +220,16 @@ class StatePolycentric {
 
             when (promptMigrationFailure(error)) {
                 MigrationFailureChoice.RETRY -> continue
-                MigrationFailureChoice.DELETE -> {
-                    mutateIdentity { it.deleteLegacyKeyPair(keyPair) }
-                    return LegacyKeyOutcome.Deleted
+                MigrationFailureChoice.CREATE_NEW -> {
+                    markLegacyKeyMigrated(keyPair)
+                    return LegacyKeyOutcome.CreateNew
                 }
                 null -> return LegacyKeyOutcome.Skipped
             }
         }
     }
 
-    private enum class MigrationFailureChoice { RETRY, DELETE }
+    private enum class MigrationFailureChoice { RETRY, CREATE_NEW }
 
     /** Shows the migration error and waits for the user's choice; null when dismissed. */
     private suspend fun promptMigrationFailure(error: Throwable): MigrationFailureChoice? = withContext(Dispatchers.Main) {
@@ -232,8 +244,8 @@ class StatePolycentric {
             val dialog = UIDialogs.showDialog(activity, R.drawable.ic_error_pred,
                 activity.getString(R.string.polycentric_migration_failed),
                 error.message ?: error.javaClass.simpleName, null, -1,
-                UIDialogs.Action(activity.getString(R.string.polycentric_migration_delete), {
-                    choose(MigrationFailureChoice.DELETE)
+                UIDialogs.Action(activity.getString(R.string.polycentric_migration_create_new), {
+                    choose(MigrationFailureChoice.CREATE_NEW)
                 }, UIDialogs.ActionStyle.DANGEROUS),
                 UIDialogs.Action(activity.getString(R.string.retry), {
                     choose(MigrationFailureChoice.RETRY)
@@ -242,6 +254,59 @@ class StatePolycentric {
             dialog.setOnCancelListener { choose(null) }
             continuation.invokeOnCancellation { dialog.dismiss() }
         }
+    }
+
+    sealed interface LegacyImportResult {
+        class Migrated(val identity: String) : LegacyImportResult
+        /** The key was already migrated on this device. */
+        class AlreadyImported(val identity: String) : LegacyImportResult
+        /** The migrator has no identity for the key. */
+        object NotFound : LegacyImportResult
+        /** Another device with the same key migrated first; this device should pair instead. */
+        object AlreadyClaimed : LegacyImportResult
+    }
+
+    /**
+     * Imports a Polycentric v1 profile export, claims the identity Harbor's Grayjay migrator
+     * created for its key, and signs in to that identity. Throws on invalid exports and on lookup
+     * or claim failures, in which case the key is kept such that the import can be retried.
+     */
+    suspend fun importLegacyExport(text: String): LegacyImportResult {
+        val seed = parseLegacyExport(text)
+        val publicKey = PolycentricKeyStorage.deriveEd25519PublicKey(seed)
+        val adapter = requireAdapter()
+
+        adapter.findKeyPair(publicKey)?.second?.let { identity ->
+            switchIdentity(identity)
+            withContext(Dispatchers.Main) { onIdentitiesChanged.emit() }
+            return LegacyImportResult.AlreadyImported(identity)
+        }
+
+        val added = withContext(Dispatchers.IO) { importLegacyKey(seed) }
+        val keyPair = adapter.findKeyPair(publicKey)?.first
+            ?: throw IllegalStateException("Imported legacy key is not stored")
+        val identity = lookupMigratedIdentity(PolycentricAdapter.MIGRATOR_URL, publicKey)
+        if (identity == null) {
+            if (added) {
+                withContext(Dispatchers.IO) { forgetLegacyKey(publicKey) }
+            }
+            return LegacyImportResult.NotFound
+        }
+
+        try {
+            mutateIdentity {
+                it.claimMigratedIdentity(keyPair, identity)
+                it.switchIdentity(identity)
+            }
+        } catch (e: LegacyKeyAlreadyClaimedException) {
+            withContext(Dispatchers.IO) {
+                if (added) forgetLegacyKey(publicKey) else markLegacyKeyMigrated(keyPair)
+            }
+            return LegacyImportResult.AlreadyClaimed
+        }
+        Logger.i(TAG, "Imported and claimed migrated identity $identity")
+        withContext(Dispatchers.Main) { onIdentitiesChanged.emit() }
+        return LegacyImportResult.Migrated(identity)
     }
 
     fun ensureEnabled() {

@@ -23,3 +23,23 @@ message StorageTypeProcessSecret {
   Key system = 1;
   Process process = 2;
 }
+
+// Polycentric v1 profile export format (`polycentric://` links), kept such that
+// v1 exports can be imported and migrated to Harbor. Field numbers match v1's
+// `URLInfo`, `ExportBundle` and `KeyPair`. The bundle's events are not read.
+
+message LegacyURLInfo {
+  // url_type 3 = ExportBundle
+  uint64 url_type = 1;
+  bytes body = 2;
+}
+
+message LegacyExportBundle {
+  LegacyKeyPair key_pair = 1;
+}
+
+message LegacyKeyPair {
+  uint64 key_type = 1;
+  bytes private_key = 2;
+  bytes public_key = 3;
+}

@@ -677,6 +677,8 @@
     <string name="failed_to_generate_qr_code">Failed to generate QR code</string>
     <string name="share_text">Share Text</string>
     <string name="copied_text">Copied Text</string>
+    <string name="copy_details">Copy details</string>
+    <string name="details_copied">Details copied</string>
     <string name="must_be_at_least_3_characters_long">Must be at least 3 characters long.</string>
     <string name="failed_to_create_profile">Failed to create profile.</string>
     <string name="failed_to_delete_profile">Failed to delete profile.</string>
@@ -907,7 +909,11 @@
     <string name="polycentric_migration_complete_multiple">Your Polycentric profiles have been moved to Harbor. You will need to reupload your profile pictures.</string>
     <string name="polycentric_migration_failed">Your Polycentric profile could not be moved to Harbor</string>
     <string name="polycentric_migration_not_found">No Harbor account was found for this profile.</string>
-    <string name="polycentric_migration_delete">Delete and create new</string>
+    <string name="polycentric_migration_already_claimed">Your Polycentric profile could not be moved to Harbor because it was already moved on another device. Pair this device from that device instead.</string>
+    <string name="polycentric_migration_create_new">Create new</string>
+    <string name="import_polycentric_profile">Import Polycentric profile</string>
+    <string name="import_polycentric_profile_description">Move a profile exported from Polycentric to Harbor</string>
+    <string name="choose_an_import_option">Choose an import option</string>
     <string name="harbor_moderation_settings">Moderation Settings</string>
     <string name="harbor_moderation_settings_description">Set moderation settings for polycentric comments</string>
     <string name="harbor_servers">Servers</string>
