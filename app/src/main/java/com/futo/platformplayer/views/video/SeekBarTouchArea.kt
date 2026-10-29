@@ -34,7 +34,7 @@ class SeekBarTouchDelegate(val bounds: Rect, val seekBar: View) : TouchDelegate(
     companion object {
         fun expandSeekBarTouchArea(seekBar: View) {
             val parent = seekBar.parent as View
-            val targetHeight = 120.dp(seekBar.resources)
+            val targetHeight = 60.dp(seekBar.resources)
 
             fun updateTouchArea() {
                 val bounds = Rect()
