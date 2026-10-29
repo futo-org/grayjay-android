@@ -1,6 +1,7 @@
 package com.futo.platformplayer.polycentric
 
 import com.futo.platformplayer.BuildConfig
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.states.StateApp
 import org.futo.polycentric.core.AndroidFileStoreDriver
 import org.futo.polycentric.core.Collections
@@ -102,7 +103,7 @@ class PolycentricAdapter(internal val client: PolycentricClient) {
         /**
          * The initial servers of new identities.
          */
-        val SEED_SERVERS: List<String> = listOf("https://srv.staging.harbor.social")
+        val SEED_SERVERS: List<String> = listOf("https://srv.harbor.social")
 
         /**
          * Base URL of the Harbor web app, used to build the outbound links
@@ -110,16 +111,14 @@ class PolycentricAdapter(internal val client: PolycentricClient) {
          *
          * TODO: make this configurable alongside the seed server list.
          */
-        const val WEB_BASE_URL: String = "https://staging.harbor.social"
+        const val WEB_BASE_URL: String = "https://harbor.social"
 
         /**
          * Base URL of Harbor's `grayjay-migrator` lookup service, which maps legacy v1 system
          * keys to their migrated v2 identities. The v1 identity migration is skipped while unset.
          * Migrated identities live on [SEED_SERVERS] (the migrator's `IDENTITY_SERVERS`).
-         *
-         * TODO: set the production hostname
          */
-        val MIGRATOR_URL: String = "https://grayjay-migrator.staging.harbor.social"
+        val MIGRATOR_URL: String = "https://grayjay-migrator.harbor.social"
 
         /**
          * Construct a Harbor client using the Kotlin SDK, using Grayjay's
@@ -152,4 +151,13 @@ class PolycentricAdapter(internal val client: PolycentricClient) {
 fun Throwable.toHarborErrorMessage(): String = when (this) {
     is IllegalStateException, is IllegalArgumentException -> message ?: "Harbor is unavailable"
     else -> "Could not reach Harbor" + (message?.let { " ($it)" } ?: "")
+}
+
+/**
+ * Shows "[prefix] [toHarborErrorMessage]" as a toast, with a button that copies the full error
+ * (including causes and stack trace) for bug reports.
+ */
+fun showHarborErrorToast(prefix: String, e: Throwable) {
+    val details = "Grayjay ${BuildConfig.VERSION_NAME}\n$prefix\n\n${e.stackTraceToString()}"
+    UIDialogs.appToastWithDetails(prefix + " " + e.toHarborErrorMessage(), details)
 }

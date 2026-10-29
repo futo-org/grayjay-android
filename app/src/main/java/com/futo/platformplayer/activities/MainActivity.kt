@@ -1509,7 +1509,9 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                     _toastView.setToastAnimated(toast);
                 }
             }
-            if (toast.long)
+            if (toast.isError)
+                delay(10000);
+            else if (toast.long)
                 delay(5000);
             else
                 delay(2500);

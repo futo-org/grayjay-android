@@ -92,6 +92,15 @@
                 app:buttonIcon="@drawable/ic_qr"
                 app:buttonSubText="@string/pairing_pair_with_existing_device_description"
                 app:buttonText="@string/pairing_pair_with_existing_device" />
+
+            <com.futo.platformplayer.views.buttons.BigButton
+                android:id="@+id/button_import_profile"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:buttonIcon="@drawable/ic_download"
+                app:buttonSubText="@string/import_polycentric_profile_description"
+                app:buttonText="@string/import_polycentric_profile" />
         </LinearLayout>
     </ScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>

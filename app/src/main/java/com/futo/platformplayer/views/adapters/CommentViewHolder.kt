@@ -13,7 +13,7 @@ import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.futo.platformplayer.R
-import com.futo.platformplayer.polycentric.toHarborErrorMessage
+import com.futo.platformplayer.polycentric.showHarborErrorToast
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.logging.Logger
@@ -102,7 +102,7 @@ class CommentViewHolder : ViewHolder {
                     )
                 } catch (e: Throwable) {
                     Logger.w(TAG, "Failed to set comment rating.", e)
-                    UIDialogs.toast(itemView.context.getString(R.string.failed_to_set_rating) + " " + e.toHarborErrorMessage())
+                    showHarborErrorToast(itemView.context.getString(R.string.failed_to_set_rating), e)
                 }
             }
         };

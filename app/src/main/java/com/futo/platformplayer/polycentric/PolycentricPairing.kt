@@ -269,6 +269,7 @@ suspend fun PolycentricAdapter.claimPaired(pending: PendingClaim, session: Pairi
         throw PairingIdentityExistsException()
     }
     client.identityManager.claim(identity, serversForClaim(session, client.servers))
+    saveClaimedIdentityChain(identity)
 }
 
 /**
