@@ -537,7 +537,6 @@
     <string name="the_author">müəllif</string>
     <string name="reinstall_embedded_plugins">Yerləşdirilmiş plaginləri yenidən quraşdır</string>
     <string name="remove_cached_version">Keşlənmiş versiyanı sil</string>
-    <string name="remove_last_downloaded_version">Sonuncu yüklənildi versiyanı sil</string>
     <string name="clear_hidden">Gizliləri təmizlə</string>
     <string name="clear_hidden_description">Bütün gizli yaradıcıları və videoları silir, onları yenidən göstərir</string>
     <string name="reset_announcements">Elanları sıfırla</string>
