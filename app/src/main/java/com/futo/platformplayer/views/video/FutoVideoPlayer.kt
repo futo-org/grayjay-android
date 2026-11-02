@@ -687,7 +687,8 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
             //videoControlsBar.visibility = View.GONE;
             _videoView.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT;
 
-            _videoControls_fullscreen.visibility = View.VISIBLE;
+            //_videoControls_fullscreen.visibility = View.VISIBLE;
+            _videoControls_fullscreen.show(); //Known in past to cause double controls, seems fixed with animations disabled..
             videoControls.hideImmediately();
             videoControls.visibility = View.GONE;
         }
@@ -701,7 +702,8 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
             //videoControlsBar.visibility = View.VISIBLE;
             _videoView.resizeMode = _desiredResizeModePortrait;
 
-            videoControls.visibility = View.VISIBLE;
+            //videoControls.visibility = View.VISIBLE;
+            videoControls.show(); //Known in past to cause double controls, seems fixed with animations disabled..
             _videoControls_fullscreen.hideImmediately();
             _videoControls_fullscreen.visibility = View.GONE;
         }
