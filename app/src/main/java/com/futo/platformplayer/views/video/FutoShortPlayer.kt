@@ -1,11 +1,9 @@
 package com.futo.platformplayer.views.video
 
-import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.view.LayoutInflater
-import android.view.animation.LinearInterpolator
 import androidx.annotation.Dimension
 import androidx.annotation.OptIn
 import androidx.media3.common.PlaybackParameters
@@ -35,26 +33,20 @@ class FutoShortPlayer(context: Context, attrs: AttributeSet? = null) :
     private val videoView: PlayerView
     private val progressBar: DefaultTimeBar
     private lateinit var player: PlayerManager
-    private var progressAnimator: ValueAnimator = createProgressBarAnimator()
+    private var scrubbing = false
+    private val updateProgressAction = Runnable { updateProgressBar() }
 
     val onPlaybackStateChanged = Event1<Int>();
 
     private var playerEventListener = object : Player.Listener {
         override fun onEvents(player: Player, events: Player.Events) {
             if (events.containsAny(
-                    Player.EVENT_POSITION_DISCONTINUITY, Player.EVENT_IS_PLAYING_CHANGED, Player.EVENT_PLAYBACK_STATE_CHANGED
+                    Player.EVENT_POSITION_DISCONTINUITY, Player.EVENT_IS_PLAYING_CHANGED,
+                    Player.EVENT_PLAYBACK_STATE_CHANGED, Player.EVENT_TIMELINE_CHANGED,
+                    Player.EVENT_PLAYBACK_PARAMETERS_CHANGED
                 )
             ) {
-                progressAnimator.cancel()
-                if (player.duration >= 0) {
-                    progressAnimator.duration = player.duration
-                    setProgressBarDuration(player.duration)
-                    progressAnimator.currentPlayTime = player.currentPosition
-                }
-
-                if (player.isPlaying) {
-                    progressAnimator.start()
-                }
+                updateProgressBar()
             }
 
             if (events.containsAny(Player.EVENT_PLAYBACK_STATE_CHANGED)) {
@@ -86,35 +78,47 @@ class FutoShortPlayer(context: Context, attrs: AttributeSet? = null) :
 
         progressBar.addListener(object : TimeBar.OnScrubListener {
             override fun onScrubStart(timeBar: TimeBar, position: Long) {
-                progressAnimator.cancel()
+                scrubbing = true
+                removeCallbacks(updateProgressAction)
             }
 
             override fun onScrubMove(timeBar: TimeBar, position: Long) {}
 
             override fun onScrubStop(timeBar: TimeBar, position: Long, canceled: Boolean) {
-                if (canceled) {
-                    progressAnimator.currentPlayTime = player.player.currentPosition
-                    progressAnimator.duration = player.player.duration
-                    progressAnimator.start()
-                    return
+                scrubbing = false
+                if (!canceled && playerAttached) {
+                    seekTo(position)
                 }
-
-                // the progress bar should never be available to the user without the player being attached to this view
-                assert(playerAttached)
-                seekTo(position)
+                updateProgressBar()
             }
         })
     }
 
-    @OptIn(UnstableApi::class)
-    private fun createProgressBarAnimator(): ValueAnimator {
-        return ValueAnimator.ofFloat(0f, 1f).apply {
-            interpolator = LinearInterpolator()
-
-            addUpdateListener { animation ->
-                progressBar.setPosition(animation.currentPlayTime)
-            }
+    private fun updateProgressBar() {
+        removeCallbacks(updateProgressAction)
+        if (!playerAttached || !isAttachedToWindow || scrubbing) {
+            return
         }
+
+        val exoPlayer = player.player
+        setProgressBarDuration(exoPlayer.duration.coerceAtLeast(0))
+        progressBar.setPosition(exoPlayer.currentPosition)
+
+        // Playback progress must not depend on the system animator duration scale.
+        if (exoPlayer.isPlaying) {
+            postOnAnimation(updateProgressAction)
+        }
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        updateProgressBar()
+    }
+
+    override fun onDetachedFromWindow() {
+        removeCallbacks(updateProgressAction)
+        scrubbing = false
+        super.onDetachedFromWindow()
     }
 
     fun setProgressBarDuration(duration: Long) {
@@ -134,10 +138,13 @@ class FutoShortPlayer(context: Context, attrs: AttributeSet? = null) :
         playerAttached = true
 
         player.player.addListener(playerEventListener)
+        updateProgressBar()
     }
 
     fun detach() {
         playerAttached = false
+        scrubbing = false
+        removeCallbacks(updateProgressAction)
         player.player.removeListener(playerEventListener)
         player.detach()
     }
