@@ -103,7 +103,10 @@ class PolycentricAdapter(internal val client: PolycentricClient) {
         /**
          * The initial servers of new identities.
          */
-        val SEED_SERVERS: List<String> = listOf("https://srv.harbor.social")
+        val SEED_SERVERS: List<String> = listOf(
+            "https://srv.harbor.social",
+            "https://srv.polycentric.io",
+        )
 
         /**
          * Base URL of the Harbor web app, used to build the outbound links
