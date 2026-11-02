@@ -1514,9 +1514,10 @@ class VideoDetailView : ConstraintLayout {
                 }"
             )
 
-        if (!videoDetail.isLive) {
-            _player.setPlaybackRate(Settings.instance.playback.getDefaultPlaybackSpeed());
-        }
+        _player.setPlaybackRate(
+            if (videoDetail.isLive) 1.0f
+            else Settings.instance.playback.getDefaultPlaybackSpeed()
+        );
 
         val videoLocal: VideoLocal?;
         val video: IPlatformVideoDetails?;
@@ -2097,7 +2098,7 @@ class VideoDetailView : ConstraintLayout {
 
                 fragment.lifecycleScope.launch(Dispatchers.Main) {
                     try {
-                        loadCurrentVideoCast(video, videoSource, audioSource, subtitleSource, resumePositionMs, Settings.instance.playback.getDefaultPlaybackSpeed().toDouble(), sabrState);
+                        loadCurrentVideoCast(video, videoSource, audioSource, subtitleSource, resumePositionMs, if (video.isLive) 1.0 else Settings.instance.playback.getDefaultPlaybackSpeed().toDouble(), sabrState);
                     } catch (e: Throwable) {
                         Logger.e(TAG, "loadCurrentVideo failed (casting)", e)
                     }
@@ -3091,8 +3092,11 @@ class VideoDetailView : ConstraintLayout {
             StateCasting.instance.stopVideo();
             _cast.cancel()
 
-            if (video?.isLive == false) {
-                _player.setPlaybackRate(Settings.instance.playback.getDefaultPlaybackSpeed());
+            if (video != null) {
+                _player.setPlaybackRate(
+                    if (video?.isLive == true) 1.0f
+                    else Settings.instance.playback.getDefaultPlaybackSpeed()
+                );
             }
         }
 
