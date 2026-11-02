@@ -20,6 +20,7 @@
         android:padding="3dp"
         android:layout_marginStart="5dp"
         app:srcCompat="@drawable/ic_minimize"
+        android:tooltipText="@string/cd_button_minimize"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -38,6 +39,7 @@
             android:scaleType="fitCenter"
             android:clickable="true"
             android:padding="12dp"
+            android:tooltipText="@string/cd_button_autoplay"
             app:srcCompat="@drawable/autoplay_24px" />
         <ImageButton
             android:id="@+id/button_cast"
@@ -47,6 +49,7 @@
             android:scaleType="fitCenter"
             android:clickable="true"
             android:padding="12dp"
+            android:tooltipText="@string/cd_cast_button"
             app:srcCompat="@drawable/ic_cast" />
         <ImageButton
             android:id="@+id/button_rotate_lock"
@@ -56,6 +59,7 @@
             android:scaleType="fitCenter"
             android:clickable="true"
             android:padding="12dp"
+            android:tooltipText="@string/cd_button_rotate_lock"
             app:srcCompat="@drawable/ic_screen_lock_rotation" />
         <ImageButton
             android:id="@+id/button_loop"
@@ -65,6 +69,7 @@
             android:scaleType="fitCenter"
             android:clickable="true"
             android:padding="12dp"
+            android:tooltipText="@string/cd_button_loop"
             app:srcCompat="@drawable/ic_repeat_one" />
         <ImageButton
             android:id="@+id/button_settings"
@@ -74,6 +79,7 @@
             android:scaleType="fitCenter"
             android:clickable="true"
             android:padding="12dp"
+            android:tooltipText="@string/cd_button_settings"
             app:srcCompat="@drawable/ic_settings" />
     </LinearLayout>
 
@@ -89,6 +95,7 @@
         app:srcCompat="@drawable/ic_skip_previous"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintRight_toLeftOf="@id/layout_play_pause"
+        android:tooltipText="@string/cd_button_fullscreen"
         app:layout_constraintBottom_toBottomOf="parent" />
 
     <FrameLayout

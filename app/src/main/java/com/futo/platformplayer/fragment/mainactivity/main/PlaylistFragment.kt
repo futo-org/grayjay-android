@@ -308,6 +308,7 @@ class PlaylistFragment : MainFragment() {
                 return
             }
 
+            _editPlaylistNameInput?.text = playlist.name;
             _editPlaylistNameInput?.activate();
             _editPlaylistOverlay?.show();
         }

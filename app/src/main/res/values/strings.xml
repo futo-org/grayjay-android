@@ -490,6 +490,9 @@
     <string name="watch_later_add_start">Add new videos to the beginning of Watch Later</string>
     <string name="watch_later_add_start_description">When adding videos to Watch Later add them to the beginning of the list instead of the end</string>
     <string name="already_in_watch_later">Already in watch later</string>
+    <string name="added_to_playlist">Added to playlist [%1$s]</string>
+    <string name="video_already_in_playlist">Video is already in playlist [%1$s]</string>
+    <string name="playlist_no_longer_exists">Playlist [%1$s] no longer exists</string>
     <string name="enable_polycentric">Enable Harbor</string>
     <string name="can_be_disabled_when_you_are_experiencing_issues">Can be disabled when you are experiencing issues</string>
     <string name="bypass_rotation_prevention_description">Allows for rotation on non-video views.\nWARNING: Not designed for it</string>
