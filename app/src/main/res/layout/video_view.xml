@@ -55,12 +55,14 @@
             android:layout_marginLeft="-6dp"
             android:layout_marginRight="-6dp"
             app:show_timeout="-1"
+            app:animation_enabled="false"
             app:controller_layout_id="@layout/video_player_ui" />
         <androidx.media3.ui.PlayerControlView
             android:id="@+id/video_player_controller_fullscreen"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             app:show_timeout="-1"
+            app:animation_enabled="false"
             app:controller_layout_id="@layout/video_player_ui_fullscreen"
             android:visibility="gone" />
     </FrameLayout>

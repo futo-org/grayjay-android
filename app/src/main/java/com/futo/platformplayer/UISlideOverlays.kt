@@ -1004,6 +1004,9 @@ class UISlideOverlays {
 
             val resolutions = listOf(
                 Triple<String, String, Long>(container.context.getString(R.string.none), container.context.getString(R.string.none), -1),
+                Triple<String, String, Long>("144P", "256x144", 256*144),
+                Triple<String, String, Long>("240P", "426x240", 426*240),
+                Triple<String, String, Long>("360P", "640x360", 640*360),
                 Triple<String, String, Long>("480P", "720x480", 720*480),
                 Triple<String, String, Long>("720P", "1280x720", 1280*720),
                 Triple<String, String, Long>("1080P", "1920x1080", 1920*1080),
@@ -1187,14 +1190,14 @@ class UISlideOverlays {
                             "${lastUpdated.videos.size} " + container.context.getString(R.string.videos),
                             tag = "",
                             call = {
-                                if(StatePlaylists.instance.addToPlaylist(lastUpdated.id, video))
-                                    UIDialogs.appToast("Added to playlist [${lastUpdated?.name}]", false);
+                                addToPlaylistWithFeedback(container.context, lastUpdated, video)
                                 StateDownloads.instance.checkForOutdatedPlaylists();
                             }))
                 );
             }
 
-            val allPlaylists = StatePlaylists.instance.getPlaylists();
+            val allPlaylists = StatePlaylists.instance.getPlaylists()
+                .sortedByDescending { maxOf(it.datePlayed, it.dateUpdate, it.dateCreation) };
             val queue = StatePlayer.instance.getQueue();
             val watchLater = StatePlaylists.instance.getWatchLater();
             items.add(SlideUpMenuGroup(container.context, container.context.getString(R.string.actions), "actions",
@@ -1288,8 +1291,7 @@ class UISlideOverlays {
                     "${playlist.videos.size} " + container.context.getString(R.string.videos),
                     tag = "",
                     call = {
-                        if(StatePlaylists.instance.addToPlaylist(playlist.id, video))
-                            UIDialogs.appToast("Added to playlist [${playlist.name}]", false);
+                        addToPlaylistWithFeedback(container.context, playlist, video)
                         StateDownloads.instance.checkForOutdatedPlaylists();
                     }));
             }
@@ -1298,6 +1300,15 @@ class UISlideOverlays {
                 items.add(SlideUpMenuGroup(container.context, container.context.getString(R.string.playlists), "", playlistItems));
 
             return SlideUpMenuOverlay(container.context, container, container.context.getString(R.string.video_options), null, true, items).apply { show() };
+        }
+
+        private fun addToPlaylistWithFeedback(context: Context, playlist: Playlist, video: IPlatformVideo) {
+            val message = when {
+                StatePlaylists.instance.addToPlaylist(playlist.id, video) -> R.string.added_to_playlist
+                StatePlaylists.instance.getPlaylist(playlist.id) == null -> R.string.playlist_no_longer_exists
+                else -> R.string.video_already_in_playlist
+            };
+            UIDialogs.appToast(context.getString(message, playlist.name), false);
         }
 
 
@@ -1316,8 +1327,7 @@ class UISlideOverlays {
                             "${lastUpdated.videos.size} " + container.context.getString(R.string.videos),
                             tag = "",
                             call = {
-                                if(StatePlaylists.instance.addToPlaylist(lastUpdated.id, video))
-                                    UIDialogs.appToast("Added to playlist [${lastUpdated?.name}]", false);
+                                addToPlaylistWithFeedback(container.context, lastUpdated, video)
                                 StateDownloads.instance.checkForOutdatedPlaylists();
                             }))
                 );
@@ -1374,8 +1384,7 @@ class UISlideOverlays {
                     "${playlist.videos.size} " + container.context.getString(R.string.videos),
                     tag = "",
                     call = {
-                        if(StatePlaylists.instance.addToPlaylist(playlist.id, video))
-                            UIDialogs.appToast("Added to playlist [${playlist.name}]", false);
+                        addToPlaylistWithFeedback(container.context, playlist, video)
                         StateDownloads.instance.checkForOutdatedPlaylists();
                     }));
             }
