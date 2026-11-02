@@ -490,6 +490,9 @@
     <string name="watch_later_add_start">Yeni videoları Daha sonra izlə siyahısının əvvəlinə əlavə et</string>
     <string name="watch_later_add_start_description">Daha sonra izlə siyahısına videolar əlavə edərkən onları sonuna deyil, siyahının əvvəlinə əlavə edin</string>
     <string name="already_in_watch_later">Artıq daha sonra izlə siyahısındadır</string>
+    <string name="added_to_playlist">Pleylistə əlavə edildi [%1$s]</string>
+    <string name="video_already_in_playlist">Video artıq pleylistdədir [%1$s]</string>
+    <string name="playlist_no_longer_exists">Pleylist [%1$s] artıq mövcud deyil</string>
     <string name="enable_polycentric">Harbor-u aktivləşdir</string>
     <string name="can_be_disabled_when_you_are_experiencing_issues">Problemlərlə qarşılaşdıqda bağlana bilər</string>
     <string name="bypass_rotation_prevention_description">Video olmayan görünüşlərdə fırlanmaya icazə verir.\nXƏBƏRDARLIQ: Bunun üçün nəzərdə tutulmayıb</string>
