@@ -14,7 +14,8 @@ fun View.applyBottomOverlayInsets(types: Int) {
         val inset = insets.getInsets(types).bottom;
         val location = IntArray(2);
         getLocationInWindow(location);
-        val below = rootView.height - (location[1] + height);
+        // Hidden overlays can retain their previous bounds during a window resize.
+        val below = max(rootView.height - (location[1] + height), 0);
         updatePadding(bottom = max(inset - below, 0));
     }
 
@@ -24,5 +25,6 @@ fun View.applyBottomOverlayInsets(types: Int) {
         insets;
     }
 
-    addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> apply() };
+    // Padding changes must request measurement after the current layout has finished.
+    addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> post { apply() } };
 }

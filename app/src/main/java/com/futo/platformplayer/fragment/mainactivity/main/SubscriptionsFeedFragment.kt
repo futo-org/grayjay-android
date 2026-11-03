@@ -325,7 +325,7 @@ class SubscriptionsFeedFragment : MainFragment() {
         override fun filterResults(results: List<IPlatformContent>): List<IPlatformContent> {
             val nowSoon = OffsetDateTime.now().plusMinutes(5);
             val filterGroup = subGroup;
-            return results.filter {
+            return TemporaryFixes.filterSubscriptionContent(results).filter {
                 val allowedContentType = fragment._filterSettings.allowContentTypes.contains(if(it.contentType == ContentType.NESTED_VIDEO || it.contentType == ContentType.LOCKED) ContentType.MEDIA else it.contentType);
 
                 if(it is IPlatformVideo && it.duration > 0 && !fragment._filterSettings.allowWatched && StateHistory.instance.isHistoryWatched(it.url, it.duration))

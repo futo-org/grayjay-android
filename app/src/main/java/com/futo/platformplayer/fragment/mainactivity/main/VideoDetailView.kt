@@ -83,6 +83,7 @@ import com.futo.platformplayer.api.media.models.subtitles.ISubtitleSource
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.models.video.LocalVideoDetails
+import com.futo.platformplayer.api.media.models.video.PlatformVideoPlaceholder
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
@@ -1409,7 +1410,11 @@ class VideoDetailView : ConstraintLayout {
         _searchVideo = video;
         _autoplayVideo = null
         Logger.i(TAG, "Autoplay video cleared (setVideoOverview)")
-        _videoResumePositionMilliseconds = resumeSeconds * 1000;
+        _videoResumePositionMilliseconds = (if (video is PlatformVideoPlaceholder)
+            video.resumeSeconds
+        else
+            resumeSeconds) * 1000;
+
         setLastPositionMilliseconds(_videoResumePositionMilliseconds, false);
         _addCommentView.setContext(null, null);
 
@@ -3572,7 +3577,15 @@ class VideoDetailView : ConstraintLayout {
                 throw IllegalStateException("Expected media content, found ${result.contentType}");
             return@TaskHandler result;
         })
-        .success { setVideoDetails(it, true) }
+        .success { details ->
+            _searchVideo?.let { video ->
+                if (video is PlatformVideoPlaceholder) {
+                    StatePlayer.instance.replaceQueuePlaceholder(video, details)
+                    _searchVideo = details
+                }
+            }
+            setVideoDetails(details, true)
+        }
         .exception<ScriptReloadRequiredException> {
             StatePlatform.instance.handleReloadRequired(it, {
                 fetchVideo();
