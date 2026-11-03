@@ -22,7 +22,15 @@ import com.futo.platformplayer.api.http.server.handlers.HttpFileHandler
 import com.futo.platformplayer.api.http.server.handlers.HttpFunctionHandler
 import com.futo.platformplayer.api.http.server.handlers.HttpProxyHandler
 import com.futo.platformplayer.api.media.models.modifier.IRequestModifier
+import com.futo.platformplayer.api.media.models.streams.VideoUnMuxedSourceDescriptor
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
+import com.futo.platformplayer.api.media.models.streams.sources.other.IStreamMetaDataSource
+import com.futo.platformplayer.casting.dlna.DlnaCastingDevice
+import com.futo.platformplayer.casting.dlna.DlnaStatusImage
+import com.futo.platformplayer.casting.dlna.FlatMp4HttpHandler
+import com.futo.platformplayer.casting.dlna.FlatMp4Muxer
+import com.futo.platformplayer.casting.dlna.HttpRangeReader
+import com.futo.platformplayer.casting.dlna.SsdpDiscoverer
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioUrlSource
 import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestSource
@@ -84,6 +92,7 @@ import java.net.Inet6Address
 import java.net.URLDecoder
 import java.net.URLEncoder
 import java.util.UUID
+import kotlin.math.abs
 import java.util.concurrent.atomic.AtomicInteger
 import org.fcast.sender_sdk.DeviceInfo as RsDeviceInfo
 
@@ -193,6 +202,7 @@ class StateCasting {
 
     private val _context = CastContext()
     var _deviceDiscoverer: NsdDeviceDiscoverer? = null
+    private var _ssdpDiscoverer: SsdpDiscoverer? = null
 
     class DiscoveryEventHandler(
         private val onDeviceAdded: (RsDeviceInfo) -> Unit,
@@ -300,6 +310,20 @@ class StateCasting {
                 },
             )
         )
+
+        _ssdpDiscoverer = SsdpDiscoverer(context) { description ->
+            invokeInMainScopeIfRequired {
+                //FCast and Chromecast are preferred when a TV advertises them under the same name
+                if (devices.containsKey(description.friendlyName)) {
+                    return@invokeInMainScopeIfRequired
+                }
+
+                Logger.i(TAG, "DLNA device added: ${description.friendlyName}")
+                val deviceHandle = CastingDevice(DlnaCastingDevice(description.friendlyName, description.location, description))
+                devices[description.friendlyName] = deviceHandle
+                onDeviceAdded.emit(deviceHandle)
+            }
+        }.also { it.start() }
     }
 
     @Synchronized
@@ -332,6 +356,8 @@ class StateCasting {
         Logger.i(TAG, "CastingService stopped.")
 
         _deviceDiscoverer = null
+        _ssdpDiscoverer?.stop()
+        _ssdpDiscoverer = null
     }
 
     fun startUpdateTimeJob(
@@ -341,6 +367,11 @@ class StateCasting {
 
     fun deviceFromInfo(deviceInfo: CastingDeviceInfo): CastingDevice? {
         try {
+            if (deviceInfo.type == CastProtocolType.DLNA) {
+                val location = deviceInfo.txtRecords[DlnaCastingDevice.TXT_LOCATION] ?: return null
+                return CastingDevice(DlnaCastingDevice(deviceInfo.name, location))
+            }
+
             val rsAddrs =
                 deviceInfo.addresses.map { org.fcast.sender_sdk.tryIpAddrFromStr(it) }
             val rsDeviceInfo = RsDeviceInfo(
@@ -536,6 +567,30 @@ class StateCasting {
                 }
             }
 
+            var subtitleSource = subtitleSource
+            //DLNA renderers get a flat MP4 built on the fly when the sources allow it, returns null to fall back.
+            var dlnaPrepare: (() -> FlatMp4Muxer?)? = null
+            if (deviceProto == CastProtocolType.DLNA) {
+                val muxSources = selectDlnaMuxSources(video, videoSource, audioSource)
+                if (muxSources != null) {
+                    videoSource = muxSources.first
+                    audioSource = muxSources.second
+                    dlnaPrepare = { prepareDlnaMuxed(muxSources.first, muxSources.second) }
+                } else {
+                    val (dlnaVideoSource, dlnaAudioSource) = selectDlnaSources(video, videoSource, audioSource)
+                    videoSource = dlnaVideoSource
+                    audioSource = dlnaAudioSource
+                    val hlsVideo = dlnaVideoSource as? IHLSManifestSource
+                    val hlsAudio = if (dlnaVideoSource == null) dlnaAudioSource as? IHLSManifestAudioSource else null
+                    if (hlsVideo != null) {
+                        dlnaPrepare = { prepareDlnaHls(hlsVideo.url, (hlsVideo as? JSSource)?.getRequestModifier(), false) }
+                    } else if (hlsAudio != null) {
+                        dlnaPrepare = { prepareDlnaHls(hlsAudio.url, (hlsAudio as? JSSource)?.getRequestModifier(), true) }
+                    }
+                }
+                subtitleSource = null
+            }
+
             val resumePosition = if (ms > 0L) (ms.toDouble() / 1000.0) else 0.0;
             val castId = _castId.incrementAndGet()
 
@@ -556,10 +611,19 @@ class StateCasting {
             val runningCastState = if (sabrState == null) (videoSource as? JSUMPSource)?.let { takeRunningCastState(it.videoId, it.url) } else null;
             val castState = sabrState ?: runningCastState;
 
+            if (dlnaPrepare != null) {
+                //Replace the previous stream on the renderer before its handlers go away, it shows a network error otherwise.
+                showDlnaStatus(ad, video, "Preparing media…")
+            }
+
             cleanExecutors()
             _castServer.removeAllHandlers("cast")
             _castServer.removeAllHandlers("castSingular")
             _castServer.removeAllHandlers("castProxiedHlsVariant")
+
+            if (dlnaPrepare != null && castDlnaFlat(video, resumePosition, speed, castId, onLoading, dlnaPrepare)) {
+                return@withContext true
+            }
 
             if (sourceCount > 1) {
                 if (videoSource is LocalVideoSource || audioSource is LocalAudioSource || subtitleSource is LocalSubtitleSource) {
@@ -687,6 +751,172 @@ class StateCasting {
 
             return@withContext true;
         }
+    }
+
+    private fun hasFragmentIndex(source: Any): Boolean {
+        val meta = (source as? IStreamMetaDataSource)?.streamMetaData ?: return false
+        return meta.fileInitStart != null && meta.fileInitEnd != null && meta.fileIndexStart != null && meta.fileIndexEnd != null
+    }
+
+    /**
+     * Picks separate MP4 video and audio streams with known init/index ranges, which [FlatMp4Muxer] can combine into
+     * one file for DLNA renderers. Prefers H.264 near the selected height and audio in the selected language.
+     */
+    private fun selectDlnaMuxSources(video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?): Pair<IVideoUrlSource, IAudioUrlSource>? {
+        val descriptor = video.video as? VideoUnMuxedSourceDescriptor ?: return null
+        if (videoSource == null) return null
+
+        val videoCandidates = descriptor.videoSources
+            .filterIsInstance<IVideoUrlSource>()
+            .filter { it.container == "video/mp4" && hasFragmentIndex(it) }
+        val audioCandidates = descriptor.audioSources
+            .filterIsInstance<IAudioUrlSource>()
+            .filter { it.container == "audio/mp4" && hasFragmentIndex(it) }
+        if (videoCandidates.isEmpty() || audioCandidates.isEmpty()) return null
+
+        val targetHeight = videoSource.height
+        val chosenVideo = (videoSource as? IVideoUrlSource)?.takeIf { it in videoCandidates && it.codec.startsWith("avc1") }
+            ?: videoCandidates.filter { it.codec.startsWith("avc1") }.ifEmpty { videoCandidates }
+                .minWith(compareBy<IVideoUrlSource> { abs(it.height - targetHeight) }.thenByDescending { it.bitrate ?: 0 })
+
+        val chosenAudio = (audioSource as? IAudioUrlSource)?.takeIf { it in audioCandidates }
+            ?: audioCandidates.filter { it.language == audioSource?.language }.ifEmpty { audioCandidates }.maxBy { it.bitrate }
+
+        return Pair(chosenVideo, chosenAudio)
+    }
+
+    private fun showDlnaStatus(ad: CastingDevice, video: IPlatformVideoDetails, status: String) {
+        val device = ad.device as? DlnaCastingDevice ?: return
+        try {
+            val jpeg = DlnaStatusImage.render(StateApp.instance.contextOrNull, video.name, video.thumbnails.getHQThumbnail(), status)
+            val path = "/dlna-status-${UUID.randomUUID()}.jpg"
+            _castServer.removeAllHandlers("dlnaStatus")
+            _castServer.addHandlerWithAllowAllOptions(DlnaStatusImage.Handler(path, jpeg), true).withTag("dlnaStatus")
+            device.showImage(getLocalUrl(ad) + path, video.name)
+        } catch (e: Throwable) {
+            Logger.w(TAG, "Failed to show DLNA status screen: ${e.message}")
+        }
+    }
+
+    private fun prepareDlnaMuxed(videoSource: IVideoUrlSource, audioSource: IAudioUrlSource): FlatMp4Muxer {
+        val videoMeta = (videoSource as IStreamMetaDataSource).streamMetaData!!
+        val audioMeta = (audioSource as IStreamMetaDataSource).streamMetaData!!
+        val client = ManagedHttpClient()
+        Logger.i(TAG, "Casting as DLNA muxed MP4 (${videoSource.height}p ${videoSource.codec} + ${audioSource.codec})")
+        return FlatMp4Muxer.create(
+            FlatMp4Muxer.Source(HttpRangeReader(client, videoSource.getVideoUrl(), (videoSource as? JSSource)?.getRequestModifier()),
+                videoMeta.fileInitStart!!.toLong(), videoMeta.fileInitEnd!!.toLong(), videoMeta.fileIndexStart!!.toLong(), videoMeta.fileIndexEnd!!.toLong()),
+            FlatMp4Muxer.Source(HttpRangeReader(client, audioSource.getAudioUrl(), (audioSource as? JSSource)?.getRequestModifier()),
+                audioMeta.fileInitStart!!.toLong(), audioMeta.fileInitEnd!!.toLong(), audioMeta.fileIndexStart!!.toLong(), audioMeta.fileIndexEnd!!.toLong())
+        )
+    }
+
+    /**
+     * Builds a flat MP4 from a VOD HLS playlist with fMP4 segments (EXT-X-MAP), which DLNA renderers handle far better
+     * than HLS itself. Returns null for anything else (TS segments, encryption, live, multiple tracks).
+     */
+    private fun prepareDlnaHls(url: String, requestModifier: IRequestModifier?, isAudio: Boolean): FlatMp4Muxer? {
+        try {
+            val client = ManagedHttpClient()
+            fun fetch(playlistUrl: String): String = client.get(playlistUrl, mutableMapOf(), requestModifier).use {
+                if (!it.isOk) throw IllegalStateException("Playlist request failed with HTTP ${it.code}")
+                it.body?.string() ?: throw IllegalStateException("Playlist response has no body")
+            }
+
+            var playlistUrl = url
+            var content = fetch(url)
+            if (content.contains("#EXT-X-STREAM-INF")) {
+                val master = HLS.parseMasterPlaylist(content, url)
+                playlistUrl = (if (isAudio) master.mediaRenditions.firstOrNull { it.type == "AUDIO" && it.uri != null }?.uri else null)
+                    ?: master.variantPlaylistsRefs.maxByOrNull { it.streamInfo.bandwidth ?: 0 }?.url
+                    ?: return null
+                content = fetch(playlistUrl)
+            }
+
+            val playlist = HLS.parseVariantPlaylist(content, playlistUrl)
+            val mapUrl = playlist.mapUrl
+            if (mapUrl == null || playlist.decryptionInfo?.isEncrypted == true || !content.contains("#EXT-X-ENDLIST")) {
+                Logger.i(TAG, "DLNA: HLS playlist is not VOD fMP4, using HLS directly")
+                return null
+            }
+
+            val readers = HashMap<String, HttpRangeReader>()
+            fun reader(segmentUrl: String) = readers.getOrPut(segmentUrl) { HttpRangeReader(client, segmentUrl, requestModifier) }
+            //A byte range without offset continues where the previous range of the same resource ended.
+            val nextOffsets = HashMap<String, Long>()
+            fun segment(segmentUrl: String, start: Long, length: Long): FlatMp4Muxer.SegmentSource.Segment {
+                val offset = if (start >= 0) start else if (length > 0) nextOffsets[segmentUrl] ?: 0L else 0L
+                if (length > 0) nextOffsets[segmentUrl] = offset + length
+                return FlatMp4Muxer.SegmentSource.Segment(reader(segmentUrl), offset, length)
+            }
+
+            val init = segment(mapUrl, playlist.mapBytesStart, playlist.mapBytesLength)
+            val segments = playlist.segments.filterIsInstance<HLS.MediaSegment>().map { segment(it.uri, it.bytesStart, it.bytesLength) }
+            if (segments.isEmpty()) return null
+
+            Logger.i(TAG, "Casting as DLNA flat MP4 from HLS (${segments.size} segments, audio=$isAudio)")
+            val source = FlatMp4Muxer.SegmentSource(init, segments)
+            return FlatMp4Muxer.create(if (isAudio) null else source, if (isAudio) source else null)
+        } catch (e: Throwable) {
+            Logger.w(TAG, "DLNA: failed to build flat MP4 from HLS, using HLS directly", e)
+            return null
+        }
+    }
+
+    /**
+     * Returns false when [prepare] could not build a muxer and the regular cast path should be used.
+     */
+    private fun castDlnaFlat(video: IPlatformVideoDetails, resumePosition: Double, speed: Double?, castId: Int, onLoading: ((Boolean) -> Unit)?, prepare: () -> FlatMp4Muxer?): Boolean {
+        val ad = activeDevice ?: return true
+
+        invokeInMainScopeIfRequired { onLoading?.invoke(true) }
+        val muxer = try {
+            val startTime = System.currentTimeMillis()
+            prepare()?.also {
+                Logger.i(TAG, "DLNA flat MP4 prepared in ${System.currentTimeMillis() - startTime}ms (${it.contentType}, ${it.size} bytes)")
+            }
+        } finally {
+            invokeInMainScopeIfRequired { onLoading?.invoke(false) }
+        } ?: return false
+
+        if (_castId.get() != castId) {
+            Logger.i(TAG, "DLNA flat MP4 prepared for an outdated cast, ignoring")
+            return true
+        }
+
+        val url = getLocalUrl(ad)
+        val path = "/dlna-${UUID.randomUUID()}." + (if (muxer.contentType.startsWith("audio/")) "m4a" else "mp4")
+        _castServer.addHandlerWithAllowAllOptions(FlatMp4HttpHandler(path, muxer), true).withTag("cast")
+        ad.loadVideo("BUFFERED", muxer.contentType, url + path, resumePosition, muxer.durationSeconds, speed, metadataFromVideo(video))
+        return true
+    }
+
+    /**
+     * DLNA renderers play a single URL, so separate video and audio streams cannot be combined (no DASH support).
+     * Prefers a muxed progressive source, then HLS, then the audio stream on its own when there is no video.
+     */
+    private fun selectDlnaSources(video: IPlatformVideoDetails, videoSource: IVideoSource?, audioSource: IAudioSource?): Pair<IVideoSource?, IAudioSource?> {
+        if (videoSource == null) {
+            return Pair(null, audioSource)
+        }
+
+        val descriptor = video.video
+        val isMuxed = !descriptor.isUnMuxed
+        if (isMuxed && (videoSource is IVideoUrlSource || videoSource is IHLSManifestSource || videoSource is LocalVideoSource || videoSource is LocalVideoContentSource)) {
+            return Pair(videoSource, null)
+        }
+        if (videoSource is IHLSManifestSource) {
+            return Pair(videoSource, null)
+        }
+
+        val hls = descriptor.videoSources.firstOrNull { it is IHLSManifestSource }
+        if (hls != null) {
+            Logger.i(TAG, "DLNA: using HLS source instead of separate video and audio streams")
+            return Pair(hls, null)
+        }
+
+        val sources = listOfNotNull(videoSource::class.java.simpleName, audioSource?.let { it::class.java.simpleName }).joinToString(", ")
+        throw UnsupportedCastException("DLNA devices can only play a single combined video and audio stream, but this video only offers separate streams ($sources).")
     }
 
     private fun HttpProxyHandler.withIRequestModifier(requestModifier: IRequestModifier?): HttpProxyHandler {

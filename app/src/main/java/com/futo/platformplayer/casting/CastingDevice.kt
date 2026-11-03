@@ -2,6 +2,7 @@ package com.futo.platformplayer.casting
 
 import android.os.Build
 import com.futo.platformplayer.BuildConfig
+import com.futo.platformplayer.casting.dlna.DlnaCastingDevice
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
@@ -15,7 +16,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import org.fcast.sender_sdk.ApplicationInfo
-import org.fcast.sender_sdk.CastingDevice as RsCastingDevice
+import org.fcast.sender_sdk.CastingDeviceInterface
 import org.fcast.sender_sdk.MediaTrack
 import org.fcast.sender_sdk.MediaTrackType
 import java.net.InetAddress
@@ -48,7 +49,8 @@ enum class CastConnectionState {
 enum class CastProtocolType {
     CHROMECAST,
     AIRPLAY,
-    FCAST;
+    FCAST,
+    DLNA;
 
     object CastProtocolTypeSerializer : KSerializer<CastProtocolType> {
         override val descriptor: SerialDescriptor =
@@ -100,7 +102,7 @@ private fun ipAddrToInetAddress(addr: IpAddr): InetAddress = when (addr) {
     )
 }
 
-class CastingDevice(val device: RsCastingDevice) {
+class CastingDevice(val device: CastingDeviceInterface) {
     class EventHandler : RsDeviceEventHandler {
         var onConnectionStateChanged = Event1<DeviceConnectionState>();
         var onPlayChanged = Event1<Boolean>()
@@ -213,6 +215,16 @@ class CastingDevice(val device: RsCastingDevice) {
     fun disconnect() = device.disconnect()
 
     fun getDeviceInfo(): CastingDeviceInfo {
+        if (device is DlnaCastingDevice) {
+            return CastingDeviceInfo(
+                device.name(),
+                CastProtocolType.DLNA,
+                addresses = arrayOf(device.host),
+                port = device.port,
+                txtRecords = mapOf(DlnaCastingDevice.TXT_LOCATION to device.location),
+            )
+        }
+
         val info = device.getDeviceInfo()
         return CastingDeviceInfo(
             info.name,
@@ -273,7 +285,7 @@ class CastingDevice(val device: RsCastingDevice) {
 
     var connectionState = CastConnectionState.DISCONNECTED
     val protocolType: CastProtocolType
-        get() = when (device.castingProtocol()) {
+        get() = if (device is DlnaCastingDevice) CastProtocolType.DLNA else when (device.castingProtocol()) {
             ProtocolType.CHROMECAST -> CastProtocolType.CHROMECAST
             ProtocolType.F_CAST -> CastProtocolType.FCAST
         }
