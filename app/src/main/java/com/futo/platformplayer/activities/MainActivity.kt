@@ -40,7 +40,9 @@ import com.futo.platformplayer.RootInsetsController
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.http.ManagedHttpClient
+import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.models.video.LocalVideoDetails
+import com.futo.platformplayer.api.media.models.video.PlatformVideoPlaceholder
 import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.dp
@@ -95,6 +97,7 @@ import com.futo.platformplayer.fragment.mainactivity.topbar.NavigationTopBarFrag
 import com.futo.platformplayer.fragment.mainactivity.topbar.SearchTopBarFragment
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.ImportCache
+import com.futo.platformplayer.models.PlatformVideoWithTime
 import com.futo.platformplayer.models.UrlVideoWithTime
 import com.futo.platformplayer.polycentric.isPairingLink
 import com.futo.platformplayer.polycentric.parsePairingInfo
@@ -132,6 +135,7 @@ import java.lang.reflect.InvocationTargetException
 import java.util.LinkedList
 import java.util.UUID
 import java.util.concurrent.ConcurrentLinkedQueue
+import kotlin.coroutines.cancellation.CancellationException
 
 
 class MainActivity : AppCompatActivity, IWithResultLauncher {
@@ -809,7 +813,10 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
             "VIDEO" -> {
                 val url = intent.getStringExtra("VIDEO");
-                navigateWhenReady(_fragVideoDetail, url);
+                //navigateWhenReady(_fragVideoDetail, url);
+                url?.let {
+                    openExternalVideo(it);
+                }
             }
 
             "IMPORT_OPTIONS" -> {
@@ -862,6 +869,24 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         }
     }
 
+    private fun openExternalVideo(url: String, position: Long = 0) {
+        lifecycleScope.launch {
+            lifecycle.withStateAtLeast(Lifecycle.State.RESUMED) {
+                val player = StatePlayer.instance
+                if (player.queueSize > 0) {
+                    val video = player.currentVideo?.takeIf { it.url == url }
+                        ?: PlatformVideoPlaceholder(url, position.coerceAtLeast(0))
+                    player.insertToQueue(video, true)
+                } else if (position > 0) {
+                    navigate(_fragVideoDetail, UrlVideoWithTime(url, position, true))
+                } else {
+                    navigate(_fragVideoDetail, url)
+                }
+                _fragVideoDetail.maximizeVideoDetail(true)
+            }
+        }
+    }
+
     suspend fun handleUrlAll(url: String, openIntent: Intent? = null) {
         val uri = Uri.parse(url)
         val intent = openIntent ?: this.intent;
@@ -892,7 +917,8 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                     startActivity(intent);
                 } else if (url.startsWith("grayjay://video/")) {
                     val videoUrl = url.substring("grayjay://video/".length);
-                    navigateWhenReady(_fragVideoDetail, videoUrl);
+                    openExternalVideo(videoUrl);
+                    //navigateWhenReady(_fragVideoDetail, videoUrl);
                 } else if (url.startsWith("grayjay://channel/")) {
                     val channelUrl = url.substring("grayjay://channel/".length);
                     navigateWhenReady(_fragMainChannel, channelUrl);
@@ -953,12 +979,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             if (StatePlatform.instance.hasEnabledContentClient(url)) {
                 Logger.i(TAG, "handleUrl(url=$url) found video client");
                 withContext(Dispatchers.Main) {
-                    if (position > 0)
-                        navigateWhenReady(_fragVideoDetail, UrlVideoWithTime(url, position.toLong(), true));
-                    else
-                        navigateWhenReady(_fragVideoDetail, url);
-
-                    _fragVideoDetail.maximizeVideoDetail(true);
+                    openExternalVideo(url, if(position > 0) position.toLong() else 0);
                 }
                 return@withContext true;
             } else if (StatePlatform.instance.hasEnabledChannelClient(url)) {

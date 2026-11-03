@@ -19,6 +19,7 @@ import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
+import com.futo.platformplayer.api.media.models.video.PlatformVideoPlaceholder
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
@@ -652,6 +653,23 @@ class StatePlayer {
                 _queue.add(_queuePosition, video);
                 return video;
             }
+        }
+    }
+
+    fun replaceQueuePlaceholder(placeholder: PlatformVideoPlaceholder, video: IPlatformVideoDetails) {
+        var replaced = false
+        synchronized(_queue) {
+            for (queue in listOfNotNull(_queue, _queueShuffled)) {
+                for (index in queue.indices) {
+                    if (queue[index] === placeholder) {
+                        queue[index] = video
+                        replaced = true
+                    }
+                }
+            }
+        }
+        if (replaced) {
+            onQueueChanged.emit(false)
         }
     }
 
