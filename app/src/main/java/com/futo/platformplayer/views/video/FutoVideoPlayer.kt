@@ -16,6 +16,7 @@ import android.util.Log
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.widget.FrameLayout
 import android.widget.ImageButton
@@ -81,6 +82,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
     //Views
     private val _root: ConstraintLayout;
     private val _videoView: PlayerView;
+    private val _videoContent: View;
 
     val videoControls: PlayerControlView;
     private val _videoControls_fullscreen: PlayerControlView;
@@ -177,6 +179,14 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
         LayoutInflater.from(context).inflate(R.layout.video_view, this, true);
         _root = findViewById(R.id.videoview_root);
         _videoView = findViewById(R.id.video_player);
+        _videoContent = _videoView.findViewById(androidx.media3.ui.R.id.exo_content_frame);
+
+        val subtitles = _videoView.subtitleView
+        val subtitleOverlay = _videoView.overlayFrameLayout
+        if (subtitles != null && subtitleOverlay != null) {
+            (subtitles.parent as ViewGroup).removeView(subtitles)
+            subtitleOverlay.addView(subtitles)
+        }
 
         videoControls = findViewById(R.id.video_player_controller);
         _control_fullscreen = videoControls.findViewById(R.id.button_fullscreen);
@@ -336,12 +346,12 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
             }
         };
         gestureControl.onPan.subscribe { x, y ->
-            _videoView.translationX = x
-            _videoView.translationY = y
+            _videoContent.translationX = x
+            _videoContent.translationY = y
         }
         gestureControl.onZoom.subscribe {
-            _videoView.scaleX = it
-            _videoView.scaleY = it
+            _videoContent.scaleX = it
+            _videoContent.scaleY = it
         }
 
         gestureControl.setZoomPanEnabled(_videoView.videoSurfaceView!!)
@@ -524,8 +534,7 @@ class FutoVideoPlayer : FutoVideoPlayerBase {
 
     fun getVideoRect(): Rect {
         val r = Rect()
-        // this is the only way i could reliably get a reference to a view that matches perfectly with the video playback
-        _videoView.subtitleView?.getGlobalVisibleRect(r)
+        _videoContent.getGlobalVisibleRect(r)
         return r
     }
 
