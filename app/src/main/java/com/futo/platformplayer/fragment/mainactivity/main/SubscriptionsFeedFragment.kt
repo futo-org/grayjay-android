@@ -7,6 +7,8 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.ItemTouchHelper
+import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.*
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.models.contents.ContentType
@@ -36,6 +38,7 @@ import com.futo.platformplayer.views.ToastView
 import com.futo.platformplayer.views.adapters.ContentPreviewViewHolder
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 import com.futo.platformplayer.views.adapters.InsertedViewHolder
+import com.futo.platformplayer.views.adapters.SwipeToWatchCallback
 import com.futo.platformplayer.views.buttons.BigButton
 import com.futo.platformplayer.views.subscriptions.SubscriptionBar
 import kotlinx.coroutines.CancellationException
@@ -110,6 +113,8 @@ class SubscriptionsFeedFragment : MainFragment() {
 
         var subGroup: SubscriptionGroup? = null;
 
+        private var _swipeToWatchHelper: ItemTouchHelper? = null;
+
         constructor(fragment: SubscriptionsFeedFragment, inflater: LayoutInflater, cachedRecyclerData: RecyclerData<InsertedViewAdapterWithLoader<ContentPreviewViewHolder>, GridLayoutManager, IPager<IPlatformContent>, IPlatformContent, IPlatformContent, InsertedViewHolder<ContentPreviewViewHolder>>? = null) : super(fragment, inflater, cachedRecyclerData) {
             Logger.i(TAG, "SubscriptionsFeedFragment constructor()");
             StateSubscriptions.instance.global.onUpdateProgress.subscribe(this) { progress, total ->
@@ -130,6 +135,17 @@ class SubscriptionsFeedFragment : MainFragment() {
             if (Settings.instance.tabs.find { it.id == 0 }?.enabled != true) {
                 showAnnouncementView()
             }
+
+            _swipeToWatchHelper = ItemTouchHelper(SwipeToWatchCallback(context) {
+                //Resolved on every swipe so changing the setting is picked up without recreating the feed.
+                when (Settings.instance.subscriptions.subscriptionSwipeAction) {
+                    1 -> ItemTouchHelper.LEFT;
+                    2 -> ItemTouchHelper.RIGHT;
+                    else -> 0;
+                }
+            }.apply {
+                onSwipe = { viewHolder, _ -> onSwipeToMarkWatched(viewHolder) };
+            }).also { it.attachToRecyclerView(_recyclerResults); };
         }
 
         fun onShown() {
@@ -168,9 +184,40 @@ class SubscriptionsFeedFragment : MainFragment() {
 
         override fun cleanup() {
             super.cleanup()
+            _swipeToWatchHelper?.attachToRecyclerView(null);
+            _swipeToWatchHelper = null;
             StateSubscriptions.instance.global.onUpdateProgress.remove(this);
             StateSubscriptions.instance.onSubscriptionsChanged.remove(this);
             StateSubscriptions.instance.onFeedProgress.remove(this);
+        }
+
+        /**
+         * Marks the video of the swiped row as watched (adds it to the history) and removes it from the feed.
+         * Returns true when the row was consumed, false to let the row snap back into place.
+         */
+        private fun onSwipeToMarkWatched(viewHolder: RecyclerView.ViewHolder): Boolean {
+            return try {
+                val parentPosition = viewHolder.absoluteAdapterPosition;
+                if (parentPosition == RecyclerView.NO_POSITION)
+                    return false;
+
+                val resultsIndex = recyclerData.adapter.parentToChildPosition(parentPosition);
+                val content = recyclerData.results.getOrNull(resultsIndex);
+                if (content !is IPlatformVideo)
+                    return false;
+
+                StateHistory.instance.markAsWatched(content);
+
+                recyclerData.results.removeAt(resultsIndex);
+                recyclerData.resultsUnfiltered.remove(content);
+                recyclerData.adapter.notifyItemRemoved(parentPosition);
+
+                UIDialogs.toast(context, context.getString(R.string.marked_as_watched));
+                true;
+            } catch (e: Throwable) {
+                Logger.e(TAG, "Failed to mark video as watched after swipe", e);
+                false;
+            }
         }
 
         override val feedStyle: FeedStyle get() = Settings.instance.subscriptions.getSubscriptionsFeedStyle();

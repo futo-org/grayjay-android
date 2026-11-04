@@ -8,6 +8,9 @@
     <string name="lorem_ipsum" translatable="false">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</string>
     <string name="add_to_queue">Add to queue</string>
     <string name="add_to_history">Add to history</string>
+    <string name="marked_as_watched">Marked as watched</string>
+    <string name="subscription_swipe_action">Swipe to mark watched</string>
+    <string name="subscription_swipe_action_description">Swipe a video in the subscriptions feed to mark it as watched and remove it from the list. Choose which direction to swipe, or disable it.</string>
     <string name="general">General</string>
     <string name="channel">Channel</string>
     <string name="home">Home</string>
@@ -1157,6 +1160,11 @@
     <string-array name="feed_style">
         <item>Preview</item>
         <item>List</item>
+    </string-array>
+    <string-array name="subscription_swipe_action">
+        <item>Disabled</item>
+        <item>Swipe left</item>
+        <item>Swipe right</item>
     </string-array>
     <string-array name="app_languages">
         <item>System</item>
