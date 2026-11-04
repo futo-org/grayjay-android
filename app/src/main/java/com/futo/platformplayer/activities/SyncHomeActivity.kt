@@ -17,6 +17,7 @@ import com.futo.platformplayer.states.StateSync
 import com.futo.platformplayer.sync.internal.LinkType
 import com.futo.platformplayer.sync.internal.SyncSession
 import com.futo.platformplayer.views.sync.SyncDeviceView
+import com.futo.platformplayer.tv.sync.TvSyncIdentityStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -128,6 +129,7 @@ class SyncHomeActivity : AppCompatActivity() {
         val authorized = session?.isAuthorized ?: false
 
         syncDeviceView.setLinkType(session?.linkType ?: LinkType.None)
+            .setTelevision(publicKey in TvSyncIdentityStore.all(this))
             .setName(session?.displayName ?: StateSync.instance.getCachedName(publicKey) ?: publicKey)
             //TODO: also display public key?
             .setStatus(if (connected && authorized) "Connected" else "Disconnected or unauthorized")

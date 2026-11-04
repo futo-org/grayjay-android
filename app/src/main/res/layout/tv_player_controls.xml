@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:id="@id/exo_bottom_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="@drawable/tv_player_scrim"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:orientation="vertical"
+        android:paddingStart="40dp"
+        android:paddingEnd="40dp"
+        android:paddingTop="64dp"
+        android:paddingBottom="22dp">
+
+        <TextView
+            android:id="@+id/tv_player_title"
+            style="@style/TvPlayerText"
+            android:layout_width="match_parent"
+            android:textColor="#FFFFFF"
+            android:textSize="25sp"
+            android:fontFamily="@font/inter_semibold"
+            android:maxLines="2"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/tv_player_author"
+            style="@style/TvPlayerText"
+            android:layout_width="match_parent"
+            android:layout_marginTop="7dp"
+            android:textColor="#B3FFFFFF"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <androidx.media3.ui.DefaultTimeBar
+            android:id="@id/exo_progress"
+            android:layout_width="match_parent"
+            android:layout_height="32dp"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/tv_player_timeline_focus"
+            android:focusable="true"
+            android:contentDescription="@string/tv_seek"
+            app:played_color="#FFFFFF"
+            app:buffered_color="#80FFFFFF"
+            app:unplayed_color="#40FFFFFF"
+            app:scrubber_color="#FFFFFF"
+            app:scrubber_enabled_size="10dp"
+            app:scrubber_dragged_size="16dp"
+            app:bar_height="3dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:clipChildren="false"
+            android:clipToPadding="false">
+
+            <ImageButton
+                android:id="@id/exo_play_pause"
+                style="@style/TvPlayerIcon"
+                android:layout_marginStart="0dp" />
+
+            <ImageButton
+                android:id="@id/exo_rew"
+                style="@style/TvPlayerIcon"
+                android:contentDescription="@string/exo_controls_rewind_description"
+                android:src="@drawable/exo_styled_controls_rewind" />
+
+            <ImageButton
+                android:id="@id/exo_ffwd"
+                style="@style/TvPlayerIcon"
+                android:contentDescription="@string/exo_controls_fastforward_description"
+                android:src="@drawable/exo_styled_controls_fastforward" />
+
+            <TextView
+                android:id="@id/exo_position"
+                style="@style/TvPlayerText"
+                android:layout_marginStart="16dp" />
+            <TextView
+                style="@style/TvPlayerText"
+                android:paddingHorizontal="4dp"
+                android:text="/"
+                android:textColor="#80FFFFFF"
+                android:importantForAccessibility="no" />
+            <TextView
+                android:id="@id/exo_duration"
+                style="@style/TvPlayerText"
+                android:textColor="#B3FFFFFF" />
+
+            <Space android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+
+            <ImageButton
+                android:id="@+id/tv_player_channel"
+                style="@style/TvPlayerIcon"
+                android:contentDescription="@string/tv_channel"
+                android:src="@drawable/ic_person" />
+            <ImageButton
+                android:id="@+id/tv_player_comments"
+                style="@style/TvPlayerIcon"
+                android:contentDescription="@string/tv_comments"
+                android:src="@drawable/ic_comment" />
+            <ImageButton
+                android:id="@+id/tv_player_settings"
+                style="@style/TvPlayerIcon"
+                android:contentDescription="@string/tv_playback_settings"
+                android:src="@drawable/ic_settings" />
+            <ImageButton
+                android:id="@id/tv_video_info"
+                style="@style/TvPlayerIcon"
+                android:contentDescription="@string/tv_video_info"
+                android:src="@drawable/tv_ic_info" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tv_player_action_hint"
+            style="@style/TvPlayerText"
+            android:layout_width="match_parent"
+            android:layout_height="20dp"
+            android:layout_marginTop="8dp"
+            android:gravity="end"
+            android:textSize="11sp"
+            android:textColor="#CCFFFFFF" />
+    </LinearLayout>
+</FrameLayout>

@@ -1,0 +1,17 @@
+{
+  "ndk": {
+    "version": "28.2.13676358",
+    "url": "https://dl.google.com/android/repository/android-ndk-r28c-linux.zip",
+    "sha256": "dfb20d396df28ca02a8c708314b814a4d961dc9074f9a161932746f815aa552f"
+  },
+  "cmake": {
+    "version": "3.22.1",
+    "url": "https://dl.google.com/android/repository/cmake-3.22.1-linux.zip",
+    "sha256": "9196644852a978012caf7a4067ba1898debf6cc204c3341562771e31080d6869"
+  },
+  "protoc": {
+    "version": "3.21.12",
+    "url": "https://github.com/protocolbuffers/protobuf/releases/download/v21.12/protoc-21.12-linux-x86_64.zip",
+    "sha256": "3a4c1e5f2516c639d3079b1586e703fc7bcfa2136d58bda24d1d54f949c315e8"
+  }
+}

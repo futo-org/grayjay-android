@@ -23,6 +23,7 @@ import androidx.core.view.WindowCompat
 import androidx.media3.common.util.UnstableApi
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
+import com.futo.platformplayer.tv.TvMode
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
@@ -139,6 +140,10 @@ class VideoDetailFragment() : MainFragment() {
     }
 
     private fun onStateChanged(state: State) {
+        if (context?.let(TvMode::isEnabled) == true) {
+            if (state == State.MAXIMIZED) _viewDetail?.setFullscreen(true)
+            return
+        }
         if (
             isSmallWindow()
             && state == State.MAXIMIZED
@@ -166,6 +171,7 @@ class VideoDetailFragment() : MainFragment() {
 
     fun updateOrientation() {
         val a = activity ?: return
+        if (TvMode.isEnabled(a)) return
         val isFullScreenPortraitAllowed = Settings.instance.playback.fullscreenPortrait
         val isReversePortraitAllowed = Settings.instance.playback.reversePortrait
         val rotationLock = StatePlayer.instance.rotationLock
@@ -283,7 +289,9 @@ class VideoDetailFragment() : MainFragment() {
             return true;
         }
 
-        if(state == State.MAXIMIZED)
+        if (context?.let(TvMode::isEnabled) == true)
+            closeVideoDetails();
+        else if(state == State.MAXIMIZED)
             minimizeVideoDetail();
         else
             closeVideoDetails();

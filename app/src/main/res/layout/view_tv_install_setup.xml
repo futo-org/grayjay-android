@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/tv_install_setup_page"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:visibility="gone">
+
+    <TextView
+        android:id="@+id/tv_install_step"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#55B9EB"
+        android:textSize="13sp" />
+
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/tv_install_steps"
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:layout_marginTop="12dp"
+        android:max="7"
+        app:indicatorColor="#019BE7"
+        app:trackColor="#252B30" />
+
+    <ImageView
+        android:id="@+id/tv_install_step_icon"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:layout_marginTop="28dp"
+        android:background="@drawable/background_1b_round_6dp"
+        android:importantForAccessibility="no"
+        android:padding="13dp"
+        app:srcCompat="@drawable/ic_live_tv"
+        app:tint="#55B9EB" />
+
+    <TextView
+        android:id="@+id/tv_install_title"
+        style="@style/TvInstallTitle"
+        android:layout_marginTop="20dp"
+        android:accessibilityHeading="true" />
+
+    <TextView
+        android:id="@+id/tv_install_description"
+        style="@style/TvInstallDescription" />
+
+    <TextView
+        android:id="@+id/tv_install_instructions"
+        style="@style/TvInstallDescription"
+        android:layout_marginTop="24dp"
+        android:background="@drawable/background_1b_round_6dp"
+        android:padding="20dp"
+        android:textColor="@color/gray_e0"
+        android:textSize="16sp" />
+
+    <com.futo.platformplayer.tv.install.TvSetupScreenshotView
+        android:id="@+id/tv_install_screenshot"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/background_1b_round_6dp"
+        android:clipToOutline="true"
+        android:importantForAccessibility="no"
+        android:visibility="gone" />
+
+    <RadioGroup
+        android:id="@+id/tv_install_debug_options"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <RadioButton
+            android:id="@+id/tv_install_wireless"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="56dp"
+            android:background="@drawable/background_1b_round_6dp"
+            android:buttonTint="#55B9EB"
+            android:padding="12dp"
+            android:text="@string/tv_install_wireless"
+            android:textColor="@color/white"
+            android:textSize="16sp" />
+
+        <TextView
+            style="@style/TvInstallDescription"
+            android:layout_marginHorizontal="12dp"
+            android:text="@string/tv_install_wireless_description"
+            android:textSize="14sp" />
+
+        <RadioButton
+            android:id="@+id/tv_install_network"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:minHeight="56dp"
+            android:background="@drawable/background_1b_round_6dp"
+            android:buttonTint="#55B9EB"
+            android:padding="12dp"
+            android:text="@string/tv_install_network"
+            android:textColor="@color/white"
+            android:textSize="16sp" />
+
+        <TextView
+            style="@style/TvInstallDescription"
+            android:layout_marginHorizontal="12dp"
+            android:text="@string/tv_install_network_description"
+            android:textSize="14sp" />
+    </RadioGroup>
+
+    <LinearLayout
+        android:id="@+id/tv_install_fields"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            style="@style/TvInstallLabel"
+            android:labelFor="@id/tv_install_host"
+            android:text="@string/tv_install_host" />
+
+        <EditText
+            android:id="@+id/tv_install_host"
+            style="@style/TvInstallInput"
+            android:hint="@string/tv_install_host_hint"
+            android:inputType="textUri"
+            android:maxLength="253" />
+
+        <TextView
+            android:id="@+id/tv_install_port_label"
+            style="@style/TvInstallLabel"
+            android:labelFor="@id/tv_install_port"
+            android:text="@string/tv_install_pair_port" />
+
+        <EditText
+            android:id="@+id/tv_install_port"
+            style="@style/TvInstallInput"
+            android:hint="@string/tv_install_pair_port_hint"
+            android:inputType="number"
+            android:maxLength="5" />
+
+        <LinearLayout
+            android:id="@+id/tv_install_code_fields"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                style="@style/TvInstallLabel"
+                android:labelFor="@id/tv_install_code"
+                android:text="@string/tv_install_code" />
+
+            <EditText
+                android:id="@+id/tv_install_code"
+                style="@style/TvInstallInput"
+                android:hint="@string/tv_install_code_hint"
+                android:importantForAutofill="no"
+                android:saveEnabled="false"
+                android:imeOptions="actionDone|flagNoPersonalizedLearning"
+                android:inputType="numberPassword"
+                android:maxLength="6" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/tv_install_apk"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:background="@drawable/background_1b_round_6dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="20dp"
+        android:visibility="gone">
+
+        <ImageView
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:importantForAccessibility="no"
+            app:srcCompat="@mipmap/ic_launcher" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tv_install_apk_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/inter_medium"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/tv_install_apk_size"
+                style="@style/TvInstallDescription"
+                android:layout_marginTop="6dp"
+                android:textSize="13sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tv_install_note"
+        style="@style/TvInstallDescription"
+        android:layout_marginTop="24dp"
+        android:textSize="13sp" />
+</LinearLayout>

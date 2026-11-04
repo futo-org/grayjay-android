@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true" android:drawable="@drawable/tv_focusable" />
+    <item android:state_selected="true">
+        <layer-list>
+            <item android:gravity="bottom" android:height="3dp" android:left="14dp" android:right="14dp">
+                <shape><solid android:color="#FFFFFF" /><corners android:radius="2dp" /></shape>
+            </item>
+        </layer-list>
+    </item>
+    <item android:drawable="@android:color/transparent" />
+</selector>
