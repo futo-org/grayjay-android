@@ -111,6 +111,7 @@ class MenuBottomBarFragment : MainActivityFragment() {
         private var currentButtonDefinitions: List<ButtonDefinition>? = null;
 
         private var moreColumns = 3;
+        private var moreTotalWidthDp = 0f;
 
         constructor(fragment: MenuBottomBarFragment, inflater: LayoutInflater) : super(inflater.context) {
             _fragment = fragment;
@@ -192,6 +193,7 @@ class MenuBottomBarFragment : MainActivityFragment() {
                 }
             })
             moreColumns = columns;
+            moreTotalWidthDp = totalWidthDp;
             val layoutManager = GridLayoutManager(context, columns, GridLayoutManager.VERTICAL, true);
             _layoutMoreButtons.layoutManager = layoutManager;
 
@@ -418,6 +420,18 @@ class MenuBottomBarFragment : MainActivityFragment() {
             val defs = currentButtonDefinitions?.toMutableList() ?: return
             val metrics = resources.displayMetrics
             _buttonsVisible = floor(metrics.widthPixels.toDouble() / 65.dp(resources).toDouble()).roundToInt();
+
+            //The fly-out grid is sized from the screen metrics, which can change without this view
+            //being recreated. Recompute the column count and tile sizes so the tiles do not keep
+            //overlapping the layout they were created for (e.g. after rotating the device).
+            val moreWidthDp = metrics.widthPixels / metrics.density;
+            val newMoreColumns = MenuButtonItemViewHolder.getAutoSizeColumns(moreWidthDp);
+            if (newMoreColumns != moreColumns || moreWidthDp != moreTotalWidthDp) {
+                moreColumns = newMoreColumns;
+                moreTotalWidthDp = moreWidthDp;
+                _layoutMoreButtons.layoutManager = GridLayoutManager(context, newMoreColumns, GridLayoutManager.VERTICAL, true);
+                _layoutMoreButtonsAdapter?.notifyContentChanged();
+            }
             if (_buttonsVisible >= defs.size) {
                 updateBottomMenuButtons(defs.toMutableList(), false);
             } else if (_buttonsVisible > 0) {
@@ -515,6 +529,12 @@ class MenuBottomBarFragment : MainActivityFragment() {
                 button = value;
                 textName.text = _view.context.getString(value.def.string);
                 imageIcon.setImageResource(value.def.iconActive);
+
+                //Unlike onCreate, bind is called every time the tile is (re)bound, so the tile size
+                //has to be (re)applied here as well. Otherwise the tiles keep the size they got for
+                //the metrics at creation time and end up overlapping each other when the screen
+                //metrics change (e.g. rotating the device) without the view being recreated.
+                setAutoSize(_view.resources.displayMetrics.widthPixels / _view.resources.displayMetrics.density);
             }
 
 
