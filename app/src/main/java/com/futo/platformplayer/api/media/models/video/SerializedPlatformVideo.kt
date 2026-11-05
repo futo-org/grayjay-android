@@ -35,6 +35,8 @@ open class SerializedPlatformVideo(
     override var playbackTime: Long = -1;
     @kotlinx.serialization.Serializable(with = OffsetDateTimeNullableSerializer::class)
     override var playbackDate: OffsetDateTime? = null;
+    @kotlinx.serialization.Serializable(with = OffsetDateTimeNullableSerializer::class)
+    var addedToPlaylistDateTime: OffsetDateTime? = OffsetDateTime.now();
 
     override fun toJson() : String {
         return Json.encodeToString(this);
