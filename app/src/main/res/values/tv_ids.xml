@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <item name="tv_video_source_icon" type="id" />
     <item name="tv_focus_navigation" type="id" />
     <item name="tv_content" type="id" />
     <item name="tv_nav_home" type="id" />

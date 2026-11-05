@@ -5,12 +5,14 @@ import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
+import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.tv.views.TvUi.dp
 import com.futo.platformplayer.tv.views.TvUi.lines
 
@@ -34,6 +36,10 @@ internal class TvVideoAdapter(
         holder.author.visibility = if (showAuthor) View.VISIBLE else View.GONE
         holder.duration.text = if (video.isLive) holder.root.context.getString(R.string.tv_live) else TvUi.duration(video.duration)
         TvUi.load(holder.image, video.thumbnails.getHQThumbnail())
+        holder.requests.clear(holder.sourceIcon)
+        val sourceIcon = StatePlatform.instance.getPlatformIcon(video.id.pluginId)
+        holder.sourceIcon.visibility = if (sourceIcon == null) View.GONE else View.VISIBLE
+        sourceIcon?.setImageView(holder.sourceIcon)
         holder.root.contentDescription = "${video.name}, ${video.author.name}"
         holder.root.setOnClickListener { open(video) }
         holder.root.setOnLongClickListener {
@@ -63,11 +69,18 @@ internal class TvVideoAdapter(
 
     override fun onViewRecycled(holder: Card) {
         holder.requests.clear(holder.image)
+        holder.requests.clear(holder.sourceIcon)
     }
 
     class Card(val root: LinearLayout) : RecyclerView.ViewHolder(root) {
         val requests = Glide.with(root)
         val image = TvUi.image(root.context)
+        val sourceIcon = ImageView(root.context).apply {
+            id = R.id.tv_video_source_icon
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+            setPadding(context.dp(4), context.dp(4), context.dp(4), context.dp(4))
+        }
         val title = TvUi.text(root.context, "", 16f).apply {
             lines(2)
             minLines = 2
@@ -92,6 +105,11 @@ internal class TvVideoAdapter(
                 setPadding(context.dp(3), context.dp(3), context.dp(3), context.dp(3))
             }
             picture.addView(image, FrameLayout.LayoutParams(-1, -1))
+            picture.addView(
+                sourceIcon,
+                FrameLayout.LayoutParams(context.dp(28), context.dp(28), Gravity.BOTTOM or Gravity.START).apply {
+                    setMargins(context.dp(7), 0, 0, context.dp(7))
+                })
             picture.addView(
                 duration,
                 FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM or Gravity.END).apply {

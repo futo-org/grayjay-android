@@ -47,7 +47,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class TvSearchFragment : Fragment() {
+open class TvSearchFragment : Fragment() {
     private var catalog: List<TvSearchProvider>? = null
     private var catalogError = false
     private var catalogJob: Job? = null
@@ -84,6 +84,8 @@ class TvSearchFragment : Fragment() {
 
     internal var source: TvSearchSource = TvSearchSource.platform
 
+    protected open val channelUrl: String? get() = null
+
     private val host
         get() = requireActivity() as TvActivity
 
@@ -109,7 +111,7 @@ class TvSearchFragment : Fragment() {
         val context = requireContext()
         val root = TvUi.column(context).apply { setPadding(context.dp(28), context.dp(24), context.dp(32), context.dp(16)) }
         root.addView(
-            TvUi.heading(context, getString(R.string.tv_search)).apply { textSize = 28f },
+            createHeading(context),
             LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = context.dp(18) })
         val workspace = TvUi.row(context).apply { gravity = Gravity.TOP }
         keyboard = TvSearchKeyboard(
@@ -129,7 +131,7 @@ class TvSearchFragment : Fragment() {
             id = R.id.tv_query
             isSaveEnabled = false
             setSingleLine(true)
-            hint = getString(R.string.tv_search_input_hint)
+            hint = getString(if (channelUrl == null) R.string.tv_search_input_hint else R.string.tv_search_channel)
             textSize = 18f
             typeface = ResourcesCompat.getFont(context, R.font.inter_regular)
             setTextColor(Color.WHITE)
@@ -185,7 +187,13 @@ class TvSearchFragment : Fragment() {
             LinearLayout.LayoutParams(context.dp(48), context.dp(48)).apply { marginStart = context.dp(12) })
         search.addView(bar)
         val body = FrameLayout(context)
-        suggestions = TvSearchSuggestions(context, ::submit, { keyboard.focusLast() }) { value ->
+        suggestions = TvSearchSuggestions(
+            context,
+            ::submit,
+            { keyboard.focusLast() },
+            emptyTitle = if (channelUrl != null) getString(R.string.tv_search_channel) else null,
+            emptyHint = if (channelUrl != null) getString(R.string.tv_search_channel_hint) else null
+        ) { value ->
             val before = source.recent()
             source.forget(value)
             val remaining = source.recent()
@@ -199,6 +207,7 @@ class TvSearchFragment : Fragment() {
         toolbar.addView(tabs, LinearLayout.LayoutParams(0, context.dp(54), 1f))
         filterButton = TvUi.button(context, getString(R.string.tv_search_filters), ::showFilters).apply {
             id = R.id.tv_search_filters
+            visibility = if (channelUrl == null) View.VISIBLE else View.GONE
         }
         toolbar.addView(filterButton)
         results.addView(toolbar)
@@ -304,6 +313,9 @@ class TvSearchFragment : Fragment() {
         grid.adapter = null
         super.onDestroyView()
     }
+
+    protected open fun createHeading(context: Context): View =
+        TvUi.heading(context, getString(R.string.tv_search)).apply { textSize = 28f }
 
     private fun loadCatalog() {
         catalogJob?.cancel()
@@ -436,7 +448,7 @@ class TvSearchFragment : Fragment() {
         source.remember(query)
         urlJob?.cancel()
         urlPending = false
-        if (isUrl(query)) {
+        if (channelUrl == null && isUrl(query)) {
             openUrl(query)
             return
         }
@@ -628,7 +640,9 @@ class TvSearchFragment : Fragment() {
         val selected = options.providers(catalog.orEmpty(), kind)
         summary.text = buildList {
             add(
-                if (options.sourceIds == null) getString(R.string.tv_search_all_sources)
+                if (channelUrl != null) getString(R.string.tv_channel_search_scope,
+                    arguments?.getString("name") ?: getString(R.string.tv_channel_title))
+                else if (options.sourceIds == null) getString(R.string.tv_search_all_sources)
                 else selected.joinToString { it.name })
             if (kind == TvSearchKind.VIDEOS)
                 options.sort?.let { add(TvSearchFilters.sortLabel(requireContext(), it)) }

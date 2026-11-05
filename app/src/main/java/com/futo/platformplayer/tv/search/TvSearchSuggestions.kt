@@ -15,6 +15,8 @@ internal class TvSearchSuggestions(
     context: Context,
     private val search: (String) -> Unit,
     private val keyboard: () -> Unit,
+    private val emptyTitle: String? = null,
+    private val emptyHint: String? = null,
     private val remove: (String) -> Unit
 ) : ScrollView(context) {
     private val content = TvUi.column(context)
@@ -33,12 +35,12 @@ internal class TvSearchSuggestions(
         content.removeAllViews()
         if (values.isEmpty()) {
             content.addView(
-                TvUi.heading(context, context.getString(R.string.tv_search_discover)).apply {
+                TvUi.heading(context, emptyTitle ?: context.getString(R.string.tv_search_discover)).apply {
                     textSize = 24f
                     setPadding(context.dp(8), context.dp(36), 0, context.dp(12))
                 })
             content.addView(
-                TvUi.text(context, context.getString(R.string.tv_search_discover_hint), 16f, true).apply {
+                TvUi.text(context, emptyHint ?: context.getString(R.string.tv_search_discover_hint), 16f, true).apply {
                     setPadding(context.dp(8), 0, 0, 0)
                 })
             return

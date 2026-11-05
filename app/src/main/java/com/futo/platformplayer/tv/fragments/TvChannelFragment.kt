@@ -1,20 +1,14 @@
 package com.futo.platformplayer.tv.fragments
 
 import android.app.Dialog
-import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.os.Parcelable
-import android.text.InputType
 import android.view.Gravity
-import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.inputmethod.EditorInfo
-import android.view.inputmethod.InputMethodManager
-import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
@@ -60,7 +54,6 @@ class TvChannelFragment : Fragment() {
     private var metadataLoaded = false
     private var active = Tab.VIDEOS
     private var sort: String? = null
-    private var query = ""
     private val pages = mutableMapOf<Tab, Page>()
     private lateinit var header: TvChannelHeader
     private lateinit var tabs: LinearLayout
@@ -68,13 +61,13 @@ class TvChannelFragment : Fragment() {
     private lateinit var grid: RecyclerView
     private lateinit var videos: TvVideoAdapter
     private lateinit var playlists: TvPlaylistAdapter
-    private lateinit var search: LinearLayout
-    private lateinit var input: EditText
+    private lateinit var searchButton: View
     private lateinit var sortButton: TextView
     private lateinit var message: LinearLayout
     private lateinit var footer: LinearLayout
     private var dialog: Dialog? = null
     private var restoreCard = false
+    private var restoreSearch = false
 
     internal var source: TvChannelSource = TvChannelSource.platform
 
@@ -89,9 +82,9 @@ class TvChannelFragment : Fragment() {
         state?.let {
             active = Tab.entries.firstOrNull { tab -> tab.name == it.getString("tab") } ?: Tab.VIDEOS
             sort = it.getString("sort")
-            query = it.getString("query").orEmpty()
             pages.getOrPut(active, ::Page).selected = it.getInt("selected")
             restoreCard = it.getBoolean("card")
+            restoreSearch = it.getBoolean("searchFocus")
         }
     }
 
@@ -108,36 +101,19 @@ class TvChannelFragment : Fragment() {
                 addView(tabs)
             },
             LinearLayout.LayoutParams(0, context.dp(52), 1f))
+        searchButton = TvUi.iconButton(context, R.drawable.ic_search, getString(R.string.tv_search_channel), ::openSearch).apply {
+            id = R.id.tv_channel_search
+            visibility = View.GONE
+        }
+        bar.addView(searchButton, LinearLayout.LayoutParams(context.dp(40), context.dp(40)).apply {
+            marginEnd = context.dp(12)
+        })
         sortButton = TvUi.button(context, getString(R.string.tv_sort), ::showSort).apply { id = R.id.tv_channel_sort }
         bar.addView(sortButton)
         root.addView(bar)
         root.addView(
             View(context).apply { setBackgroundColor(0xFF292929.toInt()) },
             LinearLayout.LayoutParams(-1, context.dp(1)))
-        search = TvUi.row(context).apply { visibility = View.GONE }
-        input = EditText(context).apply {
-            id = R.id.tv_query
-            setSingleLine(true)
-            textSize = 16f
-            hint = getString(R.string.tv_search_channel)
-            setTextColor(Color.WHITE)
-            setHintTextColor(TvUi.muted)
-            setPadding(context.dp(16), context.dp(8), context.dp(16), context.dp(8))
-            setBackgroundResource(R.drawable.tv_channel_input)
-            imeOptions = EditorInfo.IME_ACTION_SEARCH
-            inputType = InputType.TYPE_CLASS_TEXT
-            setText(query)
-            setOnEditorActionListener { _, action, event ->
-                if (action == EditorInfo.IME_ACTION_SEARCH ||
-                    (event?.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_UP)) {
-                    submitSearch()
-                    true
-                } else false
-            }
-        }
-        search.addView(input, LinearLayout.LayoutParams(0, context.dp(40), 1f).apply { marginEnd = context.dp(12) })
-        search.addView(TvUi.button(context, getString(R.string.tv_search), ::submitSearch))
-        root.addView(search)
         body = FrameLayout(context)
         videos = TvVideoAdapter(
             {
@@ -158,7 +134,7 @@ class TvChannelFragment : Fragment() {
             override fun focusSearch(focused: View, direction: Int): View? {
                 if (direction == View.FOCUS_UP &&
                     findContainingViewHolder(focused)?.bindingAdapterPosition in 0..2) {
-                    return if (active == Tab.SEARCH) input else tabs.findViewById<View>(active.viewId)
+                    return tabs.findViewById<View>(active.viewId)
                 }
                 return super.focusSearch(focused, direction)
             }
@@ -209,9 +185,9 @@ class TvChannelFragment : Fragment() {
     override fun onSaveInstanceState(outState: Bundle) {
         outState.putString("tab", active.name)
         outState.putString("sort", sort)
-        outState.putString("query", query)
         outState.putInt("selected", pages[active]?.selected ?: 0)
         outState.putBoolean("card", grid.hasFocus())
+        outState.putBoolean("searchFocus", restoreSearch || searchButton.hasFocus())
         super.onSaveInstanceState(outState)
     }
 
@@ -289,13 +265,13 @@ class TvChannelFragment : Fragment() {
                 Tab.VIDEOS,
                 Tab.ABOUT -> true
                 Tab.PLAYLISTS -> caps?.playlists == true
-                Tab.SEARCH -> caps?.search == true
                 else -> caps?.types?.contains(tab.type) == true
             }
         }
     }
 
     private fun buildTabs() {
+        searchButton.visibility = if (capabilities?.search == true) View.VISIBLE else View.GONE
         val focusedId = tabs.findFocus()?.id
         tabs.removeAllViews()
         val available = availableTabs()
@@ -316,6 +292,10 @@ class TvChannelFragment : Fragment() {
                 })
         }
         focusedId?.let { tabs.findViewById<View>(it)?.requestFocus() }
+        if (restoreSearch && searchButton.visibility == View.VISIBLE) {
+            searchButton.requestFocus()
+            restoreSearch = false
+        }
     }
 
     private fun select(tab: Tab) {
@@ -333,7 +313,6 @@ class TvChannelFragment : Fragment() {
     }
 
     private fun showPage(focusCard: Boolean = false) {
-        search.visibility = if (active == Tab.SEARCH) View.VISIBLE else View.GONE
         sortButton.visibility = if (active.type != null && (capabilities?.sorts?.size ?: 0) > 1) View.VISIBLE else View.GONE
         sortButton.text = sort?.let(::sortLabel) ?: getString(R.string.tv_sort)
         if (active == Tab.ABOUT) {
@@ -362,13 +341,12 @@ class TvChannelFragment : Fragment() {
 
     private fun load(next: Boolean = false, refresh: Boolean = false) {
         if (!isAdded || view == null) return
-        if (active == Tab.ABOUT || (active == Tab.SEARCH && query.isBlank())) return
+        if (active == Tab.ABOUT) return
         val tab = active
         val page = pages.getOrPut(tab, ::Page)
         if (page.job?.isActive == true || (!next && !refresh && page.pager != null)) return
         page.error = false
         val requestedSort = sort
-        val requestedQuery = query
         page.job = viewLifecycleOwner.lifecycleScope.launch {
             try {
                 host.awaitReady()
@@ -383,7 +361,7 @@ class TvChannelFragment : Fragment() {
                             url,
                             tab.type?.takeIf { capabilities?.types?.contains(it) == true },
                             requestedSort,
-                            if (tab == Tab.SEARCH) requestedQuery else "")
+                            "")
                     pager to
                         pager.getResults().filter {
                             if (tab == Tab.PLAYLISTS) it is IPlatformPlaylist else it is IPlatformVideo
@@ -436,8 +414,6 @@ class TvChannelFragment : Fragment() {
             val label = when {
                 loading -> R.string.tv_loading
                 page.error -> R.string.tv_channel_content_error
-                active == Tab.SEARCH && query.isBlank() -> R.string.tv_search_channel_hint
-                active == Tab.SEARCH -> R.string.tv_channel_no_results
                 active == Tab.PLAYLISTS -> R.string.tv_no_playlists
                 else -> R.string.tv_empty
             }
@@ -460,14 +436,16 @@ class TvChannelFragment : Fragment() {
         if (position >= page.items.size - 6 && !page.error && page.pager?.hasMorePages() == true) load(next = true)
     }
 
-    private fun submitSearch() {
-        query = input.text.toString().trim()
-        (requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).hideSoftInputFromWindow(
-            input.windowToken, 0)
-        pages.remove(Tab.SEARCH)?.job?.cancel()
-        showPage()
-        restoreCard = true
-        load()
+    private fun openSearch() {
+        restoreSearch = true
+        host.navigate(TvChannelSearchFragment().also {
+            it.channelSource = source
+            it.arguments = Bundle().apply {
+                putString("url", url)
+                putString("name", channel?.name ?: arguments?.getString("name"))
+                putString("thumbnail", channel?.thumbnail ?: arguments?.getString("thumbnail"))
+            }
+        })
     }
 
     private fun showAbout() {
@@ -572,7 +550,6 @@ class TvChannelFragment : Fragment() {
         STREAMS(R.string.tv_streams, R.id.tv_channel_streams, ResultCapabilities.TYPE_STREAMS),
         LIVE(R.string.tv_live, R.id.tv_channel_live, ResultCapabilities.TYPE_LIVE),
         PLAYLISTS(R.string.playlists, R.id.tv_channel_playlists),
-        SEARCH(R.string.tv_search, R.id.tv_channel_search),
         ABOUT(R.string.tv_about, R.id.tv_channel_about)
     }
 

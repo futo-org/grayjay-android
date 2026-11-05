@@ -63,6 +63,7 @@
     <string name="tv_about_channel">About this channel</string>
     <string name="tv_search_channel">Search this channel</string>
     <string name="tv_search_channel_hint">Find a video from this creator</string>
+    <string name="tv_channel_search_scope">Videos from %1$s</string>
     <string name="tv_channel_no_results">No videos found. Try a different search.</string>
     <string name="tv_channel_content_error">This channel’s content couldn’t be loaded.</string>
     <string name="tv_channel_details_error">Channel details are temporarily unavailable.</string>

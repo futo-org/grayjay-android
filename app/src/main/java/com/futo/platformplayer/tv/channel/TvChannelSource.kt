@@ -47,7 +47,8 @@ internal interface TvChannelSource {
                 sort: String?,
                 query: String
             ): IPager<IPlatformContent> {
-                if (query.isNotBlank()) return StatePlatform.instance.searchChannel(url, query)
+                if (query.isNotBlank())
+                    return StatePlatform.instance.getChannelClient(url).searchChannelContents(url, query, null, null, emptyMap())
                 if (type == null && sort == null) return StatePlatform.instance.getChannelContent(url)
                 return StatePlatform.instance.getChannelClient(url).getChannelContents(url, type, sort)
             }
