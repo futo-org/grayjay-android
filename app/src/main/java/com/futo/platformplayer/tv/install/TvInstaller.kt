@@ -4,6 +4,7 @@ import android.content.Context
 import com.futo.platformplayer.BuildConfig
 import com.futo.platformplayer.R
 import com.futo.platformplayer.states.StateSync
+import com.futo.platformplayer.states.StateUpdate
 import com.futo.platformplayer.sync.internal.SyncDeviceInfo
 import com.futo.platformplayer.tv.sync.TvSyncSetupReceiver
 import kotlinx.coroutines.CancellationException
@@ -65,12 +66,15 @@ class TvInstaller(context: Context) : Closeable {
         _process.run(listOf("disconnect", endpoint.serial))
     }
 
-    suspend fun install(device: TvInstallDevice) = withContext(Dispatchers.IO) {
-        start()
+    suspend fun packageFor(device: TvInstallDevice): Package = withContext(Dispatchers.IO) {
         val abis = shell(device.endpoint, "getprop", "ro.product.cpu.abilist").trim().split(',')
-        val files = apks
-        if (!files.supports(abis))
-            throw Failure(R.string.tv_install_abi_mismatch)
+        val abi = abis.firstOrNull { it in StateUpdate.APP_SUPPORTED_ABIS }
+            ?: throw Failure(R.string.tv_install_abi_unsupported)
+        Package(abi, !apks.supports(abis))
+    }
+
+    suspend fun install(device: TvInstallDevice, files: TvApkFiles = apks) = withContext(Dispatchers.IO) {
+        start()
         val result = _process.run(files.installArguments(device.endpoint), timeoutSeconds = 300)
         if (!result.succeeded || result.output.lineSequence().none { it.trim() == "Success" }) {
             val message = when {
@@ -156,4 +160,6 @@ class TvInstaller(context: Context) : Closeable {
     }
 
     class Failure(val messageId: Int) : Exception()
+
+    data class Package(val abi: String, val downloadRequired: Boolean)
 }

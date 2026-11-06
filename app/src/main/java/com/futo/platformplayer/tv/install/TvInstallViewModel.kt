@@ -19,6 +19,7 @@ import kotlinx.coroutines.withContext
 
 class TvInstallViewModel(application: Application) : AndroidViewModel(application) {
     private val _installer = TvInstaller(application)
+    private val _download = TvApkDownload(application)
     private val _store = TvInstallStore(application)
     private val _sync = TvSetupSync(application, _installer)
     private val _state = MutableStateFlow(State())
@@ -27,10 +28,16 @@ class TvInstallViewModel(application: Application) : AndroidViewModel(applicatio
     private var _previousDevice: TvInstallDevice? = null
 
     val state = _state.asStateFlow()
-    var host = ""
-    var pairingPort = ""
-    var connectionPort = ""
+    var pairingAddress = ""
+    var connectionAddress = ""
     var usesPairing = true
+
+    var connectionPort: String
+        get() = connectionAddress.substringAfterLast(':', "")
+        set(value) {
+            val host = _state.value.pairedHost ?: return
+            connectionAddress = if (host.contains(':')) "[$host]:$value" else "$host:$value"
+        }
 
     init {
         StateSync.instance.deviceUpdatedOrAdded.subscribe(this) { _, _ -> refreshSync() }
@@ -54,28 +61,31 @@ class TvInstallViewModel(application: Application) : AndroidViewModel(applicatio
     fun add() {
         if (_state.value.busy || !_loaded)
             return
-        host = ""
-        pairingPort = ""
-        connectionPort = ""
+        pairingAddress = ""
+        connectionAddress = ""
         usesPairing = true
         _previousDevice = null
-        _state.update { it.copy(page = Page.INSTALLED, selected = null, error = null, appInstalled = false) }
+        _state.update { it.copy(page = Page.INSTALLED, selected = null, error = null, appInstalled = false, apk = null, pairedHost = null) }
     }
 
     fun open(device: TvInstallDevice) {
         if (_state.value.busy)
             return
-        host = device.host
-        connectionPort = device.port.toString()
+        connectionAddress = device.endpoint.serial
         usesPairing = device.usesPairing
         _previousDevice = device
+        val connected = device.endpoint.serial in _state.value.connected
         _state.update {
             it.copy(
-                page = if (device.endpoint.serial in it.connected) Page.INSTALL else Page.CONNECT,
+                page = Page.CONNECT,
                 selected = device,
+                apk = null,
+                pairedHost = null,
                 appInstalled = device.installedVersion != null,
                 error = null)
         }
+        if (connected)
+            execute(R.string.tv_install_connect_failed) { connectDevice(device.endpoint) }
     }
 
     fun next() {
@@ -88,31 +98,34 @@ class TvInstallViewModel(application: Application) : AndroidViewModel(applicatio
             Page.ABOUT -> Page.BUILD
             Page.BUILD -> Page.DEVELOPER_OPTIONS
             Page.DEVELOPER_OPTIONS -> Page.DEBUGGING
-            Page.DEBUGGING -> if (usesPairing) Page.PAIR else Page.ADDRESS
+            Page.DEBUGGING -> if (usesPairing) Page.PAIR else Page.CONNECT
             else -> return
         }
-        _state.update { it.copy(page = page, error = null) }
+        _state.update { it.copy(page = page, error = null,
+            pairedHost = if (it.page == Page.DEBUGGING) null else it.pairedHost) }
     }
 
     fun pair(code: String) {
-        val endpoint = endpoint(pairingPort) ?: return
+        val endpoint = endpoint(pairingAddress) ?: return
         if (!code.matches(Regex("[0-9]{6}"))) {
             _state.update { it.copy(error = R.string.tv_install_code_invalid) }
             return
         }
         execute(R.string.tv_install_pair_failed) {
             _installer.pair(endpoint, code)
-            _state.update { it.copy(page = Page.CONNECT) }
+            connectionAddress = endpoint.serial.substringBeforeLast(':') + ":"
+            _state.update { it.copy(page = Page.CONNECT, pairedHost = endpoint.host) }
             val port = try {
-                TvAdbDiscovery.connectionPort(getApplication(), host)
+                TvAdbDiscovery.connectionPort(getApplication(), endpoint.host)
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (_: Exception) {
                 null
             }
             if (port != null) {
-                connectionPort = port.toString()
-                connectDevice(AdbEndpoint.parse(host, connectionPort))
+                val connection = AdbEndpoint(endpoint.host, port)
+                connectionAddress = connection.serial
+                connectDevice(connection)
             }
         }
     }
@@ -122,27 +135,37 @@ class TvInstallViewModel(application: Application) : AndroidViewModel(applicatio
             _state.update { it.copy(page = Page.DEVELOPER_OPTIONS, error = null) }
     }
 
-    fun manualConnection() {
-        if (!_state.value.busy) {
-            if (connectionPort.isEmpty()) connectionPort = "5555"
-            _state.update { it.copy(page = Page.CONNECT, error = null) }
-        }
-    }
-
     fun connect() {
-        val endpoint = endpoint(if (_state.value.page == Page.ADDRESS) "5555" else connectionPort) ?: return
-        connectionPort = endpoint.port.toString()
-        _state.update { it.copy(page = Page.CONNECT) }
+        val endpoint = endpoint(connectionAddress, if (usesPairing) null else 5555) ?: return
+        connectionAddress = endpoint.serial
         execute(R.string.tv_install_connect_failed) { connectDevice(endpoint) }
     }
 
     fun install() {
         val device = _state.value.selected ?: return
-        execute(R.string.tv_install_failed) {
-            _installer.install(device)
+        val approved = _state.value.apk
+        execute(if (approved?.downloadRequired == true) R.string.tv_install_download_failed else R.string.tv_install_failed) {
+            _state.update { it.copy(status = R.string.tv_install_checking) }
+            _installer.connect(device.endpoint)
+            val apk = _installer.packageFor(device)
+            _state.update { it.copy(apk = apk) }
+            if (apk.downloadRequired) {
+                if (apk != approved)
+                    return@execute
+                _state.update { it.copy(status = R.string.tv_install_downloading) }
+                _download.withApk(apk.abi, { progress -> _state.update { it.copy(downloadProgress = progress) } }) { files ->
+                    _state.update { it.copy(status = R.string.tv_install_installing, downloadProgress = null) }
+                    _installer.connect(device.endpoint)
+                    _installer.install(device, files)
+                }
+            } else {
+                _state.update { it.copy(status = R.string.tv_install_installing) }
+                _installer.install(device)
+            }
             val installed = device.copy(installedVersion = BuildConfig.VERSION_NAME)
             save(installed)
-            _state.update { it.copy(page = Page.SYNC, selected = installed, appInstalled = true) }
+            _state.update { it.copy(page = Page.SYNC, selected = installed, appInstalled = true,
+                connected = it.connected + device.endpoint.serial) }
         }
     }
 
@@ -182,7 +205,6 @@ class TvInstallViewModel(application: Application) : AndroidViewModel(applicatio
             Page.DEVELOPER_OPTIONS -> Page.BUILD
             Page.DEBUGGING -> Page.DEVELOPER_OPTIONS
             Page.PAIR -> Page.DEBUGGING
-            Page.ADDRESS -> Page.DEBUGGING
             Page.CONNECT -> if (_previousDevice != null) Page.DEVICES else Page.DEBUGGING
             Page.INSTALL -> Page.DEVICES
             Page.SYNC -> Page.INSTALL
@@ -207,8 +229,10 @@ class TvInstallViewModel(application: Application) : AndroidViewModel(applicatio
         if (_state.value.busy)
             return
         usesPairing = true
-        pairingPort = ""
-        _state.update { it.copy(page = Page.PAIR, error = null) }
+        pairingAddress = connectionAddress.substringBeforeLast(':', connectionAddress).let {
+            if (it.isEmpty()) "" else "$it:"
+        }
+        _state.update { it.copy(page = Page.PAIR, error = null, pairedHost = null) }
     }
 
     fun alreadyInstalled() {
@@ -266,11 +290,12 @@ class TvInstallViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    private fun endpoint(port: String): AdbEndpoint? {
+    private fun endpoint(address: String, defaultPort: Int? = null): AdbEndpoint? {
         return try {
-            AdbEndpoint.parse(host, port)
+            AdbEndpoint.parse(address, defaultPort)
         } catch (error: IllegalArgumentException) {
-            _state.update { it.copy(error = R.string.tv_install_address_invalid) }
+            _state.update { it.copy(error = if (it.page == Page.CONNECT && it.pairedHost != null)
+                R.string.tv_install_connection_port_invalid else R.string.tv_install_address_invalid) }
             null
         }
     }
@@ -298,15 +323,16 @@ class TvInstallViewModel(application: Application) : AndroidViewModel(applicatio
         val device = _installer.connect(endpoint).copy(usesPairing = usesPairing,
             installedVersion = _previousDevice?.installedVersion, syncPublicKey = _previousDevice?.syncPublicKey)
         val installed = _installer.isInstalled(device)
+        val apk = _installer.packageFor(device)
         save(device)
-        _state.update { it.copy(page = Page.INSTALL, selected = device, appInstalled = installed,
+        _state.update { it.copy(page = Page.INSTALL, selected = device, appInstalled = installed, apk = apk,
             connected = it.connected + endpoint.serial) }
     }
 
     private fun execute(errorMessage: Int, action: suspend () -> Unit) {
         if (_state.value.busy)
             return
-        _state.update { it.copy(busy = true, error = null, status = null) }
+        _state.update { it.copy(busy = true, error = null, status = null, downloadProgress = null) }
         _operation = viewModelScope.launch {
             try {
                 action()
@@ -321,7 +347,7 @@ class TvInstallViewModel(application: Application) : AndroidViewModel(applicatio
                 withContext(Dispatchers.IO) { _installer.close() }
                 _state.update { it.copy(error = errorMessage, connected = emptySet()) }
             } finally {
-                _state.update { it.copy(busy = false, status = null) }
+                _state.update { it.copy(busy = false, status = null, downloadProgress = null) }
             }
         }
     }
@@ -331,6 +357,9 @@ class TvInstallViewModel(application: Application) : AndroidViewModel(applicatio
         val devices: List<TvInstallDevice> = emptyList(),
         val syncDevices: List<TvSetupSync.Device> = emptyList(),
         val appInstalled: Boolean = false,
+        val pairedHost: String? = null,
+        val apk: TvInstaller.Package? = null,
+        val downloadProgress: TvApkDownload.Progress? = null,
         val status: Int? = null,
         val connected: Set<String> = emptySet(),
         val selected: TvInstallDevice? = null,
@@ -339,6 +368,6 @@ class TvInstallViewModel(application: Application) : AndroidViewModel(applicatio
     )
 
     enum class Page {
-        DEVICES, INSTALLED, EXISTING, INTRO, DEVELOPER, ABOUT, BUILD, DEVELOPER_OPTIONS, DEBUGGING, PAIR, ADDRESS, CONNECT, INSTALL, SYNC, SECURITY, DISABLE
+        DEVICES, INSTALLED, EXISTING, INTRO, DEVELOPER, ABOUT, BUILD, DEVELOPER_OPTIONS, DEBUGGING, PAIR, CONNECT, INSTALL, SYNC, SECURITY, DISABLE
     }
 }

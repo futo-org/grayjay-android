@@ -23,17 +23,6 @@
         app:indicatorColor="#019BE7"
         app:trackColor="#252B30" />
 
-    <ImageView
-        android:id="@+id/tv_install_step_icon"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
-        android:layout_marginTop="28dp"
-        android:background="@drawable/background_1b_round_6dp"
-        android:importantForAccessibility="no"
-        android:padding="13dp"
-        app:srcCompat="@drawable/ic_live_tv"
-        app:tint="#55B9EB" />
-
     <TextView
         android:id="@+id/tv_install_title"
         style="@style/TvInstallTitle"
@@ -117,29 +106,25 @@
         android:visibility="gone">
 
         <TextView
+            android:id="@+id/tv_install_address_label"
             style="@style/TvInstallLabel"
-            android:labelFor="@id/tv_install_host"
-            android:text="@string/tv_install_host" />
+            android:labelFor="@id/tv_install_address"
+            android:text="@string/tv_install_address" />
 
         <EditText
-            android:id="@+id/tv_install_host"
+            android:id="@+id/tv_install_address"
             style="@style/TvInstallInput"
-            android:hint="@string/tv_install_host_hint"
+            android:hint="@string/tv_install_address_hint"
             android:inputType="textUri"
-            android:maxLength="253" />
+            android:singleLine="true"
+            android:maxLength="261" />
 
         <TextView
-            android:id="@+id/tv_install_port_label"
-            style="@style/TvInstallLabel"
-            android:labelFor="@id/tv_install_port"
-            android:text="@string/tv_install_pair_port" />
-
-        <EditText
-            android:id="@+id/tv_install_port"
-            style="@style/TvInstallInput"
-            android:hint="@string/tv_install_pair_port_hint"
-            android:inputType="number"
-            android:maxLength="5" />
+            android:id="@+id/tv_install_address_example"
+            style="@style/TvInstallDescription"
+            android:layout_marginTop="8dp"
+            android:text="@string/tv_install_address_hint"
+            android:textSize="13sp" />
 
         <LinearLayout
             android:id="@+id/tv_install_code_fields"

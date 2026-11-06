@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
+import android.text.InputType
 import android.text.format.Formatter
 import android.view.View
 import android.view.inputmethod.InputMethodManager
@@ -43,10 +44,10 @@ import kotlin.math.max
 
 class TvDevicesActivity : AppCompatActivity() {
     private lateinit var _model: TvInstallViewModel
-    private lateinit var _host: EditText
-    private lateinit var _port: EditText
+    private lateinit var _address: EditText
     private lateinit var _code: EditText
     private var _renderedPage: Page? = null
+    private var _bindingAddress = false
     private val _pairExisting = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         _model.finishSetup()
     }
@@ -61,8 +62,7 @@ class TvDevicesActivity : AppCompatActivity() {
         setContentView(R.layout.activity_tv_devices)
         setNavigationBarColorAndIcons()
         _model = ViewModelProvider(this)[TvInstallViewModel::class.java]
-        _host = findViewById(R.id.tv_install_host)
-        _port = findViewById(R.id.tv_install_port)
+        _address = findViewById(R.id.tv_install_address)
         _code = findViewById(R.id.tv_install_code)
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.tv_install_root)) { view, insets ->
@@ -83,16 +83,17 @@ class TvDevicesActivity : AppCompatActivity() {
                 _model.state.value.page == Page.SYNC -> _model.skipSync()
                 _model.state.value.page == Page.SECURITY || _model.state.value.page == Page.DISABLE -> _model.finishSetup()
                 _model.state.value.page == Page.CONNECT -> _model.pairAgain()
-                _model.state.value.page == Page.ADDRESS -> _model.manualConnection()
                 _model.state.value.page == Page.DEVELOPER -> _model.developerOptionsEnabled()
             }
         }
-        _host.doAfterTextChanged { _model.host = it.toString() }
-        _port.doAfterTextChanged {
+        _address.doAfterTextChanged {
+            if (_bindingAddress) return@doAfterTextChanged
             if (_model.state.value.page == Page.PAIR)
-                _model.pairingPort = it.toString()
-            else
+                _model.pairingAddress = it.toString()
+            else if (_model.state.value.pairedHost != null)
                 _model.connectionPort = it.toString()
+            else
+                _model.connectionAddress = it.toString()
         }
         findViewById<RadioGroup>(R.id.tv_install_debug_options).setOnCheckedChangeListener { _, checkedId ->
             _model.usesPairing = checkedId == R.id.tv_install_wireless
@@ -121,7 +122,7 @@ class TvDevicesActivity : AppCompatActivity() {
                 _code.text.clear()
                 _model.pair(code)
             }
-            Page.ADDRESS, Page.CONNECT -> _model.connect()
+            Page.CONNECT -> _model.connect()
             Page.INSTALL -> _model.install()
             Page.SYNC -> StateSync.instance.confirmStarted(this, { _model.pairSync() }, {})
             Page.EXISTING -> StateSync.instance.confirmStarted(this, {
@@ -146,7 +147,13 @@ class TvDevicesActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tv_install_toolbar_title).setText(if (isList) R.string.tv_install_menu else R.string.tv_install_setup)
         findViewById<TextView>(R.id.tv_install_error).apply {
             isVisible = state.error != null
-            text = state.error?.let { getString(it) }.orEmpty()
+            text = state.error?.let {
+                when (it) {
+                    R.string.tv_install_abi_mismatch, R.string.tv_install_download_unavailable ->
+                        getString(it, BuildConfig.VERSION_NAME, architectureName(state.apk?.abi))
+                    else -> getString(it)
+                }
+            }.orEmpty()
         }
         if (isList)
             renderDevices(state)
@@ -230,19 +237,24 @@ class TvDevicesActivity : AppCompatActivity() {
             progress = content.step
             isVisible = !complete
         }
-        findViewById<ImageView>(R.id.tv_install_step_icon).apply {
-            isVisible = content.screenshot == null
-            setImageResource(if (complete) R.drawable.ic_check else R.drawable.ic_live_tv)
-        }
         findViewById<ImageView>(R.id.tv_install_screenshot).apply {
             isVisible = content.screenshot != null
             if (content.screenshot != null)
                 setImageResource(content.screenshot)
         }
-        findViewById<TextView>(R.id.tv_install_title).setText(content.title)
+        val download = state.page == Page.INSTALL && state.apk?.downloadRequired == true
+        val portOnly = state.page == Page.CONNECT && state.pairedHost != null
+        findViewById<TextView>(R.id.tv_install_title).setText(if (download) R.string.tv_install_download_title else content.title)
         findViewById<TextView>(R.id.tv_install_description).text = when (state.page) {
-            Page.INSTALL, Page.SYNC -> getString(content.description, state.selected?.name.orEmpty())
-            Page.CONNECT -> getString(if (_model.usesPairing) content.description else R.string.tv_install_connect_network_description)
+            Page.INSTALL -> if (download) getString(R.string.tv_install_download_description,
+                state.selected?.name.orEmpty(), BuildConfig.VERSION_NAME, architectureName(state.apk?.abi))
+                else getString(content.description, state.selected?.name.orEmpty())
+            Page.SYNC -> getString(content.description, state.selected?.name.orEmpty())
+            Page.CONNECT -> getString(when {
+                portOnly -> R.string.tv_install_connect_port_description
+                _model.usesPairing -> content.description
+                else -> R.string.tv_install_connect_network_description
+            })
             else -> getString(content.description)
         }
         findViewById<TextView>(R.id.tv_install_instructions).apply {
@@ -250,33 +262,62 @@ class TvDevicesActivity : AppCompatActivity() {
             text = content.instructions?.let { getString(it) }.orEmpty()
         }
         findViewById<TextView>(R.id.tv_install_note).setText(
-            if (state.page == Page.INSTALL && state.appInstalled) R.string.tv_install_update_note else content.note)
+            if (download) R.string.tv_install_download_note
+            else if (state.page == Page.INSTALL && state.appInstalled) R.string.tv_install_update_note else content.note)
         findViewById<RadioGroup>(R.id.tv_install_debug_options).apply {
             isVisible = state.page == Page.DEBUGGING
             check(if (_model.usesPairing) R.id.tv_install_wireless else R.id.tv_install_network)
         }
-        val hasFields = state.page == Page.PAIR || state.page == Page.CONNECT || state.page == Page.ADDRESS
+        val hasFields = state.page == Page.PAIR || state.page == Page.CONNECT
         findViewById<View>(R.id.tv_install_fields).isVisible = hasFields
         findViewById<View>(R.id.tv_install_code_fields).isVisible = state.page == Page.PAIR
-        _port.isVisible = state.page != Page.ADDRESS
-        findViewById<View>(R.id.tv_install_port_label).isVisible = state.page != Page.ADDRESS
         if (hasFields) {
-            findViewById<TextView>(R.id.tv_install_port_label).setText(
-                if (state.page == Page.PAIR) R.string.tv_install_pair_port else R.string.tv_install_connection_port)
-            _port.setHint(if (state.page == Page.PAIR) R.string.tv_install_pair_port_hint else R.string.tv_install_connection_port_hint)
-            if (changedPage) {
-                _host.setText(_model.host)
-                _port.setText(if (state.page == Page.PAIR) _model.pairingPort else _model.connectionPort)
+            val address = when {
+                state.page == Page.PAIR -> _model.pairingAddress
+                portOnly -> _model.connectionPort
+                else -> _model.connectionAddress
+            }
+            val hint = when {
+                portOnly -> R.string.tv_install_connection_port_hint
+                _model.usesPairing -> R.string.tv_install_address_hint
+                else -> R.string.tv_install_network_address_hint
+            }
+            findViewById<TextView>(R.id.tv_install_address_label).setText(
+                if (portOnly) R.string.tv_install_connection_port else R.string.tv_install_address)
+            _address.setHint(hint)
+            findViewById<View>(R.id.tv_install_address_example).isVisible = state.page != Page.PAIR
+            findViewById<TextView>(R.id.tv_install_address_example).setText(
+                if (portOnly) R.string.tv_install_connection_port_example else hint)
+            _bindingAddress = true
+            try {
+                val inputType = if (portOnly) InputType.TYPE_CLASS_NUMBER else InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
+                if (_address.inputType != inputType) _address.inputType = inputType
+                if (changedPage || _address.text.toString() != address)
+                    _address.setText(address)
+            } finally {
+                _bindingAddress = false
             }
         }
-        _host.isEnabled = !state.busy
-        _port.isEnabled = !state.busy
+        _address.isEnabled = !state.busy
         _code.isEnabled = !state.busy
         findViewById<View>(R.id.tv_install_apk).isVisible = state.page == Page.INSTALL
         if (state.page == Page.INSTALL) {
             val size = (listOf(applicationInfo.sourceDir) + applicationInfo.splitSourceDirs.orEmpty()).sumOf { File(it).length() }
             findViewById<TextView>(R.id.tv_install_apk_name).text = getString(R.string.tv_install_package, BuildConfig.VERSION_NAME)
-            findViewById<TextView>(R.id.tv_install_apk_size).text = getString(R.string.tv_install_package_details, Formatter.formatFileSize(this, size))
+            findViewById<TextView>(R.id.tv_install_apk_size).text = if (download)
+                getString(R.string.tv_install_download_details, architectureName(state.apk?.abi),
+                    getString(if (BuildConfig.IS_UNSTABLE_BUILD) R.string.tv_install_release_unstable else R.string.tv_install_release_stable))
+                else getString(R.string.tv_install_package_details, Formatter.formatFileSize(this, size))
+        }
+    }
+
+    private fun architectureName(abi: String?): String {
+        return when (abi) {
+            "armeabi-v7a" -> getString(R.string.tv_install_arm32)
+            "arm64-v8a" -> getString(R.string.tv_install_arm64)
+            "x86" -> getString(R.string.tv_install_x86)
+            "x86_64" -> getString(R.string.tv_install_x86_64)
+            else -> abi.orEmpty()
         }
     }
 
@@ -288,8 +329,9 @@ class TvDevicesActivity : AppCompatActivity() {
                 Page.EXISTING -> R.string.tv_install_scan_sync
                 Page.INTRO -> R.string.tv_install_begin
                 Page.PAIR -> R.string.tv_install_pair
-                Page.ADDRESS, Page.CONNECT -> R.string.tv_install_connect
-                Page.INSTALL -> if (state.appInstalled) R.string.tv_install_update else R.string.tv_install_button
+                Page.CONNECT -> R.string.tv_install_connect
+                Page.INSTALL -> if (state.apk?.downloadRequired == true) R.string.tv_install_download_button
+                    else if (state.appInstalled) R.string.tv_install_update else R.string.tv_install_button
                 Page.SYNC -> R.string.tv_install_sync_pair
                 Page.SECURITY -> R.string.tv_install_disable_open
                 Page.DISABLE -> R.string.tv_install_done
@@ -298,19 +340,34 @@ class TvDevicesActivity : AppCompatActivity() {
             isEnabled = !state.busy
             alpha = if (state.busy) 0.5f else 1f
         }
-        findViewById<View>(R.id.tv_install_busy).isVisible = state.busy
+        val download = state.downloadProgress
+        findViewById<LinearProgressIndicator>(R.id.tv_install_busy).apply {
+            val indeterminate = download == null || download.total <= 0
+            if (isIndeterminate != indeterminate) {
+                hide()
+                isIndeterminate = indeterminate
+            }
+            isVisible = state.busy
+            if (!indeterminate && download != null)
+                progress = (download.received * 100 / download.total).toInt().coerceIn(0, 100)
+        }
         findViewById<TextView>(R.id.tv_install_status).apply {
             isVisible = state.busy
-            setText(state.status ?: when (state.page) {
+            text = if (download != null) {
+                val received = Formatter.formatFileSize(this@TvDevicesActivity, download.received)
+                if (download.total > 0) getString(R.string.tv_install_download_progress, received,
+                    Formatter.formatFileSize(this@TvDevicesActivity, download.total))
+                else getString(R.string.tv_install_download_received, received)
+            } else getString(state.status ?: when (state.page) {
                 Page.PAIR -> R.string.tv_install_pairing
-                Page.ADDRESS, Page.CONNECT -> R.string.tv_install_connecting
+                Page.CONNECT -> R.string.tv_install_connecting
                 Page.INSTALL -> R.string.tv_install_installing
                 else -> R.string.tv_install_working
             })
         }
         findViewById<MaterialButton>(R.id.tv_install_secondary).apply {
             isVisible = state.busy || state.page in listOf(Page.INSTALLED, Page.EXISTING, Page.INSTALL, Page.SYNC,
-                Page.SECURITY, Page.CONNECT, Page.ADDRESS, Page.DEVELOPER)
+                Page.SECURITY, Page.DEVELOPER) || (state.page == Page.CONNECT && _model.usesPairing)
             setText(when {
                 state.busy -> R.string.cancel
                 state.page == Page.INSTALLED -> R.string.tv_install_is_installed
@@ -319,7 +376,6 @@ class TvDevicesActivity : AppCompatActivity() {
                 state.page == Page.SYNC -> R.string.tv_install_not_now
                 state.page == Page.SECURITY -> R.string.tv_install_keep_debugging
                 state.page == Page.DEVELOPER -> R.string.tv_install_already_enabled
-                state.page == Page.ADDRESS -> R.string.tv_install_manual_port
                 else -> R.string.tv_install_pair_again
             })
         }
@@ -351,9 +407,8 @@ class TvDevicesActivity : AppCompatActivity() {
     }
 
     private fun hideKeyboard() {
-        (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager).hideSoftInputFromWindow(_host.windowToken, 0)
-        _host.clearFocus()
-        _port.clearFocus()
+        (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager).hideSoftInputFromWindow(_address.windowToken, 0)
+        _address.clearFocus()
         _code.clearFocus()
     }
 
@@ -363,8 +418,6 @@ class TvDevicesActivity : AppCompatActivity() {
                 R.string.tv_install_installed_note)
             Page.EXISTING -> PageContent(1, R.string.tv_install_existing_title, R.string.tv_install_existing_description,
                 R.string.tv_install_existing_note)
-            Page.ADDRESS -> PageContent(4, R.string.tv_install_connect_title, R.string.tv_install_address_description,
-                R.string.tv_install_address_note)
             Page.INTRO -> PageContent(1, R.string.tv_install_intro_title, R.string.tv_install_intro_description,
                 R.string.tv_install_intro_note, R.string.tv_install_intro_instructions)
             Page.DEVELOPER -> PageContent(2, R.string.tv_install_developer_title, R.string.tv_install_developer_description,

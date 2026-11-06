@@ -13,6 +13,14 @@ data class AdbEndpoint(val host: String, val port: Int) {
     }
 
     companion object {
+        fun parse(address: String, defaultPort: Int? = null): AdbEndpoint {
+            val match = Regex("(\\[[0-9a-fA-F:.]+\\]|[^:\\s]+)(?::([0-9]+))?").matchEntire(address.trim())
+                ?: throw IllegalArgumentException("Invalid address")
+            val port = match.groups[2]?.value?.toInt() ?: defaultPort
+                ?: throw IllegalArgumentException("Missing port")
+            return parse(match.groupValues[1], port.toString())
+        }
+
         fun parse(host: String, port: String): AdbEndpoint {
             return AdbEndpoint(host.trim().removeSurrounding("[", "]"), port.trim().toInt())
         }
