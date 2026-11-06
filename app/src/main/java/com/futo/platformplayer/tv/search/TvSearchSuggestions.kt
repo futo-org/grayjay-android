@@ -70,6 +70,7 @@ internal class TvSearchSuggestions(
                     compoundDrawableTintList = ContextCompat.getColorStateList(context, R.color.tv_button_text)
                     compoundDrawablePadding = context.dp(16)
                     tag = value
+                    if (index == 0) nextFocusUpId = R.id.tv_query
                     setOnKeyListener { _, key, event ->
                         if (key == KeyEvent.KEYCODE_DPAD_LEFT) {
                             if (event.action == KeyEvent.ACTION_DOWN) keyboard()
@@ -90,6 +91,7 @@ internal class TvSearchSuggestions(
                         remove(value)
                     }.apply {
                         tag = "remove:$value"
+                        if (index == 0) nextFocusUpId = R.id.tv_query
                     },
                     LinearLayout.LayoutParams(context.dp(40), context.dp(40)).apply { bottomMargin = context.dp(8) })
             content.addView(row, LinearLayout.LayoutParams(-1, -2))

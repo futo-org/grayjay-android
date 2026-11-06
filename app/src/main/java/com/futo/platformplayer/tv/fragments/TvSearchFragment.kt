@@ -121,6 +121,7 @@ open class TvSearchFragment : Fragment() {
             { submit(input.text.toString()) },
             host::focusNavigation,
             { if (!suggestions.focusFirst()) input.requestFocus() },
+            { input.requestFocus() },
             { input.dispatchKeyEvent(it) })
         workspace.addView(keyboard, LinearLayout.LayoutParams(context.dp(292), -2).apply { marginEnd = context.dp(32) })
         val search = TvUi.column(context)
@@ -146,6 +147,12 @@ open class TvSearchFragment : Fragment() {
             setOnKeyListener { _, key, event ->
                 if (key == KeyEvent.KEYCODE_DPAD_CENTER) {
                     if (event.action == KeyEvent.ACTION_UP) editQuery()
+                    true
+                } else if (editing && key == KeyEvent.KEYCODE_DPAD_DOWN) {
+                    if (event.action == KeyEvent.ACTION_DOWN) suggestions.focusFirst()
+                    true
+                } else if (editing && key == KeyEvent.KEYCODE_DPAD_LEFT && selectionStart == 0 && selectionEnd == 0) {
+                    if (event.action == KeyEvent.ACTION_DOWN) keyboard.focusQueryEdge()
                     true
                 } else false
             }

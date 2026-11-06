@@ -460,7 +460,6 @@ class TvPlayerFragment : Fragment() {
             viewLifecycleOwner.lifecycleScope,
             { StatePlatform.instance.getComments(video) },
             { StatePlatform.instance.getSubComments(it) },
-            { comment -> host.openChannel(comment.author.url, comment.author.name, comment.author.thumbnail) },
             ::closePanel)
         openPanel(panel, R.id.tv_player_comments)
     }

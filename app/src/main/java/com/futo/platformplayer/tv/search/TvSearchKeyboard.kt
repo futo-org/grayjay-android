@@ -16,6 +16,7 @@ internal class TvSearchKeyboard(
     search: () -> Unit,
     private val navigation: () -> Unit,
     private val suggestions: () -> Unit,
+    private val query: () -> Unit = suggestions,
     private val physicalKey: (KeyEvent) -> Boolean
 ) : LinearLayout(context) {
     private val letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".map { it.toString() }
@@ -98,6 +99,8 @@ internal class TvSearchKeyboard(
         (lastFocused?.takeIf { it.isShown } ?: keys.getChildAt(0)?.let { it as LinearLayout }?.getChildAt(0))
             ?.requestFocus() == true
 
+    fun focusQueryEdge() = (keys.getChildAt(0) as? LinearLayout)?.getChildAt(5)?.requestFocus() == true
+
     private fun showKeys() {
         keys.removeAllViews()
         (if (showingSymbols) symbols else letters).chunked(6).forEachIndexed { rowIndex, values ->
@@ -141,7 +144,9 @@ internal class TvSearchKeyboard(
                     true
                 }
                 key == KeyEvent.KEYCODE_DPAD_RIGHT && last -> {
-                    if (event.action == KeyEvent.ACTION_DOWN) suggestions()
+                    if (event.action == KeyEvent.ACTION_DOWN) {
+                        if (top) query() else suggestions()
+                    }
                     true
                 }
                 key == KeyEvent.KEYCODE_DPAD_UP && top -> true

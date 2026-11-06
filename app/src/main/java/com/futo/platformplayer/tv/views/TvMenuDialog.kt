@@ -6,10 +6,12 @@ import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.view.Gravity
 import android.view.View
+import android.view.animation.DecelerateInterpolator
+import android.view.animation.TranslateAnimation
 import com.futo.platformplayer.R
 import com.futo.platformplayer.tv.views.TvUi.dp
 
-internal class TvMenuDialog(context: Context) : Dialog(context) {
+internal class TvMenuDialog(context: Context, private val bottomSheet: Boolean = false) : Dialog(context) {
     val panel = TvPlayerPanel(context, ::dismiss)
 
     init {
@@ -20,9 +22,21 @@ internal class TvMenuDialog(context: Context) : Dialog(context) {
         super.onStart()
         window?.apply {
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            setGravity(Gravity.END or Gravity.CENTER_VERTICAL)
-            setLayout(context.dp(400), context.resources.displayMetrics.heightPixels - context.dp(40))
-            attributes = attributes.apply { x = context.dp(20) }
+            val metrics = context.resources.displayMetrics
+            if (bottomSheet) {
+                setGravity(Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL)
+                setLayout(metrics.widthPixels - context.dp(64), metrics.heightPixels * 2 / 3)
+                attributes = attributes.apply { y = context.dp(24) }
+                setWindowAnimations(0)
+                panel.startAnimation(TranslateAnimation(0f, 0f, context.dp(48).toFloat(), 0f).apply {
+                    duration = 200
+                    interpolator = DecelerateInterpolator()
+                })
+            } else {
+                setGravity(Gravity.END or Gravity.CENTER_VERTICAL)
+                setLayout(context.dp(400), metrics.heightPixels - context.dp(40))
+                attributes = attributes.apply { x = context.dp(20) }
+            }
         }
     }
 

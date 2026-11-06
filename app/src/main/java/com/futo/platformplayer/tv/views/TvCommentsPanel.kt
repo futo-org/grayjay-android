@@ -30,7 +30,6 @@ internal class TvCommentsPanel(
     private val scope: CoroutineScope,
     loader: suspend () -> IPager<IPlatformComment>,
     private val replies: suspend (IPlatformComment) -> IPager<IPlatformComment>,
-    private val channel: (IPlatformComment) -> Unit,
     close: () -> Unit
 ) : TvPlayerPanel(context, close) {
     private val pages = mutableListOf(Page(loader))
@@ -189,33 +188,39 @@ internal class TvCommentsPanel(
         expanded = true
         title(context.getString(R.string.tv_comments), true)
         val column = menu()
+        val replyAction = if ((comment.replyCount ?: 0) > 0)
+            option(context.getString(R.string.tv_view_replies, comment.replyCount)) {
+                pages.add(Page { replies(comment) })
+                expanded = false
+                title(context.getString(R.string.tv_replies), true)
+                load()
+            }.apply {
+                id = R.id.tv_comment_replies
+                column.addView(this)
+            }
+        else null
         val holder = CommentViewHolder(column)
         holder.bind(comment, true)
         styleComment(holder.itemView, compact = false)
         holder.itemView.findViewById<View>(R.id.button_replies).visibility = View.GONE
         holder.itemView.findViewById<View>(R.id.text_author).apply {
-            isFocusable = comment.author.url.isNotBlank()
-            setBackgroundResource(R.drawable.tv_player_timeline_focus)
-            setOnClickListener { channel(comment) }
+            isFocusable = false
+            isClickable = false
         }
-        holder.onAuthorClick.subscribe { channel(it) }
+        holder.itemView.findViewById<ViewGroup>(R.id.image_thumbnail).apply {
+            isFocusable = false
+            isClickable = false
+            descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS
+        }
         holder.itemView.findViewById<View>(R.id.button_show)?.apply {
             isFocusable = true
             setBackgroundResource(R.drawable.tv_panel_item)
         }
         column.addView(holder.itemView)
-        if ((comment.replyCount ?: 0) > 0)
-            column.addView(
-                option(context.getString(R.string.tv_view_replies, comment.replyCount)) {
-                    pages.add(Page { replies(comment) })
-                    expanded = false
-                    title(context.getString(R.string.tv_replies), true)
-                    load()
-                }.apply { id = R.id.tv_comment_replies })
-        (column.parent as ScrollView).apply {
+        val scroll = (column.parent as ScrollView).apply {
             isFocusable = true
-            requestFocus()
         }
+        (replyAction ?: scroll).requestFocus()
     }
 
     private fun styleComment(view: View, compact: Boolean) {

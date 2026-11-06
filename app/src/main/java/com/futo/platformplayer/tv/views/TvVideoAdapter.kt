@@ -35,6 +35,7 @@ internal class TvVideoAdapter(
         holder.author.text = video.author.name
         holder.author.visibility = if (showAuthor) View.VISIBLE else View.GONE
         holder.duration.text = if (video.isLive) holder.root.context.getString(R.string.tv_live) else TvUi.duration(video.duration)
+        holder.duration.visibility = if (video.isLive || video.duration > 0) View.VISIBLE else View.GONE
         TvUi.load(holder.image, video.thumbnails.getHQThumbnail())
         holder.requests.clear(holder.sourceIcon)
         val sourceIcon = StatePlatform.instance.getPlatformIcon(video.id.pluginId)

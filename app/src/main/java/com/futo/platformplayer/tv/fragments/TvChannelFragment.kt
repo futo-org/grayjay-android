@@ -546,7 +546,6 @@ class TvChannelFragment : Fragment() {
 
     private enum class Tab(val label: Int, val viewId: Int, val type: String? = null) {
         VIDEOS(R.string.videos, R.id.tv_channel_videos, ResultCapabilities.TYPE_VIDEOS),
-        SHORTS(R.string.shorts, R.id.tv_channel_shorts, ResultCapabilities.TYPE_SHORTS),
         STREAMS(R.string.tv_streams, R.id.tv_channel_streams, ResultCapabilities.TYPE_STREAMS),
         LIVE(R.string.tv_live, R.id.tv_channel_live, ResultCapabilities.TYPE_LIVE),
         PLAYLISTS(R.string.playlists, R.id.tv_channel_playlists),

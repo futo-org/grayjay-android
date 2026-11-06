@@ -9,7 +9,6 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
-import androidx.appcompat.app.AlertDialog
 import androidx.core.text.HtmlCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -20,6 +19,7 @@ import com.futo.platformplayer.states.StateHistory
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlaylists
 import com.futo.platformplayer.tv.TvActivity
+import com.futo.platformplayer.tv.views.TvMenuDialog
 import com.futo.platformplayer.tv.views.TvUi
 import com.futo.platformplayer.tv.views.TvUi.dp
 import com.futo.platformplayer.tv.views.TvUi.lines
@@ -28,6 +28,7 @@ import kotlinx.coroutines.launch
 
 class TvVideoDetailsFragment : Fragment() {
     private var video: IPlatformVideoDetails? = null
+    private var descriptionDialog: TvMenuDialog? = null
     private lateinit var root: FrameLayout
     private lateinit var column: LinearLayout
 
@@ -41,6 +42,12 @@ class TvVideoDetailsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         load()
+    }
+
+    override fun onDestroyView() {
+        descriptionDialog?.dismiss()
+        descriptionDialog = null
+        super.onDestroyView()
     }
 
     private fun load() {
@@ -151,11 +158,21 @@ class TvVideoDetailsFragment : Fragment() {
                     setPadding(context.dp(8), context.dp(12), context.dp(8), context.dp(12))
                     setBackgroundResource(R.drawable.tv_card_focus)
                     setOnClickListener {
-                        AlertDialog.Builder(context)
-                            .setTitle(video.name)
-                            .setMessage(description)
-                            .setPositiveButton(R.string.tv_close, null)
-                            .show()
+                        descriptionDialog = TvMenuDialog(context, bottomSheet = true).also { dialog ->
+                            dialog.panel.title(video.name)
+                            val menu = dialog.panel.menu()
+                            menu.addView(TvUi.text(context, description, 16f).apply {
+                                setPadding(context.dp(12), context.dp(8), context.dp(12), context.dp(20))
+                                setLineSpacing(context.dp(4).toFloat(), 1f)
+                            })
+                            val reading = (menu.parent as ScrollView).apply {
+                                isFocusable = true
+                                setBackgroundResource(R.drawable.tv_channel_reading)
+                            }
+                            dialog.setOnShowListener { reading.requestFocus() }
+                            dialog.setOnDismissListener { if (isAttachedToWindow) requestFocus() }
+                            dialog.show()
+                        }
                     }
                 },
                 LinearLayout.LayoutParams(context.dp(650), -2).apply { topMargin = context.dp(10) })

@@ -32,6 +32,7 @@ class TvSourceDetailsFragment : Fragment() {
     private var advanced = false
     private var busy = false
     private var checkingSubscriptions = false
+    private var draftSettings: Map<String, String?>? = null
     private var dialog: TvMenuDialog? = null
     private lateinit var identity: LinearLayout
     private lateinit var panel: TvPlayerPanel
@@ -45,7 +46,9 @@ class TvSourceDetailsFragment : Fragment() {
         get() = requireArguments().getString("id")!!
 
     private val item
-        get() = catalog.firstOrNull { it.id == sourceId }
+        get() = catalog.firstOrNull { it.id == sourceId }?.let { source ->
+            draftSettings?.let { source.copy(values = it) } ?: source
+        }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, state: Bundle?): View {
         val c = requireContext()
@@ -175,8 +178,7 @@ class TvSourceDetailsFragment : Fragment() {
         panel.onBack = if (page == "main") null
         else
             ({
-                page = "main"
-                render()
+                leavePage()
                 true
             })
         val menu = panel.menu()
@@ -187,6 +189,15 @@ class TvSourceDetailsFragment : Fragment() {
             }
         when (page) {
             "preferences" -> {
+                option(R.string.tv_source_save_changes, tag = "save") { saveSettings() }.apply {
+                    isEnabled = draftSettings != null
+                    alpha = if (isEnabled) 1f else .4f
+                }
+                menu.addView(
+                    View(requireContext()).apply { setBackgroundColor(0xFF333333.toInt()) },
+                    LinearLayout.LayoutParams(-1, requireContext().dp(1)).apply {
+                        setMargins(0, requireContext().dp(8), 0, requireContext().dp(16))
+                    })
                 source.config
                     ?.settings
                     .orEmpty()
@@ -224,7 +235,7 @@ class TvSourceDetailsFragment : Fragment() {
                         getString(R.string.tv_source_reset),
                         getString(R.string.tv_source_reset_hint),
                         getString(R.string.tv_source_reset)) {
-                        load("reset") { checkNotNull(store).settings(sourceId, emptyMap()) }
+                        updateDraft(source.config?.settings.orEmpty().associate { it.variableOrName to it.default }, "reset")
                     }
                 }
             }
@@ -366,10 +377,12 @@ class TvSourceDetailsFragment : Fragment() {
         val source = item ?: return
         val current = source.values[setting.variableOrName] ?: setting.default
         fun save(value: String) {
+            if (if (setting.type.equals("boolean", true)) truth(value) == truth(current) else value == (current ?: "0")) {
+                render(setting.variableOrName)
+                return
+            }
             val action = {
-                load(setting.variableOrName) {
-                    checkNotNull(store).settings(sourceId, source.values + (setting.variableOrName to value))
-                }
+                updateDraft(source.values + (setting.variableOrName to value), setting.variableOrName)
             }
             if (!setting.warningDialog.isNullOrBlank() && truth(value))
                 confirm(setting.name, setting.warningDialog, getString(R.string.ok), action)
@@ -398,6 +411,48 @@ class TvSourceDetailsFragment : Fragment() {
                     })
             }
             menu.getChildAt(if (setting.description.isBlank()) 0 else 1)?.requestFocus()
+            d.show()
+        }
+    }
+
+    private fun updateDraft(values: Map<String, String?>, focus: String) {
+        draftSettings = values.takeIf { it != catalog.firstOrNull { source -> source.id == sourceId }?.values }
+        render(focus)
+    }
+
+    private fun saveSettings(leave: Boolean = false) {
+        val values = draftSettings?.toMap() ?: return
+        load("save") {
+            checkNotNull(store).settings(sourceId, values)
+            withContext(Dispatchers.Main) {
+                draftSettings = null
+                if (leave) page = "main"
+            }
+        }
+    }
+
+    private fun leavePage() {
+        if (page != "preferences" || draftSettings == null) {
+            page = "main"
+            render()
+            return
+        }
+        dialog = TvMenuDialog(requireContext()).also { d ->
+            d.panel.title(getString(R.string.tv_source_unsaved_changes))
+            val menu = d.panel.menu()
+            menu.addView(d.panel.option(getString(R.string.tv_source_save_changes)) {
+                d.dismiss()
+                saveSettings(leave = true)
+            }.apply { tag = "save" })
+            menu.addView(d.panel.option(getString(R.string.tv_source_discard_changes)) {
+                d.dismiss()
+                draftSettings = null
+                page = "main"
+                render("preferences")
+            }.apply { tag = "discard" })
+            val keep = d.panel.option(getString(R.string.tv_source_keep_editing)) { d.dismiss() }
+            menu.addView(keep)
+            keep.requestFocus()
             d.show()
         }
     }

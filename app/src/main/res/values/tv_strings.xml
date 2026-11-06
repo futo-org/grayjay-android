@@ -119,7 +119,11 @@
     <string name="tv_source_priority">Source priority</string>
     <string name="tv_source_advanced">Advanced settings</string>
     <string name="tv_source_reset">Reset preferences</string>
-    <string name="tv_source_reset_hint">Restore this source’s preferences to their defaults? Your subscriptions and sign-in are kept.</string>
+    <string name="tv_source_reset_hint">Restore this source’s preferences to their defaults? Choose Save changes to apply them. Your subscriptions and sign-in are kept.</string>
+    <string name="tv_source_save_changes">Save changes</string>
+    <string name="tv_source_unsaved_changes">Unsaved changes</string>
+    <string name="tv_source_discard_changes">Discard changes</string>
+    <string name="tv_source_keep_editing">Keep editing</string>
     <string name="tv_source_priority_hint">Sources higher in this list appear first in combined feeds.</string>
     <string name="tv_source_move_up">Move up</string>
     <string name="tv_source_move_down">Move down</string>
