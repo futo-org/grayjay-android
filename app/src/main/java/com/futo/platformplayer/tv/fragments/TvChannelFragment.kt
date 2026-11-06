@@ -81,7 +81,6 @@ class TvChannelFragment : Fragment() {
         super.onCreate(state)
         state?.let {
             active = Tab.entries.firstOrNull { tab -> tab.name == it.getString("tab") } ?: Tab.VIDEOS
-            sort = it.getString("sort")
             pages.getOrPut(active, ::Page).selected = it.getInt("selected")
             restoreCard = it.getBoolean("card")
             restoreSearch = it.getBoolean("searchFocus")
@@ -184,7 +183,6 @@ class TvChannelFragment : Fragment() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         outState.putString("tab", active.name)
-        outState.putString("sort", sort)
         outState.putInt("selected", pages[active]?.selected ?: 0)
         outState.putBoolean("card", grid.hasFocus())
         outState.putBoolean("searchFocus", restoreSearch || searchButton.hasFocus())
@@ -313,7 +311,7 @@ class TvChannelFragment : Fragment() {
     }
 
     private fun showPage(focusCard: Boolean = false) {
-        sortButton.visibility = if (active.type != null && (capabilities?.sorts?.size ?: 0) > 1) View.VISIBLE else View.GONE
+        sortButton.visibility = View.GONE
         sortButton.text = sort?.let(::sortLabel) ?: getString(R.string.tv_sort)
         if (active == Tab.ABOUT) {
             showAbout()

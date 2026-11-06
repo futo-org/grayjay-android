@@ -50,6 +50,8 @@ internal interface TvSubscriptionsStore {
 
     suspend fun cached(): IPager<IPlatformContent>
 
+    suspend fun load(): TvSubscriptionFeed = refresh(false)
+
     suspend fun refresh(bypassRateLimit: Boolean): TvSubscriptionFeed
 
     fun observe(changed: () -> Unit, progress: (Int, Int) -> Unit): () -> Unit
@@ -90,16 +92,21 @@ internal interface TvSubscriptionsStore {
                     channels().any { StatePlatform.instance.hasEnabledChannelClient(it.url) }
 
                 override fun refreshOnOpen(changed: Boolean) =
-                    Settings.instance.subscriptions.fetchOnTabOpen &&
-                        (changed ||
-                            subscriptions.global.feed == null ||
-                            subscriptions.getOldestUpdateTime().isBefore(OffsetDateTime.now().minusMinutes(5)))
+                    subscriptions.global.isGlobalUpdating ||
+                        (Settings.instance.subscriptions.fetchOnTabOpen && subscriptions.global.feed == null)
 
                 override suspend fun cached(): IPager<IPlatformContent> =
-                    StateCache.instance.getSubscriptionCachePager()
+                    subscriptions.global.feed?.takeUnless { Settings.instance.subscriptions.alwaysReloadFromCache }
+                        ?.getWindow() ?: StateCache.instance.getSubscriptionCachePager()
 
-                override suspend fun refresh(bypassRateLimit: Boolean): TvSubscriptionFeed {
+                override suspend fun load() = fetch(false, false)
+
+                override suspend fun refresh(bypassRateLimit: Boolean) = fetch(bypassRateLimit, true)
+
+                private suspend fun fetch(bypassRateLimit: Boolean, force: Boolean): TvSubscriptionFeed {
                     val feed = subscriptions.global
+                    if (!force && feed.feed != null)
+                        return TvSubscriptionFeed(cached(), feed.exceptions.size)
                     if (!bypassRateLimit && !feed.isGlobalUpdating) {
                         val limited = subscriptions.getSubscriptionRequestCount()
                             .filter { (client, count) ->
@@ -112,6 +119,10 @@ internal interface TvSubscriptionsStore {
                     val pager = suspendCancellableCoroutine<IPager<IPlatformContent>> { continuation ->
                         val listener = Any()
                         synchronized(feed.lock) {
+                            if (!force && feed.feed != null) {
+                                continuation.resume(checkNotNull(feed.feed).getWindow())
+                                return@synchronized
+                            }
                             feed.onUpdatedOnce.subscribe(listener) { error ->
                                 if (continuation.isActive) {
                                     if (error != null) continuation.resumeWithException(error)
@@ -122,8 +133,10 @@ internal interface TvSubscriptionsStore {
                                 }
                             }
                             continuation.invokeOnCancellation { feed.onUpdatedOnce.remove(listener) }
-                            if (!feed.isGlobalUpdating) feed.exceptions = emptyList()
-                            subscriptions.updateSubscriptionFeed(StateApp.instance.scope)
+                            if (!feed.isGlobalUpdating) {
+                                feed.exceptions = emptyList()
+                                subscriptions.updateSubscriptionFeed(StateApp.instance.scope, onlyIfNull = !force)
+                            }
                         }
                     }
                     return TvSubscriptionFeed(

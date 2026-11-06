@@ -407,7 +407,9 @@ open class TvSavedPlaylistFragment : Fragment() {
                                     if (store.playlistId == null) R.string.tv_watch_later_remove
                                     else R.string.tv_saved_playlist_remove),
                                 getString(R.string.tv_saved_playlist_remove_hint, video.name, heading.text),
-                                getString(R.string.tv_history_remove)) {
+                                getString(
+                                    if (store.playlistId == null) R.string.tv_watch_later_remove
+                                    else R.string.tv_saved_playlist_remove)) {
                                 val visible = position
                                 selectedUrl = adapter.videos.getOrNull(visible + 1)?.url
                                     ?: adapter.videos.getOrNull(visible - 1)?.url

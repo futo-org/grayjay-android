@@ -247,12 +247,10 @@ class TvSubscriptionsFragment : Fragment() {
                     render()
                     return@launch
                 }
-                if (changed || pager == null) {
-                    val cached = withContext(Dispatchers.IO) { store.cached() }
-                    replace(cached)
-                } else render()
+                val cached = withContext(Dispatchers.IO) { store.cached() }
+                replace(cached)
                 restoreFocus()
-                if (enabledSources && refreshNeeded) fetch(false)
+                if (enabledSources && refreshNeeded) fetch(false, initial = true)
                 else
                     status.text = getString(
                         if (enabledSources) R.string.tv_subscriptions_cached
@@ -284,9 +282,9 @@ class TvSubscriptionsFragment : Fragment() {
         }
     }
 
-    private suspend fun fetch(bypass: Boolean) {
+    private suspend fun fetch(bypass: Boolean, initial: Boolean = false) {
         status.text = getString(R.string.tv_subscriptions_refreshing)
-        val result = withContext(Dispatchers.IO) { store.refresh(bypass) }
+        val result = withContext(Dispatchers.IO) { if (initial) store.load() else store.refresh(bypass) }
         val keepFocus = grid.hasFocus()
         replace(result.pager, keepOnEmpty = result.failures > 0)
         status.text = if (result.failures > 0) getString(R.string.tv_subscriptions_partial)

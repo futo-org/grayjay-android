@@ -62,6 +62,9 @@ internal class TvHistoryAdapter(
         card.author.text = video.author.name
         card.duration.visibility = if (video.isLive || video.duration > 0) View.VISIBLE else View.GONE
         card.duration.text = if (video.isLive) c.getString(R.string.tv_live) else TvUi.duration(video.duration)
+        if (video.isLive) card.duration.setBackgroundResource(R.drawable.background_thumbnail_live)
+        else card.duration.setBackgroundColor(0xCC000000.toInt())
+        card.duration.setPadding(c.dp(5), c.dp(2), c.dp(5), c.dp(2))
         TvUi.load(card.image, video.thumbnails.getHQThumbnail())
         holder.progress.visibility = if (item.position > 0 && video.duration > 0) View.VISIBLE else View.GONE
         holder.progress.progress =

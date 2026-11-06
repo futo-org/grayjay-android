@@ -35,6 +35,9 @@ internal class TvSavedVideosAdapter(
         holder.author.text = video.author.name
         holder.duration.visibility = if (video.isLive || video.duration > 0) View.VISIBLE else View.GONE
         holder.duration.text = if (video.isLive) holder.root.context.getString(R.string.tv_live) else TvUi.duration(video.duration)
+        if (video.isLive) holder.duration.setBackgroundResource(R.drawable.background_thumbnail_live)
+        else holder.duration.setBackgroundColor(0xCC000000.toInt())
+        holder.duration.setPadding(holder.root.context.dp(4), holder.root.context.dp(2), holder.root.context.dp(4), holder.root.context.dp(2))
         TvUi.load(holder.image, video.thumbnails.getHQThumbnail())
         holder.content.contentDescription = "${video.name}, ${video.author.name}"
         holder.more.contentDescription = holder.root.context.getString(R.string.tv_watch_later_video_options, video.name)

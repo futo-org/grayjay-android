@@ -36,6 +36,9 @@ internal class TvVideoAdapter(
         holder.author.visibility = if (showAuthor) View.VISIBLE else View.GONE
         holder.duration.text = if (video.isLive) holder.root.context.getString(R.string.tv_live) else TvUi.duration(video.duration)
         holder.duration.visibility = if (video.isLive || video.duration > 0) View.VISIBLE else View.GONE
+        if (video.isLive) holder.duration.setBackgroundResource(R.drawable.background_thumbnail_live)
+        else holder.duration.setBackgroundColor(0xCC000000.toInt())
+        holder.duration.setPadding(holder.root.context.dp(5), holder.root.context.dp(2), holder.root.context.dp(5), holder.root.context.dp(2))
         TvUi.load(holder.image, video.thumbnails.getHQThumbnail())
         holder.requests.clear(holder.sourceIcon)
         val sourceIcon = StatePlatform.instance.getPlatformIcon(video.id.pluginId)

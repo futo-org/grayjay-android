@@ -32,7 +32,6 @@ abstract class TvFeedFragment : Fragment() {
     private lateinit var retry: TextView
     private lateinit var adapter: TvVideoAdapter
     private var pager: IPager<IPlatformContent>? = null
-    private val videos = mutableListOf<IPlatformVideo>()
     private var loadJob: Job? = null
     private var selected = 0
     private var retryNext = false
@@ -42,6 +41,7 @@ abstract class TvFeedFragment : Fragment() {
     protected lateinit var status: TextView
     protected lateinit var title: TextView
     protected lateinit var grid: RecyclerView
+    protected val videos = mutableListOf<IPlatformVideo>()
     protected open val hint: Int = 0
     protected open val separateActions = false
     protected open val autoLoad = true
@@ -81,7 +81,7 @@ abstract class TvFeedFragment : Fragment() {
             itemAnimator = null
         }
         adapter = TvVideoAdapter(
-            { host.openVideo(it.url) },
+            ::openVideo,
             { host.focusNavigation() },
             options = { video ->
                 TvVideoActions.show(this, video) {
@@ -133,6 +133,8 @@ abstract class TvFeedFragment : Fragment() {
     }
 
     protected open fun onLoaded() = Unit
+
+    protected open fun openVideo(video: IPlatformVideo) = host.openVideo(video.url)
 
     protected open fun emptyText() = getString(R.string.tv_empty)
 

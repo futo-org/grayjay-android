@@ -122,10 +122,21 @@ class TvPlayerFragment : Fragment() {
                     .start()
             }
         }
-        controller.findViewById<View>(androidx.media3.ui.R.id.exo_progress).setOnFocusChangeListener { _, focused ->
-            if (focused) {
-                hint.setText(R.string.tv_seek)
-                hint.gravity = Gravity.START
+        controller.findViewById<View>(androidx.media3.ui.R.id.exo_progress).apply {
+            setOnFocusChangeListener { _, focused ->
+                if (focused) {
+                    hint.setText(R.string.tv_seek)
+                    hint.gravity = Gravity.START
+                }
+            }
+            setOnKeyListener { view, key, event ->
+                if (key == KeyEvent.KEYCODE_DPAD_CENTER || key == KeyEvent.KEYCODE_ENTER) {
+                    if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+                        view.onKeyDown(key, event)
+                        if (player.exoPlayer?.player?.playWhenReady == true) player.pause() else play()
+                    }
+                    true
+                } else false
             }
         }
         controller.findViewById<View>(R.id.tv_player_channel).setOnClickListener {
@@ -181,7 +192,9 @@ class TvPlayerFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         if (requireArguments().containsKey(TvPlaylistQueue.KEY)) {
-            queue = TvPlaylistQueue(requireArguments(), savedInstanceState, checkNotNull(controls), ::playQueuedVideo)
+            queue = TvPlaylistQueue(
+                requireArguments(), savedInstanceState, checkNotNull(controls), ::playQueuedVideo,
+                viewLifecycleOwner.lifecycleScope)
         }
         parentFragmentManager.setFragmentResultListener("tv_resume", viewLifecycleOwner) { _, result ->
             position = result.getLong("position")
