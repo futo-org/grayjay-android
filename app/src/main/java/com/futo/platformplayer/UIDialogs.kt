@@ -228,6 +228,7 @@ class UIDialogs {
             val builder = AlertDialog.Builder(context);
             val view = LayoutInflater.from(context).inflate(R.layout.dialog_multi_button, null);
             builder.setView(view);
+            com.futo.platformplayer.tv.TvFocusNavigation.attach(view)
             builder.setCancelable(defaultCloseAction > -2);
             val dialog = builder.create();
             registerDialogOpened(dialog);

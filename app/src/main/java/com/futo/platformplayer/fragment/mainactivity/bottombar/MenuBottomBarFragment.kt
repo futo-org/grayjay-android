@@ -34,6 +34,7 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePayment
 import com.futo.platformplayer.states.StateSubscriptions
+import com.futo.platformplayer.tv.install.TvDevicesActivity
 import com.futo.platformplayer.views.AnyAdapterView
 import com.futo.platformplayer.views.AnyAdapterView.Companion.asAny
 import com.futo.platformplayer.views.adapters.AnyAdapter
@@ -110,6 +111,7 @@ class MenuBottomBarFragment : MainActivityFragment() {
         private var currentButtonDefinitions: List<ButtonDefinition>? = null;
 
         private var moreColumns = 3;
+        private var moreTotalWidthDp = 0f;
 
         constructor(fragment: MenuBottomBarFragment, inflater: LayoutInflater) : super(inflater.context) {
             _fragment = fragment;
@@ -191,6 +193,7 @@ class MenuBottomBarFragment : MainActivityFragment() {
                 }
             })
             moreColumns = columns;
+            moreTotalWidthDp = totalWidthDp;
             val layoutManager = GridLayoutManager(context, columns, GridLayoutManager.VERTICAL, true);
             _layoutMoreButtons.layoutManager = layoutManager;
 
@@ -417,6 +420,18 @@ class MenuBottomBarFragment : MainActivityFragment() {
             val defs = currentButtonDefinitions?.toMutableList() ?: return
             val metrics = resources.displayMetrics
             _buttonsVisible = floor(metrics.widthPixels.toDouble() / 65.dp(resources).toDouble()).roundToInt();
+
+            //The fly-out grid is sized from the screen metrics, which can change without this view
+            //being recreated. Recompute the column count and tile sizes so the tiles do not keep
+            //overlapping the layout they were created for (e.g. after rotating the device).
+            val moreWidthDp = metrics.widthPixels / metrics.density;
+            val newMoreColumns = MenuButtonItemViewHolder.getAutoSizeColumns(moreWidthDp);
+            if (newMoreColumns != moreColumns || moreWidthDp != moreTotalWidthDp) {
+                moreColumns = newMoreColumns;
+                moreTotalWidthDp = moreWidthDp;
+                _layoutMoreButtons.layoutManager = GridLayoutManager(context, newMoreColumns, GridLayoutManager.VERTICAL, true);
+                _layoutMoreButtonsAdapter?.notifyContentChanged();
+            }
             if (_buttonsVisible >= defs.size) {
                 updateBottomMenuButtons(defs.toMutableList(), false);
             } else if (_buttonsVisible > 0) {
@@ -514,6 +529,12 @@ class MenuBottomBarFragment : MainActivityFragment() {
                 button = value;
                 textName.text = _view.context.getString(value.def.string);
                 imageIcon.setImageResource(value.def.iconActive);
+
+                //Unlike onCreate, bind is called every time the tile is (re)bound, so the tile size
+                //has to be (re)applied here as well. Otherwise the tiles keep the size they got for
+                //the metrics at creation time and end up overlapping each other when the screen
+                //metrics change (e.g. rotating the device) without the view being recreated.
+                setAutoSize(_view.resources.displayMetrics.widthPixels / _view.resources.displayMetrics.density);
             }
 
 
@@ -617,6 +638,9 @@ class MenuBottomBarFragment : MainActivityFragment() {
             ButtonDefinition(11, R.drawable.ic_smart_display, R.drawable.ic_smart_display_filled, R.string.shorts, canToggle = true, { it.currentMain is ShortsFragment && !(it.currentMain as ShortsFragment).isChannelShortsMode }, { it.navigateTab<ShortsFragment>() }),
             ButtonDefinition(5, R.drawable.ic_history, R.drawable.ic_history, R.string.history, canToggle = false, { it.currentMain is HistoryFragment }, { it.navigateTab<HistoryFragment>() }),
             ButtonDefinition(6, R.drawable.ic_download, R.drawable.ic_download, R.string.downloads, canToggle = false, { it.currentMain is DownloadsFragment }, { it.navigateTab<DownloadsFragment>() }),
+            ButtonDefinition(13, R.drawable.ic_live_tv, R.drawable.ic_live_tv, R.string.tv_install_menu, canToggle = false, { false }, {
+                it.startActivity(Intent(it.requireContext(), TvDevicesActivity::class.java))
+            }),
             ButtonDefinition(8, R.drawable.ic_chat, R.drawable.ic_chat_filled, R.string.comments, canToggle = true, { it.currentMain is CommentsFragment }, { it.navigateTab<CommentsFragment>() }),
             ButtonDefinition(9, R.drawable.ic_subscriptions, R.drawable.ic_subscriptions_filled, R.string.subscription_group_menu, canToggle = true, { it.currentMain is SubscriptionGroupListFragment }, { it.navigateTab<SubscriptionGroupListFragment>() }),
             ButtonDefinition(10, R.drawable.ic_help_square, R.drawable.ic_help_square_fill, R.string.tutorials, canToggle = true, { it.currentMain is TutorialFragment }, { it.navigateTab<TutorialFragment>() }),

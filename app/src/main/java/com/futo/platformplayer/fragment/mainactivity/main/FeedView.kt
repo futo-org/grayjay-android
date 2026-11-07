@@ -116,6 +116,14 @@ abstract class FeedView<TFragment, TResult, TConverted, TPager, TViewHolder> : L
         _overlayContainer = findViewById(R.id.overlay_container);
         _recyclerResults = recyclerResults;
 
+        //The RecyclerView is not a direct child of the SwipeRefreshLayout (it is wrapped in a
+        //FrameLayout/LinearLayout), which makes the default canChildScrollUp() check - that only
+        //looks at the direct child - always report false. The pull-to-refresh therefore stays armed
+        //even while the list is scrolled, and it then steals (and cancels) vertical drags from the
+        //list, for example the slight upward/downward drift of a thumb while swiping an item.
+        //Point it at the actual list instead.
+        _swipeRefresh.setOnChildScrollUpCallback { _, _ -> _recyclerResults.canScrollVertically(-1) };
+
         _containerSortBy = findViewById(R.id.container_sort_by);
         _spinnerSortBy = findViewById(R.id.spinner_sortby);
         _spinnerSortBy.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {

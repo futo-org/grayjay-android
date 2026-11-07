@@ -17,6 +17,7 @@ import com.futo.platformplayer.setNavigationBarColorAndIcons
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateSync
 import com.futo.platformplayer.sync.internal.SyncDeviceInfo
+import com.futo.platformplayer.tv.sync.TvSyncIdentityStore
 import com.google.zxing.integration.android.IntentIntegrator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -103,6 +104,11 @@ class SyncPairActivity : AppCompatActivity() {
 
             val deviceInfo: SyncDeviceInfo = Json.decodeFromString<SyncDeviceInfo>(Base64.decode(url.substring("grayjay://sync/".length), Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP).decodeToString())
             if (StateSync.instance.isAuthorized(deviceInfo.publicKey)) {
+                if (intent.getBooleanExtra("pairTv", false)) {
+                    TvSyncIdentityStore.remember(this, deviceInfo.publicKey)
+                    finish()
+                    return
+                }
                 throw Exception("This device is already paired")
             }
 
@@ -126,6 +132,8 @@ class SyncPairActivity : AppCompatActivity() {
                         lifecycleScope.launch(Dispatchers.Main) {
                             if (complete != null) {
                                 if (complete) {
+                                    if (intent.getBooleanExtra("pairTv", false))
+                                        TvSyncIdentityStore.remember(this@SyncPairActivity, deviceInfo.publicKey)
                                     _layoutPairingSuccess.visibility = View.VISIBLE
                                     _layoutPairing.visibility = View.GONE
                                 } else {

@@ -32,9 +32,6 @@ import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
 import java.nio.ByteBuffer
-import java.nio.channels.ClosedChannelException
-import java.nio.channels.ServerSocketChannel
-import java.nio.channels.SocketChannel
 import java.util.Base64
 import java.util.Locale
 import kotlin.math.min
@@ -74,7 +71,7 @@ class SyncService(
     private val database: ISyncDatabaseProvider,
     private val settings: SyncServiceSettings = SyncServiceSettings()
 ) {
-    private var _serverSocket: ServerSocketChannel? = null
+    private var _serverSocket: ServerSocket? = null
     private val _sessions: MutableMap<String, SyncSession> = mutableMapOf()
     private val _lastConnectTimesMdns: MutableMap<String, Long> = mutableMapOf()
     private val _lastConnectTimesIp: MutableMap<String, Long> = mutableMapOf()
@@ -303,8 +300,9 @@ class SyncService(
         serverSocketStarted = false
         _scope?.launch(Dispatchers.IO) {
             try {
-                val serverSocket = ServerSocketChannel.open()
-                serverSocket.socket().bind(InetSocketAddress("0.0.0.0", settings.listenerPort))
+                // Channel-backed streams share a blocking lock, which can stall UI approval writes behind a read.
+                val serverSocket = ServerSocket()
+                serverSocket.bind(InetSocketAddress("0.0.0.0", settings.listenerPort))
                 _serverSocket = serverSocket
 
                 Log.i(TAG, "Running on port ${settings.listenerPort} (TCP)")
@@ -312,15 +310,14 @@ class SyncService(
 
                 while (isActive) {
                     val socket = serverSocket.accept()
-                    //TODO: Switch to SocketChannel?
-                    val session = createSocketSession(socket.socket(), true)
+                    val session = createSocketSession(socket, true)
                     session.startAsResponder()
                 }
-            } catch (e: ClosedChannelException) {
-                // normal shutdown
             } catch (e: Throwable) {
-                Log.e(TAG, "Failed to bind server socket to port ${settings.listenerPort}", e)
-                serverSocketFailedToStart = true
+                if (isActive) {
+                    Log.e(TAG, "Failed to bind server socket to port ${settings.listenerPort}", e)
+                    serverSocketFailedToStart = true
+                }
             } finally {
                 serverSocketStarted = false
             }
@@ -649,8 +646,8 @@ class SyncService(
                 }
 
                 ap.invoke(remotePublicKey) {
-                    try {
-                        _scope?.launch(Dispatchers.IO) {
+                    _scope?.launch(Dispatchers.IO) {
+                        try {
                             if (it) {
                                 Logger.i(TAG, "$remotePublicKey manually authorized")
                                 syncSession.authorize()
@@ -659,9 +656,10 @@ class SyncService(
                                 syncSession.unauthorize()
                                 syncSession.close()
                             }
+                        } catch (e: Throwable) {
+                            Logger.e(TAG, "Failed to send authorize result.", e)
+                            syncSession.close()
                         }
-                    } catch (e: Throwable) {
-                        Logger.e(TAG, "Failed to send authorize result.")
                     }
                 }
             } else {

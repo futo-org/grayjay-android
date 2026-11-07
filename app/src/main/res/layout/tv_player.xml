@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.media3.ui.PlayerControlView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/tv_player_controls"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:focusable="true"
+    app:controller_layout_id="@layout/tv_player_controls"
+    app:animation_enabled="false"
+    app:play_icon="@drawable/ic_play_white_nopad"
+    app:pause_icon="@drawable/ic_pause_white"
+    app:show_timeout="5000" />

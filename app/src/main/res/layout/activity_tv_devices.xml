@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/tv_install_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/black"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageButton
+            android:id="@+id/tv_install_back"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/cd_button_back"
+            android:padding="18dp"
+            app:srcCompat="@drawable/ic_back_thin_white_16dp" />
+
+        <TextView
+            android:id="@+id/tv_install_toolbar_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:fontFamily="@font/inter_medium"
+            android:text="@string/tv_install_menu"
+            android:textSize="18sp" />
+
+        <ImageButton
+            android:id="@+id/tv_install_refresh"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/tv_install_refresh"
+            android:padding="18dp"
+            app:srcCompat="@drawable/ic_refresh" />
+    </LinearLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/tv_install_scroll"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true"
+        android:clipToPadding="false">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp">
+
+            <LinearLayout
+                android:id="@+id/tv_install_devices_page"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    style="@style/TvInstallTitle"
+                    android:text="@string/tv_install_your_tvs" />
+
+                <TextView
+                    style="@style/TvInstallDescription"
+                    android:text="@string/tv_install_list_description" />
+
+                <LinearLayout
+                    android:id="@+id/tv_install_devices"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:orientation="vertical" />
+
+                <LinearLayout
+                    android:id="@+id/tv_install_empty"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="28dp"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:layout_width="240dp"
+                        android:layout_height="160dp"
+                        android:importantForAccessibility="no"
+                        app:srcCompat="@drawable/tv_install_illustration" />
+
+                    <TextView
+                        style="@style/TvInstallTitle"
+                        android:layout_marginTop="28dp"
+                        android:gravity="center"
+                        android:text="@string/tv_install_empty_title"
+                        android:textSize="22sp" />
+
+                    <TextView
+                        style="@style/TvInstallDescription"
+                        android:gravity="center"
+                        android:text="@string/tv_install_empty_description" />
+
+                    <TextView
+                        style="@style/TvInstallDescription"
+                        android:layout_marginTop="24dp"
+                        android:gravity="center"
+                        android:text="@string/tv_install_empty_hint"
+                        android:textColor="#6F8FA3"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <include layout="@layout/view_tv_install_setup" />
+
+            <TextView
+                android:id="@+id/tv_install_error"
+                style="@style/TvInstallDescription"
+                android:layout_marginTop="24dp"
+                android:accessibilityLiveRegion="polite"
+                android:background="@drawable/background_1b_round_6dp"
+                android:padding="16dp"
+                android:textColor="#FFB4AB"
+                android:visibility="gone" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="24dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="16dp">
+
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/tv_install_busy"
+            android:layout_width="match_parent"
+            android:layout_height="4dp"
+            android:layout_marginBottom="12dp"
+            android:indeterminate="true"
+            android:visibility="gone"
+            app:indicatorColor="#019BE7"
+            app:trackColor="#252B30" />
+
+        <TextView
+            android:id="@+id/tv_install_status"
+            style="@style/TvInstallDescription"
+            android:layout_marginTop="0dp"
+            android:layout_marginBottom="12dp"
+            android:accessibilityLiveRegion="polite"
+            android:gravity="center"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/tv_install_primary"
+            style="@style/TvInstallPrimary"
+            android:text="@string/tv_install_add" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/tv_install_secondary"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:fontFamily="@font/inter_medium"
+            android:textAllCaps="false"
+            android:textColor="@color/gray_ac"
+            android:textSize="14sp"
+            android:visibility="gone" />
+    </LinearLayout>
+</LinearLayout>

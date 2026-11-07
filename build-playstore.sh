@@ -15,7 +15,7 @@ echo "Signing all sources..."
 
 # Build content
 echo "Building content..."
-./gradlew --stacktrace bundlePlaystoreRelease
+./gradlew --no-daemon --max-workers=1 --stacktrace bundlePlaystoreRelease
 
 # Take site offline
 echo "Taking site offline..."
