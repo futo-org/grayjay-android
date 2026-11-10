@@ -14,7 +14,7 @@
     <string name="tv_install_forget_description">Remove %1$s from this list? Grayjay will stay installed. To revoke this phone’s access, also remove it from the TV’s Wireless debugging settings.</string>
     <string name="tv_install_more">Options for %1$s</string>
     <string name="tv_install_setup">Set up your TV</string>
-    <string name="tv_install_step">Step %1$d of 7</string>
+    <string name="tv_install_step">Step %1$d of 8</string>
     <string name="tv_install_installed_title">Is Grayjay on your TV?</string>
     <string name="tv_install_installed_description">Connect a TV you already use, or install Grayjay from this phone.</string>
     <string name="tv_install_installed_note">Keep your phone and TV on the same home network.</string>
@@ -153,4 +153,22 @@
     <string name="tv_install_saved_failed">Couldn’t read or save your TVs. Close this screen and try again.</string>
     <string name="tv_install_unavailable">TV installation is not included in this Grayjay build.</string>
     <string name="tv_install_start_failed">Couldn’t start the TV connection service. Close this screen and try again.</string>
+    <string name="tv_install_playstore_download_required">Download Grayjay from its official release server to install it on your TV.</string>
+    <string name="tv_install_playstore_download_description">Download Grayjay %2$s for %3$s from the official release server and install it on %1$s? TV installation uses the direct-download version of Grayjay.</string>
+    <string name="tv_install_type_title">Which TV are you setting up?</string>
+    <string name="tv_install_type_description">Choose your TV system for the right setup instructions.</string>
+    <string name="tv_install_google_tv">Google TV</string>
+    <string name="tv_install_android_tv">Android TV</string>
+    <string name="tv_install_shield">NVIDIA Shield</string>
+    <string name="tv_install_shield_preferences_title">Open Device Preferences</string>
+    <string name="tv_install_shield_preferences_description">On your Shield, open Settings using the gear icon on the home screen. Select Device Preferences.</string>
+    <string name="tv_install_shield_preferences_note">Keep your remote nearby. The next steps are on your Shield.</string>
+    <string name="tv_install_shield_about_description">In Device Preferences, select About at the top of the list.</string>
+    <string name="tv_install_shield_about_note">You’ll find the Build entry inside About.</string>
+    <string name="tv_install_shield_build_description">Scroll down to Build. Keep that row selected and press your remote’s OK or centre button 7 times.</string>
+    <string name="tv_install_shield_options_description">Go back to Device Preferences. Scroll to the bottom and select Developer options.</string>
+    <string name="tv_install_shield_options_note">Next, we’ll enable Network debugging so this phone can connect to your Shield.</string>
+    <string name="tv_install_shield_debug_title">Turn on Network debugging</string>
+    <string name="tv_install_shield_debug_description">In Developer options, scroll to Debugging and turn on Network debugging. Leave this screen open: you’ll need the IP address and port shown underneath.</string>
+    <string name="tv_install_shield_debug_note">Shield uses Network debugging, without a pairing code. When this phone connects, accept the debugging request on your TV. The address in this image is an example.</string>
 </resources>

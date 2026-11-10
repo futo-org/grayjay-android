@@ -32,6 +32,7 @@ class TvActivity : AppCompatActivity() {
     private lateinit var rail: TvNavigationRail
     private lateinit var content: FrameLayout
     private var selectedTab = 0
+    private var updatePrompt: TvUpdatePrompt? = null
     var currentVideo: IPlatformVideoDetails? = null
     var ready = CompletableDeferred<Unit>()
         private set
@@ -55,6 +56,7 @@ class TvActivity : AppCompatActivity() {
         rail = TvNavigationRail(this) { selectTab(it) }
         root.addView(rail, FrameLayout.LayoutParams(dp(80), -1))
         setContentView(root)
+        updatePrompt = TvUpdatePrompt(this)
         selectedTab = savedInstanceState?.getInt("tab") ?: 0
         rail.selectTab(selectedTab)
         supportFragmentManager.addOnBackStackChangedListener { updateRail() }
@@ -175,6 +177,7 @@ class TvActivity : AppCompatActivity() {
                 StateApp.instance.mainAppStarted(this@TvActivity)
                 ready.complete(Unit)
                 if (openIntent) handleIntent(intent)
+                updatePrompt?.showIfReady()
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
@@ -190,6 +193,7 @@ class TvActivity : AppCompatActivity() {
             marginStart = if (playing) 0 else dp(80)
             content.layoutParams = this
         }
+        updatePrompt?.showIfReady()
     }
 
     private fun handleIntent(intent: Intent) {

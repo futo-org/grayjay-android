@@ -19,7 +19,7 @@
         android:layout_width="match_parent"
         android:layout_height="3dp"
         android:layout_marginTop="12dp"
-        android:max="7"
+        android:max="8"
         app:indicatorColor="#019BE7"
         app:trackColor="#252B30" />
 
@@ -32,6 +32,32 @@
     <TextView
         android:id="@+id/tv_install_description"
         style="@style/TvInstallDescription" />
+
+    <LinearLayout
+        android:id="@+id/tv_install_type_options"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="28dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/tv_install_google_tv"
+            style="@style/TvInstallType"
+            android:text="@string/tv_install_google_tv" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/tv_install_android_tv"
+            style="@style/TvInstallType"
+            android:layout_marginTop="12dp"
+            android:text="@string/tv_install_android_tv" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/tv_install_shield"
+            style="@style/TvInstallType"
+            android:layout_marginTop="12dp"
+            android:text="@string/tv_install_shield" />
+    </LinearLayout>
 
     <TextView
         android:id="@+id/tv_install_instructions"
@@ -73,6 +99,7 @@
             android:textSize="16sp" />
 
         <TextView
+            android:id="@+id/tv_install_wireless_description"
             style="@style/TvInstallDescription"
             android:layout_marginHorizontal="12dp"
             android:text="@string/tv_install_wireless_description"

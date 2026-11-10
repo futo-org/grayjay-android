@@ -1,6 +1,7 @@
 package com.futo.platformplayer.activities
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.util.Base64
 import android.view.View
@@ -106,6 +107,7 @@ class SyncPairActivity : AppCompatActivity() {
             if (StateSync.instance.isAuthorized(deviceInfo.publicKey)) {
                 if (intent.getBooleanExtra("pairTv", false)) {
                     TvSyncIdentityStore.remember(this, deviceInfo.publicKey)
+                    setResult(RESULT_OK, Intent().putExtra("pairedTvKey", deviceInfo.publicKey))
                     finish()
                     return
                 }
@@ -132,8 +134,10 @@ class SyncPairActivity : AppCompatActivity() {
                         lifecycleScope.launch(Dispatchers.Main) {
                             if (complete != null) {
                                 if (complete) {
-                                    if (intent.getBooleanExtra("pairTv", false))
+                                    if (intent.getBooleanExtra("pairTv", false)) {
                                         TvSyncIdentityStore.remember(this@SyncPairActivity, deviceInfo.publicKey)
+                                        setResult(RESULT_OK, Intent().putExtra("pairedTvKey", deviceInfo.publicKey))
+                                    }
                                     _layoutPairingSuccess.visibility = View.VISIBLE
                                     _layoutPairing.visibility = View.GONE
                                 } else {

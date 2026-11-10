@@ -2,6 +2,7 @@ package com.futo.platformplayer.tv.install
 
 import android.content.Context
 import android.content.pm.PackageManager
+import android.content.pm.Signature
 import android.os.SystemClock
 import com.futo.platformplayer.BuildConfig
 import com.futo.platformplayer.R
@@ -17,6 +18,7 @@ import kotlinx.coroutines.withContext
 import okhttp3.Call
 import java.io.File
 import java.util.UUID
+import java.security.MessageDigest
 import java.util.concurrent.atomic.AtomicReference
 
 class TvApkDownload(private val context: Context) {
@@ -93,13 +95,26 @@ class TvApkDownload(private val context: Context) {
         val manager = context.packageManager
         val apk = manager.getPackageArchiveInfo(file.absolutePath, PackageManager.GET_SIGNING_CERTIFICATES)
             ?: throw TvInstaller.Failure(R.string.tv_install_download_invalid)
-        val installed = manager.getPackageInfo(context.packageName, PackageManager.GET_SIGNING_CERTIFICATES)
         val signers = apk.signingInfo?.apkContentsSigners?.toSet().orEmpty()
-        if (apk.packageName != context.packageName || apk.longVersionCode != BuildConfig.VERSION_CODE.toLong() ||
-            signers.isEmpty() || signers != installed.signingInfo?.apkContentsSigners?.toSet() ||
+        if (apk.packageName != TvInstaller.targetPackageName || apk.longVersionCode != BuildConfig.VERSION_CODE.toLong() ||
+            !hasTrustedSigner(signers) ||
             !TvApkFiles(listOf(file)).supports(listOf(abi)))
             throw TvInstaller.Failure(R.string.tv_install_download_invalid)
     }
 
+    private fun hasTrustedSigner(signers: Set<Signature>): Boolean {
+        if (signers.isEmpty()) return false
+        if (BuildConfig.IS_PLAYSTORE_BUILD) {
+            return signers.size == 1 && MessageDigest.getInstance("SHA-256")
+                .digest(signers.single().toByteArray()).joinToString("") { "%02x".format(it) } == RELEASE_CERTIFICATE_SHA256
+        }
+        val installed = context.packageManager.getPackageInfo(context.packageName, PackageManager.GET_SIGNING_CERTIFICATES)
+        return signers == installed.signingInfo?.apkContentsSigners?.toSet()
+    }
+
     data class Progress(val received: Long, val total: Long)
+
+    companion object {
+        private const val RELEASE_CERTIFICATE_SHA256 = "ef81eda98f617f7f1707d80509f28dae4e50f56e41e077eb3024d9c9072d074e"
+    }
 }

@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="tv_update_ready">Grayjay v%1$d is ready</string>
+    <string name="tv_update_ready_hint">The update has downloaded. Grayjay will close while it installs. Open Grayjay again when installation finishes.</string>
+    <string name="tv_update_install">Install update</string>
+    <string name="tv_update_later">Later</string>
     <string name="tv_home">Home</string>
     <string name="tv_home_hint">Discover something worth watching</string>
     <string name="tv_subscriptions">Subscriptions</string>

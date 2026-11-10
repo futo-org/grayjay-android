@@ -35,7 +35,7 @@ internal data class TvSubscriptionFeed(val pager: IPager<IPlatformContent>, val 
 
 internal class TvSubscriptionRateLimit(val sources: List<String>) : Exception()
 
-internal interface TvSubscriptionsStore {
+internal interface TvSubscriptionsAdapter {
     fun channels(): List<SerializedChannel>
 
     fun filters(): TvSubscriptionFilters
@@ -57,8 +57,8 @@ internal interface TvSubscriptionsStore {
     fun observe(changed: () -> Unit, progress: (Int, Int) -> Unit): () -> Unit
 
     companion object {
-        fun platform(): TvSubscriptionsStore =
-            object : TvSubscriptionsStore {
+        fun platform(): TvSubscriptionsAdapter =
+            object : TvSubscriptionsAdapter {
                 private val subscriptions
                     get() = StateSubscriptions.instance
 

@@ -14,6 +14,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.ui.PlayerControlView
@@ -21,6 +22,8 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.helpers.VideoHelper
+import com.futo.platformplayer.playback.PlaybackTracking
+import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateHistory
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.tv.TvActivity
@@ -32,9 +35,15 @@ import com.futo.platformplayer.views.video.FutoVideoPlayer
 import com.futo.platformplayer.views.video.FutoVideoPlayerBase
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 
 class TvPlayerFragment : Fragment() {
+    private val playbackTracking = PlaybackTracking()
+    private var trackerJob: Job? = null
     private var playerView: FutoVideoPlayer? = null
     private var controls: PlayerControlView? = null
     private var revealKey: Int? = null
@@ -169,6 +178,7 @@ class TvPlayerFragment : Fragment() {
         }
         player.onDatasourceError.subscribe(this) { showError() }
         player.onPlayChanged.subscribe(this) { playing ->
+            playbackTracking.updateTracker(player.position, playing, true)
             val resumed = lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
             root.keepScreenOn = playing && resumed
             controller.showTimeoutMs = if (playing) 5_000 else 0
@@ -205,6 +215,17 @@ class TvPlayerFragment : Fragment() {
                 playerView?.play()
             }
         }
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                while (isActive) {
+                    playerView?.takeIf { sourceLoaded }?.let { player ->
+                        playbackTracking.updatePlaybackTracking(details, player.position, player.playing)
+                        playbackTracking.updateTracker(player.position, player.playing)
+                    }
+                    delay(500)
+                }
+            }
+        }
         loadVideo()
     }
 
@@ -229,6 +250,9 @@ class TvPlayerFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        trackerJob?.cancel()
+        trackerJob = null
+        playbackTracking.cleanupTracker()
         queue = null
         errorDialog?.dismiss()
         errorDialog = null
@@ -322,6 +346,8 @@ class TvPlayerFragment : Fragment() {
     }
 
     private fun loadVideo(refresh: Boolean = false) {
+        trackerJob?.cancel()
+        playbackTracking.cleanupTracker()
         sourceJob?.cancel()
         sourceJob = viewLifecycleOwner.lifecycleScope.launch {
             try {
@@ -365,6 +391,7 @@ class TvPlayerFragment : Fragment() {
                 player.setPlaybackRate(settings.getDefaultPlaybackSpeed().toFloat())
                 player.seekTo(position)
                 sourceLoaded = true
+                loadPlaybackTracker(video)
                 queue?.loaded(video)
                 if (resumePlaying && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED))
                     player.play()
@@ -373,6 +400,30 @@ class TvPlayerFragment : Fragment() {
                 throw cancelled
             } catch (error: Exception) {
                 showError()
+            }
+        }
+    }
+
+    private fun loadPlaybackTracker(video: IPlatformVideoDetails) {
+        trackerJob = viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val tracker = PlaybackTracking.getTracker(video)
+                var attached = false
+                try {
+                    withContext(Dispatchers.Main) {
+                        if (sourceLoaded && details === video) {
+                            playbackTracking.setTracker(tracker)
+                            attached = true
+                            playerView?.let { playbackTracking.updateTracker(it.position, it.playing, true) }
+                        }
+                    }
+                } finally {
+                    if (!attached) tracker?.onConcluded()
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                Logger.w("TvPlayerFragment", "Playback tracker failed", error)
             }
         }
     }

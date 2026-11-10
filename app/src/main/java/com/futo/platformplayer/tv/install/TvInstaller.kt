@@ -22,8 +22,12 @@ class TvInstaller(context: Context) : Closeable {
         get() = _executable.isFile && _executable.canExecute()
 
     val apks: TvApkFiles
-        get() = TvApkFiles(listOf(File(_application.applicationInfo.sourceDir)) +
-            _application.applicationInfo.splitSourceDirs.orEmpty().map { File(it) })
+        get() {
+            if (BuildConfig.IS_PLAYSTORE_BUILD)
+                throw Failure(R.string.tv_install_playstore_download_required)
+            return TvApkFiles(listOf(File(_application.applicationInfo.sourceDir)) +
+                _application.applicationInfo.splitSourceDirs.orEmpty().map { File(it) })
+        }
 
     suspend fun pair(endpoint: AdbEndpoint, code: String) {
         require(code.matches(Regex("[0-9]{6}")))
@@ -70,10 +74,13 @@ class TvInstaller(context: Context) : Closeable {
         val abis = shell(device.endpoint, "getprop", "ro.product.cpu.abilist").trim().split(',')
         val abi = abis.firstOrNull { it in StateUpdate.APP_SUPPORTED_ABIS }
             ?: throw Failure(R.string.tv_install_abi_unsupported)
-        Package(abi, !apks.supports(abis))
+        Package(abi, BuildConfig.IS_PLAYSTORE_BUILD || !apks.supports(abis))
     }
 
     suspend fun install(device: TvInstallDevice, files: TvApkFiles = apks) = withContext(Dispatchers.IO) {
+        if (BuildConfig.IS_PLAYSTORE_BUILD && (files.files.size != 1 ||
+            _application.packageManager.getPackageArchiveInfo(files.files.single().absolutePath, 0)?.packageName != targetPackageName))
+            throw Failure(R.string.tv_install_download_invalid)
         start()
         val result = _process.run(files.installArguments(device.endpoint), timeoutSeconds = 300)
         if (!result.succeeded || result.output.lineSequence().none { it.trim() == "Success" }) {
@@ -90,25 +97,25 @@ class TvInstaller(context: Context) : Closeable {
 
     suspend fun launch(device: TvInstallDevice) {
         start()
-        val result = shell(device.endpoint, "am", "start", "-n", "${BuildConfig.APPLICATION_ID}/com.futo.platformplayer.tv.TvActivity")
+        val result = shell(device.endpoint, "am", "start", "-n", "${targetPackageName}/com.futo.platformplayer.tv.TvActivity")
         if (result.contains("Error", ignoreCase = true) || result.contains("Exception"))
             throw Failure(R.string.tv_install_launch_failed)
     }
 
     suspend fun isInstalled(device: TvInstallDevice): Boolean {
-        return shell(device.endpoint, "pm", "list", "packages", BuildConfig.APPLICATION_ID)
-            .lineSequence().any { it.trim() == "package:${BuildConfig.APPLICATION_ID}" }
+        return shell(device.endpoint, "pm", "list", "packages", targetPackageName)
+            .lineSequence().any { it.trim() == "package:${targetPackageName}" }
     }
 
     suspend fun openSync(device: TvInstallDevice) {
-        val result = shell(device.endpoint, "am", "start", "-n", "${BuildConfig.APPLICATION_ID}/com.futo.platformplayer.tv.TvActivity",
+        val result = shell(device.endpoint, "am", "start", "-n", "${targetPackageName}/com.futo.platformplayer.tv.TvActivity",
             "-a", TvSyncSetupReceiver.ACTION_OPEN)
         if (result.contains("Error", ignoreCase = true) || result.contains("Exception"))
             throw Failure(R.string.tv_install_launch_failed)
     }
 
     suspend fun pairingInfo(device: TvInstallDevice): SyncDeviceInfo? {
-        val result = shell(device.endpoint, "am", "broadcast", "--receiver-foreground", "-p", BuildConfig.APPLICATION_ID,
+        val result = shell(device.endpoint, "am", "broadcast", "--receiver-foreground", "-p", targetPackageName,
             "-a", TvSyncSetupReceiver.ACTION_PAIRING)
         return TvSetupPairing.fromBroadcast(result)
     }
@@ -157,6 +164,10 @@ class TvInstaller(context: Context) : Closeable {
             throw Failure(R.string.tv_install_connect_failed)
         }
         return result.output
+    }
+
+    companion object {
+        val targetPackageName = if (BuildConfig.IS_PLAYSTORE_BUILD) "com.futo.platformplayer" else BuildConfig.APPLICATION_ID
     }
 
     class Failure(val messageId: Int) : Exception()

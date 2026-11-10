@@ -37,6 +37,18 @@
         <item name="android:singleLine">true</item>
         <item name="android:imeOptions">actionNext|flagNoPersonalizedLearning</item>
     </style>
+    <style name="TvInstallType" parent="TvInstallPrimary">
+        <item name="android:layout_height">72dp</item>
+        <item name="android:gravity">start|center_vertical</item>
+        <item name="android:paddingHorizontal">20dp</item>
+        <item name="backgroundTint">#1B1B1B</item>
+        <item name="strokeColor">#303030</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="icon">@drawable/ic_arrow_right</item>
+        <item name="iconGravity">end</item>
+        <item name="iconTint">@color/gray_ac</item>
+        <item name="iconSize">20dp</item>
+    </style>
     <style name="TvInstallPrimary" parent="Widget.MaterialComponents.Button">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">56dp</item>

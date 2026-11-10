@@ -66,7 +66,7 @@ class TvSubscriptionsFragment : Fragment() {
     private lateinit var statusAction: TextView
     private lateinit var message: LinearLayout
 
-    internal var store: TvSubscriptionsStore = TvSubscriptionsStore.platform()
+    internal var subscriptions: TvSubscriptionsAdapter = TvSubscriptionsAdapter.platform()
 
     private val host
         get() = requireActivity() as TvActivity
@@ -182,7 +182,7 @@ class TvSubscriptionsFragment : Fragment() {
 
     override fun onViewCreated(view: View, state: Bundle?) {
         val scope = viewLifecycleOwner.lifecycleScope
-        unsubscribe = store.observe(
+        unsubscribe = subscriptions.observe(
             { scope.launch { initialize() } },
             { done, total ->
                 scope.launch {
@@ -222,13 +222,13 @@ class TvSubscriptionsFragment : Fragment() {
         job = viewLifecycleOwner.lifecycleScope.launch {
             try {
                 host.awaitReady()
-                val current = withContext(Dispatchers.IO) { store.channels() }
+                val current = withContext(Dispatchers.IO) { subscriptions.channels() }
                 val changed = current.map { it.url }.toSet() != channels.map { it.url }.toSet()
-                val refreshNeeded = store.refreshOnOpen(catalogLoaded && changed)
+                val refreshNeeded = subscriptions.refreshOnOpen(catalogLoaded && changed)
                 catalogLoaded = true
                 channels = current
-                filters = store.filters()
-                enabledSources = withContext(Dispatchers.IO) { store.hasEnabledSources() }
+                filters = subscriptions.filters()
+                enabledSources = withContext(Dispatchers.IO) { subscriptions.hasEnabledSources() }
                 creatorAdapter.channels = channels
                 creatorAdapter.notifyDataSetChanged()
                 subtitle.text = if (channels.isEmpty()) getString(R.string.tv_subscriptions_hint)
@@ -247,7 +247,7 @@ class TvSubscriptionsFragment : Fragment() {
                     render()
                     return@launch
                 }
-                val cached = withContext(Dispatchers.IO) { store.cached() }
+                val cached = withContext(Dispatchers.IO) { subscriptions.cached() }
                 replace(cached)
                 restoreFocus()
                 if (enabledSources && refreshNeeded) fetch(false, initial = true)
@@ -284,7 +284,7 @@ class TvSubscriptionsFragment : Fragment() {
 
     private suspend fun fetch(bypass: Boolean, initial: Boolean = false) {
         status.text = getString(R.string.tv_subscriptions_refreshing)
-        val result = withContext(Dispatchers.IO) { if (initial) store.load() else store.refresh(bypass) }
+        val result = withContext(Dispatchers.IO) { if (initial) subscriptions.load() else subscriptions.refresh(bypass) }
         val keepFocus = grid.hasFocus()
         replace(result.pager, keepOnEmpty = result.failures > 0)
         status.text = if (result.failures > 0) getString(R.string.tv_subscriptions_partial)
@@ -318,7 +318,7 @@ class TvSubscriptionsFragment : Fragment() {
                 pages++
             } while (current.hasMorePages() &&
                 pages < 5 &&
-                incoming.values.count { preferences.includes(it, store::watched) } < 9)
+                incoming.values.count { preferences.includes(it, subscriptions::watched) } < 9)
             incoming.values.toList()
         }
 
@@ -351,7 +351,7 @@ class TvSubscriptionsFragment : Fragment() {
         adapter.videos.clear()
         adapter.videos.addAll(
             videos.filter { video ->
-                filters.includes(video, store::watched)
+                filters.includes(video, subscriptions::watched)
             })
         adapter.notifyDataSetChanged()
         feedLabel.text = getString(
@@ -464,7 +464,7 @@ class TvSubscriptionsFragment : Fragment() {
                                     "planned" -> filters.copy(planned = !enabled)
                                     else -> filters.copy(watched = !enabled)
                                 }
-                                store.saveFilters(filters)
+                                subscriptions.saveFilters(filters)
                                 render()
                                 menu(key)
                             }.apply { tag = key })

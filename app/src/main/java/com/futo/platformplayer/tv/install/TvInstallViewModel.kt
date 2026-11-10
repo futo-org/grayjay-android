@@ -30,7 +30,11 @@ class TvInstallViewModel(application: Application) : AndroidViewModel(applicatio
     val state = _state.asStateFlow()
     var pairingAddress = ""
     var connectionAddress = ""
-    var usesPairing = true
+    var usesPairing: Boolean
+        get() = _state.value.debuggingMethod == DebuggingMethod.WIRELESS
+        set(value) {
+            _state.update { it.copy(debuggingMethod = if (value) DebuggingMethod.WIRELESS else DebuggingMethod.NETWORK) }
+        }
 
     var connectionPort: String
         get() = connectionAddress.substringAfterLast(':', "")
@@ -63,9 +67,46 @@ class TvInstallViewModel(application: Application) : AndroidViewModel(applicatio
             return
         pairingAddress = ""
         connectionAddress = ""
-        usesPairing = true
         _previousDevice = null
-        _state.update { it.copy(page = Page.INSTALLED, selected = null, error = null, appInstalled = false, apk = null, pairedHost = null) }
+        _state.update { it.copy(page = Page.TYPE, tvType = TvType.GOOGLE_TV, debuggingMethod = DebuggingMethod.WIRELESS,
+            selected = null, error = null, appInstalled = false, apk = null, pairedHost = null) }
+    }
+
+    fun chooseType(type: TvType) {
+        if (_state.value.busy || _state.value.page != Page.TYPE) return
+        _state.update { it.copy(page = Page.INSTALLED, tvType = type, debuggingMethod = when (type) {
+            TvType.GOOGLE_TV -> DebuggingMethod.WIRELESS
+            TvType.ANDROID_TV -> null
+            TvType.SHIELD -> DebuggingMethod.NETWORK
+        }) }
+    }
+
+    fun details(device: TvInstallDevice) {
+        if (!_state.value.busy)
+            _state.update { it.copy(page = Page.DETAILS, selected = device, credentialKey = device.syncPublicKey,
+                credentialName = device.name, error = null) }
+    }
+
+    fun details(device: TvSetupSync.Device) {
+        if (!_state.value.busy)
+            _state.update { it.copy(page = Page.DETAILS, selected = null, credentialKey = device.key,
+                credentialName = device.name, error = null) }
+    }
+
+    fun existingPaired(key: String?) {
+        if (key == null) {
+            finishSetup()
+            return
+        }
+        val device = _sync.devices().firstOrNull { it.key == key } ?: return
+        _state.update { it.copy(page = Page.CREDENTIALS, selected = null, credentialKey = key,
+            credentialName = device.name, error = null) }
+    }
+
+    fun credentialsFinished() {
+        if (_state.value.page != Page.CREDENTIALS) return
+        if (_state.value.selected == null) finishSetup()
+        else _state.update { it.copy(page = Page.SECURITY, error = null) }
     }
 
     fun open(device: TvInstallDevice) {
@@ -78,6 +119,7 @@ class TvInstallViewModel(application: Application) : AndroidViewModel(applicatio
         _state.update {
             it.copy(
                 page = Page.CONNECT,
+                tvType = TvType.ANDROID_TV,
                 selected = device,
                 apk = null,
                 pairedHost = null,
@@ -98,7 +140,11 @@ class TvInstallViewModel(application: Application) : AndroidViewModel(applicatio
             Page.ABOUT -> Page.BUILD
             Page.BUILD -> Page.DEVELOPER_OPTIONS
             Page.DEVELOPER_OPTIONS -> Page.DEBUGGING
-            Page.DEBUGGING -> if (usesPairing) Page.PAIR else Page.CONNECT
+            Page.DEBUGGING -> when (_state.value.debuggingMethod) {
+                DebuggingMethod.WIRELESS -> Page.PAIR
+                DebuggingMethod.NETWORK -> Page.CONNECT
+                null -> return
+            }
             else -> return
         }
         _state.update { it.copy(page = page, error = null,
@@ -197,7 +243,9 @@ class TvInstallViewModel(application: Application) : AndroidViewModel(applicatio
             return false
         val previous = when (_state.value.page) {
             Page.DEVICES -> return false
-            Page.INSTALLED, Page.SECURITY -> Page.DEVICES
+            Page.TYPE, Page.SECURITY, Page.DETAILS -> Page.DEVICES
+            Page.INSTALLED -> Page.TYPE
+            Page.CREDENTIALS -> { credentialsFinished(); return true }
             Page.INTRO, Page.EXISTING -> Page.INSTALLED
             Page.DEVELOPER -> Page.INTRO
             Page.ABOUT -> Page.DEVELOPER
@@ -256,7 +304,8 @@ class TvInstallViewModel(application: Application) : AndroidViewModel(applicatio
             val key = _sync.pair(device) { message -> _state.update { it.copy(status = message) } }
             val paired = device.copy(syncPublicKey = key)
             save(paired)
-            _state.update { it.copy(page = Page.SECURITY, selected = paired, syncDevices = _sync.devices()) }
+            _state.update { it.copy(page = Page.CREDENTIALS, selected = paired, syncDevices = _sync.devices(),
+                credentialKey = key, credentialName = paired.name) }
         }
     }
 
@@ -354,6 +403,8 @@ class TvInstallViewModel(application: Application) : AndroidViewModel(applicatio
 
     data class State(
         val page: Page = Page.DEVICES,
+        val tvType: TvType = TvType.GOOGLE_TV,
+        val debuggingMethod: DebuggingMethod? = DebuggingMethod.WIRELESS,
         val devices: List<TvInstallDevice> = emptyList(),
         val syncDevices: List<TvSetupSync.Device> = emptyList(),
         val appInstalled: Boolean = false,
@@ -363,11 +414,21 @@ class TvInstallViewModel(application: Application) : AndroidViewModel(applicatio
         val status: Int? = null,
         val connected: Set<String> = emptySet(),
         val selected: TvInstallDevice? = null,
+        val credentialKey: String? = null,
+        val credentialName: String = "",
         val busy: Boolean = false,
         val error: Int? = null
     )
 
     enum class Page {
-        DEVICES, INSTALLED, EXISTING, INTRO, DEVELOPER, ABOUT, BUILD, DEVELOPER_OPTIONS, DEBUGGING, PAIR, CONNECT, INSTALL, SYNC, SECURITY, DISABLE
+        DEVICES, DETAILS, TYPE, INSTALLED, EXISTING, INTRO, DEVELOPER, ABOUT, BUILD, DEVELOPER_OPTIONS, DEBUGGING, PAIR, CONNECT, INSTALL, SYNC, CREDENTIALS, SECURITY, DISABLE
+    }
+
+    enum class TvType {
+        GOOGLE_TV, ANDROID_TV, SHIELD
+    }
+
+    enum class DebuggingMethod {
+        WIRELESS, NETWORK
     }
 }
