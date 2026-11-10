@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/tv_update_download"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:clickable="false"
+    android:descendantFocusability="blocksDescendants"
+    android:elevation="8dp"
+    android:focusable="false"
+    android:visibility="gone">
+
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/tv_update_progress_bar"
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:layout_gravity="top"
+        app:indicatorColor="#55B9EB"
+        app:trackColor="#444444"
+        app:trackThickness="3dp" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="24dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/inter_medium"
+            android:shadowColor="#FF000000"
+            android:shadowDy="1"
+            android:shadowRadius="3"
+            android:text="@string/tv_update_downloading"
+            android:textColor="@color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/tv_update_percentage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:fontFamily="@font/inter_medium"
+            android:shadowColor="#FF000000"
+            android:shadowDy="1"
+            android:shadowRadius="3"
+            android:textColor="#55B9EB"
+            android:textSize="12sp" />
+    </LinearLayout>
+</FrameLayout>
