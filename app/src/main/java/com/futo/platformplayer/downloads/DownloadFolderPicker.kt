@@ -144,7 +144,7 @@ object DownloadFolderPicker {
     fun moveExisting(activity: MainActivity) {
         val count = StateDownloads.instance.getItemsOutsideDownloadsDirectory().size;
         if (count == 0) {
-            UIDialogs.toast(activity, "All downloads are in the download folder");
+            UIDialogs.toast(activity, if (StateDownloads.instance.getDownloadedVideos().isEmpty()) "No downloads to move" else "All downloads are in the download folder");
             return;
         }
         UIDialogs.showDialogProgress(activity) { dialog ->
