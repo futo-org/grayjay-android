@@ -97,6 +97,18 @@
                 android:layout_height="wrap_content">
                 <!--Fill Programmatically-->
             </LinearLayout>
+            <TextView
+                android:id="@+id/downloads_active_downloads_toggle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"
+                android:fontFamily="@font/inter_regular"
+                android:textColor="@color/colorPrimary"
+                android:textSize="14dp"
+                android:visibility="gone"
+                tools:text="Show all (17)"
+                />
         </LinearLayout>
 
         <!--Playlists-->
