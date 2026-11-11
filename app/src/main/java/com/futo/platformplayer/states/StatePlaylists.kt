@@ -18,6 +18,7 @@ import com.futo.platformplayer.exceptions.ReconstructionException
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.ImportCache
 import com.futo.platformplayer.models.Playlist
+import com.futo.platformplayer.models.PlaylistImportMerge
 import com.futo.platformplayer.sToOffsetDateTimeUTC
 import com.futo.platformplayer.smartMerge
 import com.futo.platformplayer.stores.FragmentedStorage
@@ -298,6 +299,37 @@ class StatePlaylists {
         createOrUpdatePlaylist(newPlaylist);
         return newPlaylist;
     }
+    /** What a playlist import will do: update a linked local playlist, ask (several name matches), or create a new one. */
+    class ImportPlan(
+        val imported: Playlist,
+        val target: Playlist?,
+        val nameMatches: List<Playlist>
+    ) {
+        fun previewFor(target: Playlist): PlaylistImportMerge.Preview<SerializedPlatformVideo> =
+            PlaylistImportMerge.merge(target.videos, imported.videos, ::videoKey).let {
+                PlaylistImportMerge.Preview(it.result, it.added, it.removed, it.repeatsSkipped + imported.importRepeatsSkipped)
+            };
+    }
+
+    fun planImport(imported: Playlist): ImportPlan {
+        val candidates = PlaylistImportMerge.findLinked(getPlaylists(), imported.sourceUrl, imported.name, { it.sourceUrl }, { it.name });
+        val target = candidates.bySource ?: candidates.byName.singleOrNull();
+        return ImportPlan(imported, target, if (target == null) candidates.byName.sortedByDescending { it.dateUpdate } else listOf());
+    }
+
+    /** Applies an import: [target] null = save as a new playlist; else [target] follows the imported list. */
+    fun applyImport(imported: Playlist, target: Playlist?): Playlist {
+        if (target == null) {
+            createOrUpdatePlaylist(imported);
+            return imported;
+        }
+        val preview = ImportPlan(imported, target, listOf()).previewFor(target);
+        target.videos = ArrayList(preview.result);
+        target.sourceUrl = imported.sourceUrl ?: target.sourceUrl;
+        createOrUpdatePlaylist(target);
+        return target;
+    }
+
     fun createOrUpdatePlaylist(playlist: Playlist, isUserInteraction: Boolean = true) {
         playlist.dateUpdate = OffsetDateTime.now();
         playlistStore.saveAsync(playlist, true);
@@ -393,6 +425,9 @@ class StatePlaylists {
     }
 
     companion object {
+        /** Same video in a playlist: same platform video ID, else same URL. */
+        fun videoKey(video: SerializedPlatformVideo): String = video.id.value?.let { "${video.id.platform}:$it" } ?: video.url;
+
         val TAG = "StatePlaylists";
         val LAST_QUEUE_PLAYLIST_ID = "a70a3287-45dd-4227-832c-6ecde7fb1bf6"
         private var _instance : StatePlaylists? = null;

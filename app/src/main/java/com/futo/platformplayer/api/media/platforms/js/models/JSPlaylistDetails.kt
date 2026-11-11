@@ -10,6 +10,7 @@ import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.api.media.structures.ReusablePager
 import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.models.Playlist
+import com.futo.platformplayer.models.PlaylistImportMerge
 import java.util.UUID
 
 class JSPlaylistDetails: JSPlaylist, IPlatformPlaylistDetails {
@@ -38,6 +39,11 @@ class JSPlaylistDetails: JSPlaylist, IPlatformPlaylistDetails {
             onProgress?.invoke(videos.size);
         }
 
-        return Playlist(UUID.randomUUID().toString(), name, videos.map { SerializedPlatformVideo.fromVideo(it)});
+        //Pages can overlap: skip a video that is already in this import.
+        val (unique, repeats) = PlaylistImportMerge.dedupe(videos) { it.id.value ?: it.url };
+        return Playlist(UUID.randomUUID().toString(), name, unique.map { SerializedPlatformVideo.fromVideo(it)}).also {
+            it.sourceUrl = url;
+            it.importRepeatsSkipped = repeats;
+        };
     }
 }

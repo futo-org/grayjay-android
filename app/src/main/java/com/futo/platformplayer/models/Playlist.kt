@@ -25,6 +25,13 @@ class Playlist {
     @kotlinx.serialization.Serializable(with = OffsetDateTimeSerializer::class)
     var datePlayed: OffsetDateTime = OffsetDateTime.MIN;
 
+    /** URL of the source playlist (for example on YouTube) this playlist was imported from. A re-import updates this playlist. */
+    var sourceUrl: String? = null;
+
+    /** Repeat videos skipped in the last import. Not saved. */
+    @kotlinx.serialization.Transient
+    var importRepeatsSkipped: Int = 0;
+
     constructor(){}
     constructor(name: String, list: List<SerializedPlatformVideo>) {
         this.name = name;

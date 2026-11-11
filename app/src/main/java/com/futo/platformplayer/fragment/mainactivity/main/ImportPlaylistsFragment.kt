@@ -19,6 +19,7 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Playlist
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlaylists
+import com.futo.platformplayer.views.PlaylistImportPrompt
 import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.views.AnyAdapterView
 import com.futo.platformplayer.views.AnyAdapterView.Companion.asAny
@@ -161,7 +162,8 @@ class ImportPlaylistsFragment : MainFragment() {
                                     it.setText("Importing playlists..\n[${playlistToImport.playlist.name}]");
                                 }
                                 try {
-                                    StatePlaylists.instance.createOrUpdatePlaylist(playlistToImport.playlist.toPlaylist());
+                                    //Re-import updates the linked local playlist (with a preview) instead of making a copy.
+                                    PlaylistImportPrompt.import(context, playlistToImport.playlist.toPlaylist());
                                 }
                                 catch(ex: Throwable) {
                                     UIDialogs.appToast("Failed to import [${playlistToImport.playlist.name}]\n" + ex.message);
