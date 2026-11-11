@@ -294,6 +294,9 @@ class StateDownloads {
         return try {
             if (!ownerFile.exists())
                 ownerFile.writeText(packageName);
+            val readme = File(directory, DownloadPaths.README_FILE_NAME);
+            if (!readme.exists())
+                readme.writeText(DownloadPaths.readmeText(directory.absolutePath));
             ownerFile.readText().trim() == packageName;
         } catch (ex: Throwable) {
             Logger.w(TAG, "Failed to read or write owner file in [${directory.absolutePath}]", ex);
@@ -796,7 +799,7 @@ class StateDownloads {
     companion object {
         const val TAG = "StateDownloads";
         private const val FREE_SPACE_MARGIN_BYTES = 50L * 1024 * 1024;
-        private val KEEP_FILE_NAMES = setOf(DownloadPaths.OWNER_FILE_NAME);
+        private val KEEP_FILE_NAMES = setOf(DownloadPaths.OWNER_FILE_NAME, DownloadPaths.README_FILE_NAME);
 
         private var _instance : StateDownloads? = null;
         val instance : StateDownloads

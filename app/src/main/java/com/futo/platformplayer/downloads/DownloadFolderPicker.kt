@@ -34,7 +34,8 @@ object DownloadFolderPicker {
         if (state.getPickedFolder() == null)
             return "Now: app storage (private to Grayjay)";
         val directory = state.getDownloadsDirectory();
-        return "Now: ${directory.absolutePath}" + (if (state.isDownloadsDirectoryAvailable()) "" else " (not available)");
+        return "Now: ${directory.absolutePath}" + (if (state.isDownloadsDirectoryAvailable()) "" else " (not available)") +
+            "\n" + DownloadPaths.UNINSTALL_NOTICE;
     }
 
     /** Asks for "All files access" if necessary, then opens the system folder picker. */
@@ -109,7 +110,7 @@ object DownloadFolderPicker {
     private fun confirmFolder(activity: MainActivity, path: String) {
         val target = File(path, DownloadPaths.SUBFOLDER_NAME);
         UIDialogs.showDialog(activity, R.drawable.ic_folder, "Download folder",
-            "New downloads go to:\n${target.absolutePath}",
+            "New downloads go to:\n${target.absolutePath}\n\n${DownloadPaths.UNINSTALL_NOTICE}",
             null, 0,
             UIDialogs.Action("Cancel", {}),
             UIDialogs.Action("Use this folder", {

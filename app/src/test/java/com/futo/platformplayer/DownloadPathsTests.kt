@@ -56,4 +56,11 @@ class DownloadPathsTests {
         assertEquals(0L, DownloadPaths.estimateBytes(8000, 0));
         assertEquals(100_000L, DownloadPaths.estimateBytes(8000, 100));
     }
+
+    @Test
+    fun readme_hasPathAndNotice() {
+        val text = DownloadPaths.readmeText("/storage/X/Grayjay Downloads");
+        org.junit.Assert.assertTrue(text.contains("/storage/X/Grayjay Downloads"));
+        org.junit.Assert.assertTrue(text.contains(DownloadPaths.UNINSTALL_NOTICE));
+    }
 }

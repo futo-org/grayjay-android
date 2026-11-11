@@ -13,6 +13,22 @@ object DownloadPaths {
     const val SUBFOLDER_NAME = "Grayjay Downloads";
     /** Marks the subfolder as owned by one app install, so only that install cleans it. */
     const val OWNER_FILE_NAME = ".grayjay-owner";
+    /** Note for people who find the folder after Grayjay is uninstalled. */
+    const val README_FILE_NAME = "READ ME - Grayjay downloads.txt";
+
+    const val UNINSTALL_NOTICE = "This folder stays after you uninstall Grayjay. Delete it yourself if you do not need the videos.";
+
+    fun readmeText(folderPath: String): String = """Grayjay downloads
+
+This folder has the videos and audio that the Grayjay app downloaded.
+Folder: $folderPath
+
+$UNINSTALL_NOTICE
+It is safe to delete this folder after you uninstall Grayjay.
+While Grayjay is installed, delete downloads in the app (Downloads page), not here.
+
+Video and audio are often in separate files. To get one playable file, use Export in the app.
+""";
 
     const val EXTERNAL_STORAGE_AUTHORITY = "com.android.externalstorage.documents";
 
