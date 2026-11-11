@@ -38,6 +38,7 @@ import com.futo.platformplayer.BuildConfig
 import com.futo.platformplayer.R
 import com.futo.platformplayer.RootInsetsController
 import com.futo.platformplayer.Settings
+import com.futo.platformplayer.PlaylistLinks
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
@@ -978,8 +979,15 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             Logger.i(TAG, "handleUrl(url=$url) on IO");
             if (StatePlatform.instance.hasEnabledContentClient(url)) {
                 Logger.i(TAG, "handleUrl(url=$url) found video client");
+                val playlistUrl = PlaylistLinks.findPlaylistUrl(url) { StatePlatform.instance.hasEnabledPlaylistClient(it) };
                 withContext(Dispatchers.Main) {
-                    openExternalVideo(url, if(position > 0) position.toLong() else 0);
+                    if (playlistUrl != null) {
+                        Logger.i(TAG, "handleUrl(url=$url) also found playlist client ($playlistUrl)");
+                        UIDialogs.showDialog(this@MainActivity, R.drawable.ic_playlist, getString(R.string.this_link_has_a_video_and_a_playlist), null, null, -1,
+                            UIDialogs.Action(getString(R.string.open_video), { openVideoUrl(url, position) }),
+                            UIDialogs.Action(getString(R.string.open_playlist), { openPlaylistUrl(playlistUrl) }, UIDialogs.ActionStyle.PRIMARY));
+                    } else
+                        openVideoUrl(url, position);
                 }
                 return@withContext true;
             } else if (StatePlatform.instance.hasEnabledChannelClient(url)) {
@@ -993,14 +1001,24 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             } else if (StatePlatform.instance.hasEnabledPlaylistClient(url)) {
                 Logger.i(TAG, "handleUrl(url=$url) found playlist client");
                 withContext(Dispatchers.Main) {
-                    navigateWhenReady(_fragMainRemotePlaylist, url);
-                    delay(100);
-                    _fragVideoDetail.minimizeVideoDetail();
+                    openPlaylistUrl(url);
                 };
                 return@withContext true;
             }
             return@withContext false;
         }
+    }
+
+    private fun openVideoUrl(url: String, position: Int) {
+        openExternalVideo(url, if(position > 0) position.toLong() else 0);
+    }
+
+    private fun openPlaylistUrl(url: String) {
+        navigateWhenReady(_fragMainRemotePlaylist, url);
+        lifecycleScope.launch(Dispatchers.Main) {
+            delay(100);
+            _fragVideoDetail.minimizeVideoDetail();
+        };
     }
 
     fun handleContent(file: String, mime: String? = null): Boolean {
