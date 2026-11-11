@@ -25,6 +25,7 @@ import com.futo.platformplayer.api.media.models.subtitles.ISubtitleSource
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.constructs.Event0
+import com.futo.platformplayer.downloads.DownloadMover
 import com.futo.platformplayer.downloads.DownloadPaths
 import com.futo.platformplayer.downloads.PlaylistDownloadDescriptor
 import com.futo.platformplayer.downloads.VideoDownload
@@ -161,6 +162,80 @@ class StateDownloads {
         if (path != null && isDownloadsDirectoryAvailable())
             claimDownloadsDirectory(getDownloadsDirectory());
         onDownloadedChanged.emit();
+    }
+
+    /** Items with at least one file that exists outside the current download folder. */
+    fun getItemsOutsideDownloadsDirectory(): List<VideoLocal> {
+        val mover = DownloadMover(getDownloadsDirectory());
+        return getDownloadedVideos().filter { item ->
+            item.getFilePaths().map { resolveFile(it) }.any { it.isFile && !mover.isInTarget(it) }
+        };
+    }
+
+    class MoveResult(val movedItems: Int, val totalItems: Int, val error: Throwable?);
+
+    /**
+     * Moves the files of all items into the current download folder.
+     * Per item: copy each file, check it, save the item with the new names, then delete the old files.
+     * On an error it stops; the old files stay and a new run continues where it stopped.
+     */
+    fun moveDownloadsToCurrentFolder(onProgress: (itemIndex: Int, itemCount: Int, fraction: Double) -> Unit, isCancelled: () -> Boolean = { false }): MoveResult {
+        if (DownloadService.getService() != null)
+            return MoveResult(0, 0, IllegalStateException("Downloads are running. Wait until they finish, then try again."));
+
+        val items = getItemsOutsideDownloadsDirectory();
+        var moved = 0;
+        try {
+            val directory = prepareDownloadsDirectory();
+            val mover = DownloadMover(directory);
+            val sources = items.flatMap { item -> item.getFilePaths().map { resolveFile(it) }.filter { it.isFile && !mover.isInTarget(it) } };
+            checkFreeSpace(directory, DownloadMover.bytesNeeded(sources, directory));
+
+            val totalBytes = sources.sumOf { it.length() }.coerceAtLeast(1L);
+            var doneBytes = 0L;
+            val oldFolders = HashSet<File>();
+            for ((index, item) in items.withIndex()) {
+                val copied = LinkedHashMap<String, Pair<File, File>>();
+                for (storedPath in item.getFilePaths()) {
+                    val source = resolveFile(storedPath);
+                    if (!source.isFile || mover.isInTarget(source))
+                        continue;
+                    val target = mover.copyIntoTarget(source, { bytes ->
+                        doneBytes += bytes;
+                        onProgress(index, items.size, doneBytes.toDouble() / totalBytes);
+                    }, isCancelled);
+                    copied[storedPath] = Pair(source, target);
+                }
+
+                item.mapFilePaths { path -> copied[path]?.let { toStoredPath(it.second.absolutePath) } ?: path };
+                _downloaded.save(item);
+
+                for ((source, target) in copied.values) {
+                    if (!mover.deleteSource(source, target))
+                        Logger.w(TAG, "Did not delete old file [${source.absolutePath}] after move");
+                    source.parentFile?.let { oldFolders.add(it) };
+                }
+                moved++;
+            }
+            oldFolders.forEach { removeEmptyGrayjayFolder(it) };
+        } catch (ex: Throwable) {
+            Logger.e(TAG, "Move of downloads stopped after $moved of ${items.size} items", ex);
+            onDownloadedChanged.emit();
+            return MoveResult(moved, items.size, ex);
+        }
+        onDownloadedChanged.emit();
+        return MoveResult(moved, items.size, null);
+    }
+
+    /** Deletes an old "Grayjay Downloads" folder if only Grayjay's own marker files are in it. */
+    private fun removeEmptyGrayjayFolder(folder: File) {
+        if (folder.name != DownloadPaths.SUBFOLDER_NAME || folder.absolutePath == getDownloadsDirectory().absolutePath)
+            return;
+        val files = folder.listFiles() ?: return;
+        if (files.all { it.isFile && it.name in KEEP_FILE_NAMES }) {
+            files.forEach { it.delete() };
+            folder.delete();
+        }
     }
 
     /** Writes the owner file if the folder has none. Returns true if this install owns the folder. */

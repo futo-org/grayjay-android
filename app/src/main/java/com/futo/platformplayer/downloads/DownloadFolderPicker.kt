@@ -13,7 +13,11 @@ import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.fragment.mainactivity.main.SettingsFragment
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StateDownloads
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
@@ -118,7 +122,54 @@ object DownloadFolderPicker {
 
     /** Called after the download folder changed. */
     private fun onFolderChanged(activity: MainActivity) {
-        UIDialogs.toast(activity, "Download folder changed");
+        val outside = StateDownloads.instance.getItemsOutsideDownloadsDirectory().size;
+        if (outside == 0) {
+            UIDialogs.toast(activity, "Download folder changed");
+            return;
+        }
+        UIDialogs.showDialog(activity, R.drawable.ic_folder, "Move existing downloads?",
+            "$outside downloaded videos are in the old folder. They still play from there. Move them to the new folder now? You can also do this later in Settings > Downloads.",
+            null, 0,
+            UIDialogs.Action("Later", {}),
+            UIDialogs.Action("Move", { moveExisting(activity) }, UIDialogs.ActionStyle.PRIMARY));
+    }
+
+    fun describeMoveState(): String {
+        val outside = StateDownloads.instance.getItemsOutsideDownloadsDirectory().size;
+        return if (outside == 0) "All downloads are in the download folder" else "$outside downloaded videos are outside the download folder";
+    }
+
+    /** Moves all downloads into the current download folder, with a progress dialog. */
+    fun moveExisting(activity: MainActivity) {
+        val count = StateDownloads.instance.getItemsOutsideDownloadsDirectory().size;
+        if (count == 0) {
+            UIDialogs.toast(activity, "All downloads are in the download folder");
+            return;
+        }
+        UIDialogs.showDialogProgress(activity) { dialog ->
+            StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+                withContext(Dispatchers.Main) { dialog.setText("Moving downloads (0/$count)"); };
+                var lastUpdate = 0L;
+                val result = StateDownloads.instance.moveDownloadsToCurrentFolder({ index, total, fraction ->
+                    val now = System.currentTimeMillis();
+                    if (now - lastUpdate > 200) {
+                        lastUpdate = now;
+                        StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
+                            dialog.setText("Moving downloads (${index + 1}/$total)");
+                            dialog.setProgress(fraction);
+                        };
+                    }
+                });
+                withContext(Dispatchers.Main) {
+                    dialog.dismiss();
+                    SettingsFragment.currentView?.reloadSettings();
+                    if (result.error == null)
+                        UIDialogs.showDialogOk(activity, R.drawable.ic_folder, "Moved ${result.movedItems} downloaded videos to:\n${StateDownloads.instance.getDownloadsDirectory().absolutePath}");
+                    else
+                        UIDialogs.showDialogOk(activity, R.drawable.ic_warning_yellow, "Moved ${result.movedItems} of ${result.totalItems} downloaded videos, then stopped:\n${result.error.message}\n\nNo file was lost. Use \"Move existing downloads\" again to continue.");
+                };
+            };
+        };
     }
 
     /** Converts a tree URI from the system folder picker to a file path, or null. */

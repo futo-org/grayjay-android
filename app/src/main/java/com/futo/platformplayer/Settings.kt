@@ -714,7 +714,15 @@ class Settings : FragmentedStorageFileJson() {
             StateApp.instance.activity?.let { DownloadFolderPicker.pick(it) };
         }
 
-        @FormField(R.string.download_folder_app_storage, FieldForm.BUTTON, R.string.download_folder_app_storage_description, 7)
+        fun moveDownloadsSubtitle(): String = DownloadFolderPicker.describeMoveState();
+
+        @FormField(R.string.move_existing_downloads, FieldForm.BUTTON, R.string.move_existing_downloads_description, 7)
+        @FormFieldDynamicSubtitle("moveDownloadsSubtitle")
+        fun moveExistingDownloads() {
+            StateApp.instance.activity?.let { DownloadFolderPicker.moveExisting(it) };
+        }
+
+        @FormField(R.string.download_folder_app_storage, FieldForm.BUTTON, R.string.download_folder_app_storage_description, 8)
         fun resetDownloadFolder() {
             StateApp.instance.activity?.let { DownloadFolderPicker.useAppStorage(it) };
         }

@@ -1291,4 +1291,6 @@
     <string name="download_folder_description">Folder for new downloads (phone or SD card). Needs \"All files access\".</string>
     <string name="download_folder_app_storage">Use app storage</string>
     <string name="download_folder_app_storage_description">Put new downloads in private app storage again (default)</string>
+    <string name="move_existing_downloads">Move existing downloads</string>
+    <string name="move_existing_downloads_description">Move downloaded videos into the download folder</string>
 </resources>
