@@ -571,7 +571,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     @OptIn(UnstableApi::class)
     private fun swapVideoSourceLocal(videoSource: LocalVideoSource) {
         Logger.i(TAG, "Loading VideoSource [Local]");
-        val file = File(videoSource.filePath);
+        val file = File(videoSource.absoluteFilePath);
         if(!file.exists())
             throw IllegalArgumentException("File for this video does not exist");
         _lastVideoMediaSource = ProgressiveMediaSource.Factory(DefaultDataSource.Factory(context))
@@ -872,7 +872,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     @OptIn(UnstableApi::class)
     private fun swapAudioSourceLocal(audioSource: LocalAudioSource) {
         Logger.i(TAG, "Loading AudioSource [Local]");
-        val file = File(audioSource.filePath);
+        val file = File(audioSource.absoluteFilePath);
         if(!file.exists())
             throw IllegalArgumentException("File for this audio does not exist");
         _lastAudioMediaSource = ProgressiveMediaSource.Factory(DefaultDataSource.Factory(context))

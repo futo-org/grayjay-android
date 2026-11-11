@@ -2,6 +2,8 @@ package com.futo.platformplayer.states
 
 import android.content.ContentResolver
 import android.content.Context
+import android.os.Build
+import android.os.Environment
 import android.os.StatFs
 import androidx.documentfile.provider.DocumentFile
 import com.futo.platformplayer.R
@@ -23,6 +25,7 @@ import com.futo.platformplayer.api.media.models.subtitles.ISubtitleSource
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.constructs.Event0
+import com.futo.platformplayer.downloads.DownloadPaths
 import com.futo.platformplayer.downloads.PlaylistDownloadDescriptor
 import com.futo.platformplayer.downloads.VideoDownload
 import com.futo.platformplayer.downloads.VideoExport
@@ -31,10 +34,12 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.DiskUsage
 import com.futo.platformplayer.models.Playlist
 import com.futo.platformplayer.models.PlaylistDownloaded
+import com.futo.platformplayer.exceptions.DownloadException
 import com.futo.platformplayer.services.DownloadService
 import com.futo.platformplayer.share
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.v2.ManagedStore
+import com.futo.platformplayer.toHumanBytesSize
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -45,8 +50,7 @@ import java.util.UUID
  * Used to maintain downloads
  */
 class StateDownloads {
-    private val _downloadsDirectory: File = FragmentedStorage.getOrCreateDirectory("downloads");
-    private val _downloadsStat = StatFs(_downloadsDirectory.absolutePath);
+    private val _internalDownloadsDirectory: File = FragmentedStorage.getOrCreateDirectory("downloads");
 
     private val _downloaded = FragmentedStorage.storeJson<VideoLocal>("downloaded")
         .withOnModified({
@@ -80,11 +84,97 @@ class StateDownloads {
     }
 
     fun getTotalUsage(reload: Boolean): DiskUsage {
-        if(reload)
-            _downloadsStat.restat(_downloadsDirectory.absolutePath);
-        val usage = _downloadsDirectory.listFiles()?.sumOf { it.length() } ?: 0;
-        val available = _downloadsStat.availableBytes;
-        return DiskUsage(usage, available);
+        val directories = listOf(_internalDownloadsDirectory, getDownloadsDirectory()).distinctBy { it.absolutePath };
+        val usage = directories.sumOf { dir -> dir.listFiles()?.sumOf { it.length() } ?: 0L };
+        return DiskUsage(usage, getAvailableBytes(getDownloadsDirectory()));
+    }
+
+    /** Free bytes in [directory], or 0 if it is not mounted. */
+    fun getAvailableBytes(directory: File): Long {
+        return try {
+            if (directory.exists()) StatFs(directory.absolutePath).availableBytes else 0L;
+        } catch (ex: Throwable) {
+            Logger.w(TAG, "Failed to read free space of [${directory.absolutePath}]", ex);
+            0L;
+        }
+    }
+
+    /** The folder the user picked in settings, or null when downloads stay in app storage. */
+    fun getPickedFolder(): File? = Settings.instance.downloads.downloadFolderPath?.let { File(it) };
+
+    /** The folder new downloads go to. A picked folder can be missing (for example, SD card out). */
+    fun getDownloadsDirectory(): File {
+        return getPickedFolder()?.let { File(it, DownloadPaths.SUBFOLDER_NAME) } ?: _internalDownloadsDirectory;
+    }
+
+    fun isDownloadsDirectoryAvailable(): Boolean {
+        val picked = getPickedFolder() ?: return true;
+        if (!hasAllFilesAccess())
+            return false;
+        val dir = File(picked, DownloadPaths.SUBFOLDER_NAME);
+        return picked.isDirectory && (dir.isDirectory || dir.mkdirs()) && dir.canWrite();
+    }
+
+    /** Returns the download folder, ready to write to. Throws if it is not available. */
+    fun prepareDownloadsDirectory(): File {
+        val dir = getDownloadsDirectory();
+        if (!isDownloadsDirectoryAvailable())
+            throw DownloadException("Download folder is not available: ${dir.absolutePath}. Insert the SD card, allow \"All files access\", or pick another folder in Settings > Downloads.", true);
+        if (getPickedFolder() != null)
+            claimDownloadsDirectory(dir);
+        return dir;
+    }
+
+    /** Throws if [directory] has less than [estimatedBytes] free, plus a margin. */
+    fun checkFreeSpace(directory: File, estimatedBytes: Long) {
+        val available = getAvailableBytes(directory);
+        val needed = estimatedBytes.coerceAtLeast(0) + FREE_SPACE_MARGIN_BYTES;
+        if (available < needed)
+            throw DownloadException("Not enough free space in ${directory.absolutePath}: needs about ${needed.toHumanBytesSize()}, ${available.toHumanBytesSize()} free.", true);
+    }
+
+    /** A picked folder needs "All files access" (Android 11+). */
+    fun hasAllFilesAccess(): Boolean =
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && Environment.isExternalStorageManager();
+
+    fun resolveFile(storedPath: String): File = DownloadPaths.resolve(storedPath, getDownloadsDirectory());
+    fun toStoredPath(absolutePath: String): String = DownloadPaths.toStoredPath(absolutePath, getDownloadsDirectory());
+
+    /**
+     * Sets the download folder ([path] null = app storage). Existing items keep working:
+     * their file names are pinned to the old folder as absolute paths. Files that are
+     * already in the new folder get relative names.
+     */
+    fun changeDownloadFolder(path: String?) {
+        val oldDirectory = getDownloadsDirectory();
+        Settings.instance.downloads.downloadFolderPath = path;
+        Settings.instance.save();
+
+        val newDirectory = getDownloadsDirectory();
+        for (item in getDownloadedVideos()) {
+            if (item.mapFilePaths { DownloadPaths.rebase(it, oldDirectory, newDirectory) })
+                _downloaded.save(item);
+        }
+
+        Logger.i(TAG, "Download folder changed from [${oldDirectory.absolutePath}] to [${getDownloadsDirectory().absolutePath}]");
+
+        if (path != null && isDownloadsDirectoryAvailable())
+            claimDownloadsDirectory(getDownloadsDirectory());
+        onDownloadedChanged.emit();
+    }
+
+    /** Writes the owner file if the folder has none. Returns true if this install owns the folder. */
+    private fun claimDownloadsDirectory(directory: File): Boolean {
+        val ownerFile = File(directory, DownloadPaths.OWNER_FILE_NAME);
+        val packageName = StateApp.instance.contextOrNull?.packageName ?: return false;
+        return try {
+            if (!ownerFile.exists())
+                ownerFile.writeText(packageName);
+            ownerFile.readText().trim() == packageName;
+        } catch (ex: Throwable) {
+            Logger.w(TAG, "Failed to read or write owner file in [${directory.absolutePath}]", ex);
+            false;
+        }
     }
 
     fun getCachedVideo(id: PlatformID): VideoLocal? {
@@ -446,30 +536,39 @@ class StateDownloads {
 
     fun cleanupDownloads(): Pair<Int, Long> {
         val expected = getDownloadedVideos();
-        val validFiles = HashSet(expected.flatMap { e ->
-            e.videoSource.map { it.filePath } +
-            e.audioSource.map { it.filePath } +
-            e.subtitlesSources.map { it.filePath }});
+        val validFiles = HashSet(expected.flatMap { e -> e.getFilePaths().map { resolveFile(it).absolutePath } });
+
+        val directories = arrayListOf(_internalDownloadsDirectory);
+        //In a picked folder, only touch Grayjay's own subfolder, and only if this install owns it.
+        val picked = getPickedFolder();
+        if (picked != null) {
+            val pickedDirectory = File(picked, DownloadPaths.SUBFOLDER_NAME);
+            if (pickedDirectory.isDirectory && hasAllFilesAccess() && claimDownloadsDirectory(pickedDirectory))
+                directories.add(pickedDirectory);
+            else
+                Logger.i(TAG, "Skipping cleanup of [${pickedDirectory.absolutePath}] (not available or owned by another install)");
+        }
 
         var totalDeleted: Long = 0;
         var totalDeletedCount = 0;
-        _downloadsDirectory.listFiles()?.let {
-            for(file in it) {
-                val absUrl = file.absolutePath;
-                if(!validFiles.contains(absUrl)) {
-                    Logger.i("StateDownloads", "Deleting unresolved ${file.name}");
-                    totalDeletedCount++;
-                    totalDeleted += file.length();
-                    file.delete();
+        for (directory in directories) {
+            val isPicked = directory != _internalDownloadsDirectory;
+            directory.listFiles()?.let {
+                for(file in it) {
+                    if (isPicked && (!file.isFile || file.name in KEEP_FILE_NAMES))
+                        continue;
+                    val absUrl = file.absolutePath;
+                    if(!validFiles.contains(absUrl)) {
+                        Logger.i("StateDownloads", "Deleting unresolved ${file.name}");
+                        totalDeletedCount++;
+                        totalDeleted += file.length();
+                        file.delete();
+                    }
                 }
             }
         }
 
         return Pair(totalDeletedCount, totalDeleted);
-    }
-
-    fun getDownloadsDirectory(): File{
-        return _downloadsDirectory;
     }
 
     fun exportPlaylist(context: Context, playlistId: String) {
@@ -569,6 +668,8 @@ class StateDownloads {
 
     companion object {
         const val TAG = "StateDownloads";
+        private const val FREE_SPACE_MARGIN_BYTES = 50L * 1024 * 1024;
+        private val KEEP_FILE_NAMES = setOf(DownloadPaths.OWNER_FILE_NAME);
 
         private var _instance : StateDownloads? = null;
         val instance : StateDownloads

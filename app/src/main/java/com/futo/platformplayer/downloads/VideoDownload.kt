@@ -486,7 +486,8 @@ class VideoDownload {
         Logger.i(TAG, "VideoDownload Download [${name}]");
         if(videoDetails == null || (videoSourceToUse == null && audioSourceToUse == null))
             throw IllegalStateException("Missing information for download to complete");
-        val downloadDir = StateDownloads.instance.getDownloadsDirectory();
+        val downloadDir = StateDownloads.instance.prepareDownloadsDirectory();
+        StateDownloads.instance.checkFreeSpace(downloadDir, estimateDownloadBytes());
 
         if(videoDetails!!.id.value == null)
             throw IllegalStateException("Video has no id");
@@ -1855,6 +1856,13 @@ class VideoDownload {
         throw lastException!!
     }
 
+    /** Rough size of the files to download: bitrate x duration. 0 if not known. */
+    private fun estimateDownloadBytes(): Long {
+        val durationSeconds = videoDetails?.duration ?: 0L;
+        val bitrate = ((videoSourceToUse?.bitrate ?: 0) + (audioSourceToUse?.bitrate ?: 0)).toLong();
+        return DownloadPaths.estimateBytes(bitrate, durationSeconds);
+    }
+
     fun validate() {
         Logger.i(TAG, "VideoDownload Validate [${name}]");
         if(videoSourceToUse != null) {
@@ -1890,9 +1898,10 @@ class VideoDownload {
     fun complete() {
         Logger.i(TAG, "VideoDownload Complete [${name}]");
         val existing = StateDownloads.instance.getCachedVideo(id);
-        val localVideoSource = videoFilePath?.let { LocalVideoSource.fromSource(videoSourceToUse!!, it, videoFileSize ?: 0, videoOverrideContainer) };
-        val localAudioSource = audioFilePath?.let { LocalAudioSource.fromSource(overrideResultAudioSource ?: audioSourceToUse!!, it, audioFileSize ?: 0, audioOverrideContainer) };
-        val localSubtitleSource = subtitleFilePath?.let { LocalSubtitleSource.fromSource(subtitleSource!!, it) };
+        //Items store file names relative to the download folder, so the folder can move.
+        val localVideoSource = videoFilePath?.let { LocalVideoSource.fromSource(videoSourceToUse!!, StateDownloads.instance.toStoredPath(it), videoFileSize ?: 0, videoOverrideContainer) };
+        val localAudioSource = audioFilePath?.let { LocalAudioSource.fromSource(overrideResultAudioSource ?: audioSourceToUse!!, StateDownloads.instance.toStoredPath(it), audioFileSize ?: 0, audioOverrideContainer) };
+        val localSubtitleSource = subtitleFilePath?.let { LocalSubtitleSource.fromSource(subtitleSource!!, StateDownloads.instance.toStoredPath(it)) };
 
         if(localVideoSource != null && videoSourceToUse != null && videoSourceToUse is IStreamMetaDataSource)
             localVideoSource.streamMetaData = (videoSourceToUse as IStreamMetaDataSource).streamMetaData;

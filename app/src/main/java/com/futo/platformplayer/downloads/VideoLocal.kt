@@ -24,8 +24,8 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideoDetails
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.serializers.OffsetDateTimeNullableSerializer
+import com.futo.platformplayer.states.StateDownloads
 import com.futo.platformplayer.stores.v2.IStoreItem
-import java.io.File
 import java.time.OffsetDateTime
 
 //TODO: Better name
@@ -117,19 +117,27 @@ class VideoLocal: IPlatformVideoDetails, IStoreItem {
         }.firstOrNull();
     }
 
+    /** All stored file paths of this item: video, audio and subtitle files. */
+    fun getFilePaths(): List<String> =
+        videoSource.map { it.filePath } + audioSource.map { it.filePath } + subtitlesSources.map { it.filePath };
+
+    /** Replaces each stored file path with [map] of it. Returns true if a path changed. */
+    fun mapFilePaths(map: (String) -> String): Boolean {
+        var changed = false;
+        val newVideos = ArrayList(videoSource.map { src -> map(src.filePath).let { if (it != src.filePath) { changed = true; src.withFilePath(it) } else src } });
+        val newAudios = ArrayList(audioSource.map { src -> map(src.filePath).let { if (it != src.filePath) { changed = true; src.withFilePath(it) } else src } });
+        val newSubtitles = ArrayList(subtitlesSources.map { src -> map(src.filePath).let { if (it != src.filePath) { changed = true; src.withFilePath(it) } else src } });
+        if (changed) {
+            videoSource = newVideos;
+            audioSource = newAudios;
+            subtitlesSources = newSubtitles;
+        }
+        return changed;
+    }
+
     override fun onDelete() {
-        for(srcFile in videoSource) {
-            val file = File(srcFile.filePath);
-            if (file.exists())
-                file.delete();
-        }
-        for(srcFile in audioSource) {
-            val file = File(srcFile.filePath);
-            if (file.exists())
-                file.delete();
-        }
-        for(srcFile in subtitlesSources) {
-            val file = File(srcFile.filePath);
+        for (path in getFilePaths()) {
+            val file = StateDownloads.instance.resolveFile(path);
             if (file.exists())
                 file.delete();
         }

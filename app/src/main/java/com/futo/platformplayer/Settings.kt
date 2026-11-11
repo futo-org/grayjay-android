@@ -36,6 +36,8 @@ import com.futo.platformplayer.views.fields.AdvancedField
 import com.futo.platformplayer.views.fields.DropdownFieldOptionsId
 import com.futo.platformplayer.views.fields.FieldForm
 import com.futo.platformplayer.views.fields.FormField
+import com.futo.platformplayer.views.fields.FormFieldDynamicSubtitle
+import com.futo.platformplayer.downloads.DownloadFolderPicker
 import com.futo.platformplayer.views.fields.FormFieldButton
 import com.futo.platformplayer.views.fields.FormFieldWarning
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuItem
@@ -699,6 +701,22 @@ class Settings : FragmentedStorageFileJson() {
         var byteRangeConcurrency: Int = 3;
         fun getByteRangeThreadCount(): Int {
             return threadIndexToCount(byteRangeConcurrency);
+        }
+
+        /** Folder the user picked for new downloads (a file path). Null = private app storage. */
+        var downloadFolderPath: String? = null;
+
+        fun downloadFolderSubtitle(): String = DownloadFolderPicker.describeCurrentFolder();
+
+        @FormField(R.string.download_folder, FieldForm.BUTTON, R.string.download_folder_description, 6)
+        @FormFieldDynamicSubtitle("downloadFolderSubtitle")
+        fun changeDownloadFolder() {
+            StateApp.instance.activity?.let { DownloadFolderPicker.pick(it) };
+        }
+
+        @FormField(R.string.download_folder_app_storage, FieldForm.BUTTON, R.string.download_folder_app_storage_description, 7)
+        fun resetDownloadFolder() {
+            StateApp.instance.activity?.let { DownloadFolderPicker.useAppStorage(it) };
         }
     }
 
