@@ -1294,4 +1294,5 @@
     <string name="move_existing_downloads">Move existing downloads</string>
     <string name="move_existing_downloads_description">Move downloaded videos into the download folder</string>
     <string name="missing">Missing</string>
+    <string name="downloads_sync">Downloads sync</string>
 </resources>

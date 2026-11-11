@@ -57,6 +57,7 @@ import com.futo.platformplayer.fragment.mainactivity.main.CreatorSearchResultsFr
 import com.futo.platformplayer.fragment.mainactivity.main.CreatorsFragment
 import com.futo.platformplayer.fragment.mainactivity.main.DeveloperFragment
 import com.futo.platformplayer.fragment.mainactivity.main.DownloadsFragment
+import com.futo.platformplayer.fragment.mainactivity.main.DownloadsSyncFragment
 import com.futo.platformplayer.fragment.mainactivity.main.HistoryFragment
 import com.futo.platformplayer.fragment.mainactivity.main.HomeFragment
 import com.futo.platformplayer.fragment.mainactivity.main.ImportPlaylistsFragment
@@ -195,6 +196,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     lateinit var _fragShorts: ShortsFragment;
     lateinit var _fragSourceDetail: SourceDetailFragment;
     lateinit var _fragDownloads: DownloadsFragment;
+    lateinit var _fragDownloadsSync: DownloadsSyncFragment;
     lateinit var _fragImportSubscriptions: ImportSubscriptionsFragment;
     lateinit var _fragImportPlaylists: ImportPlaylistsFragment;
     lateinit var _fragBuy: BuyFragment;
@@ -384,6 +386,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragShorts = ShortsFragment.newInstance();
         _fragSourceDetail = SourceDetailFragment.newInstance();
         _fragDownloads = DownloadsFragment();
+        _fragDownloadsSync = DownloadsSyncFragment();
         _fragImportSubscriptions = ImportSubscriptionsFragment.newInstance();
         _fragImportPlaylists = ImportPlaylistsFragment.newInstance();
         _fragBuy = BuyFragment.newInstance();
@@ -534,6 +537,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragHistory.topBar = _fragTopBarNavigation;
         _fragSourceDetail.topBar = _fragTopBarNavigation;
         _fragDownloads.topBar = _fragTopBarGeneral;
+        _fragDownloadsSync.topBar = _fragTopBarNavigation;
         _fragImportSubscriptions.topBar = _fragTopBarImport;
         _fragImportPlaylists.topBar = _fragTopBarImport;
         _fragSubGroupList.topBar = _fragTopBarAdd;
@@ -1435,6 +1439,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             ShortsFragment::class -> _fragShorts as T;
             SourceDetailFragment::class -> _fragSourceDetail as T;
             DownloadsFragment::class -> _fragDownloads as T;
+            DownloadsSyncFragment::class -> _fragDownloadsSync as T;
             ImportSubscriptionsFragment::class -> _fragImportSubscriptions as T;
             ImportPlaylistsFragment::class -> _fragImportPlaylists as T;
             BrowserFragment::class -> _fragBrowser as T;

@@ -213,6 +213,12 @@ class StateDownloads {
         download(VideoDownload(item.videoSerialized, pixels, bitrate));
     }
 
+    /** Saves a downloaded item made outside the download queue (for example, a copy from another device). */
+    fun saveDownloadedVideo(item: VideoLocal) {
+        _downloaded.save(item);
+        onDownloadedChanged.emit();
+    }
+
     /** Items with at least one file that exists outside the current download folder. */
     fun getItemsOutsideDownloadsDirectory(): List<VideoLocal> {
         val mover = DownloadMover(getDownloadsDirectory());
@@ -687,6 +693,9 @@ class StateDownloads {
                 for(file in it) {
                     if (isPicked && (!file.isFile || file.name in KEEP_FILE_NAMES))
                         continue;
+                    //Keep a partial copy from Downloads sync for a resume, for one week.
+                    if (file.name.endsWith(StateDownloadSync.PART_SUFFIX) && System.currentTimeMillis() - file.lastModified() < PART_KEEP_MS)
+                        continue;
                     val absUrl = file.absolutePath;
                     if(!validFiles.contains(absUrl)) {
                         Logger.i("StateDownloads", "Deleting unresolved ${file.name}");
@@ -799,6 +808,7 @@ class StateDownloads {
     companion object {
         const val TAG = "StateDownloads";
         private const val FREE_SPACE_MARGIN_BYTES = 50L * 1024 * 1024;
+        private const val PART_KEEP_MS = 7L * 24 * 60 * 60 * 1000;
         private val KEEP_FILE_NAMES = setOf(DownloadPaths.OWNER_FILE_NAME, DownloadPaths.README_FILE_NAME);
 
         private var _instance : StateDownloads? = null;

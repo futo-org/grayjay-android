@@ -14,5 +14,11 @@ class GJSyncOpcodes {
         val syncSubscriptionGroups: UByte = 204.toUByte();
         val syncPlaylists: UByte = 205.toUByte();
         val syncWatchLater: UByte = 206.toUByte();
+
+        //Downloads sync (sync/models/DownloadSyncModels.kt). High numbers to avoid upstream use.
+        val downloadIndex: UByte = 240.toUByte();
+        val downloadIndexRequest: UByte = 241.toUByte();
+        val fileChunkRequest: UByte = 242.toUByte();
+        val fileChunkResponse: UByte = 243.toUByte();
     }
 }
