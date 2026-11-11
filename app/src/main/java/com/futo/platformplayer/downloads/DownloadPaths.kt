@@ -63,6 +63,10 @@ object DownloadPaths {
     fun rebase(storedPath: String, oldDirectory: File, newDirectory: File): String =
         toStoredPath(toAbsolutePath(storedPath, oldDirectory), newDirectory);
 
+    /** Finds a file named [name] in "[folder]/Grayjay Downloads" or in [folder]. */
+    fun findByName(name: String, folder: File): File? =
+        listOf(File(File(folder, SUBFOLDER_NAME), name), File(folder, name)).firstOrNull { it.isFile };
+
     /** Returns the absolute path of [storedPath], resolved against [downloadsDirectory]. */
     fun toAbsolutePath(storedPath: String, downloadsDirectory: File): String =
         resolve(storedPath, downloadsDirectory).absolutePath;

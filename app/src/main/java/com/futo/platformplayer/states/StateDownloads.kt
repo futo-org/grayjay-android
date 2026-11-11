@@ -164,6 +164,55 @@ class StateDownloads {
         onDownloadedChanged.emit();
     }
 
+    /** Files of [item] that are not found (SD card out, folder moved, file deleted by hand). */
+    fun getMissingFiles(item: VideoLocal): List<File> =
+        (item.videoSource.map { it.filePath } + item.audioSource.map { it.filePath }).map { resolveFile(it) }.filter { !it.isFile };
+
+    fun isMissing(item: VideoLocal): Boolean = getMissingFiles(item).isNotEmpty();
+
+    /** Folder where the missing files of [item] are expected. */
+    fun getMissingLocation(item: VideoLocal): String =
+        getMissingFiles(item).firstOrNull()?.parentFile?.absolutePath ?: getDownloadsDirectory().absolutePath;
+
+    /**
+     * Looks for missing files by name in [folder] and in its "Grayjay Downloads" subfolder,
+     * and points the items to the files it finds. Returns the number of items fixed.
+     */
+    fun relinkMissing(folder: File): Int {
+        var fixed = 0;
+        for (item in getDownloadedVideos()) {
+            if (!isMissing(item))
+                continue;
+            val changed = item.mapFilePaths { stored ->
+                if (resolveFile(stored).isFile)
+                    return@mapFilePaths stored;
+                val found = DownloadPaths.findByName(File(stored).name, folder);
+                if (found != null) toStoredPath(found.absolutePath) else stored;
+            };
+            if (changed) {
+                _downloaded.save(item);
+                if (!isMissing(item))
+                    fixed++;
+            }
+        }
+        onDownloadedChanged.emit();
+        return fixed;
+    }
+
+    /** Removes the sources of [item] whose files are missing, so a new download can replace them. */
+    fun dropMissingSources(item: VideoLocal) {
+        item.videoSource = ArrayList(item.videoSource.filter { resolveFile(it.filePath).isFile });
+        item.audioSource = ArrayList(item.audioSource.filter { resolveFile(it.filePath).isFile });
+        item.subtitlesSources = ArrayList(item.subtitlesSources.filter { resolveFile(it.filePath).isFile });
+    }
+
+    /** Queues a new download of [item] with the same quality. The item stays in the list until the new files arrive. */
+    fun downloadAgain(item: VideoLocal) {
+        val pixels = item.videoSource.maxOfOrNull { it.width * it.height }?.toLong();
+        val bitrate = item.audioSource.maxOfOrNull { it.bitrate }?.toLong();
+        download(VideoDownload(item.videoSerialized, pixels, bitrate));
+    }
+
     /** Items with at least one file that exists outside the current download folder. */
     fun getItemsOutsideDownloadsDirectory(): List<VideoLocal> {
         val mover = DownloadMover(getDownloadsDirectory());
@@ -552,7 +601,10 @@ class StateDownloads {
         if(_downloading.hasItem { it.videoEither.url == videoState.videoEither.url })
             throw IllegalStateException("Video [${videoState.name}] is already queued for download");
 
-        val existing = getCachedVideo(videoState.id);
+        val existing = getCachedVideo(videoState.id)?.let { item ->
+            //Missing files do not count: a new download replaces them.
+            if (isMissing(item)) null else item
+        };
         if(existing != null) {
             //Verify for better video
             val targetPx = if(videoState.targetPixelCount != null)

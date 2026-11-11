@@ -81,6 +81,22 @@
                 android:textStyle="normal" />
         </LinearLayout>
 
+        <TextView
+            android:id="@+id/downloaded_missing_badge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|start"
+            android:layout_marginStart="4dp"
+            android:layout_marginTop="4dp"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:background="@drawable/background_thumbnail_duration"
+            android:backgroundTint="#C62828"
+            android:text="@string/missing"
+            android:textColor="#FFFFFF"
+            android:textSize="10dp"
+            android:visibility="gone" />
+
         <com.futo.platformplayer.views.platform.PlatformIndicator
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

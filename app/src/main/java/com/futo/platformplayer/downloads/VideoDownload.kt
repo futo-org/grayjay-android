@@ -1918,6 +1918,7 @@ class VideoDownload {
             localAudioSource.streamMetaData = audioStreamMetaData;
 
         if(existing != null) {
+            StateDownloads.instance.dropMissingSources(existing);
             existing.videoSerialized = videoDetails!!;
             if(localVideoSource != null) {
                 val newVideos = ArrayList(existing.videoSource);
