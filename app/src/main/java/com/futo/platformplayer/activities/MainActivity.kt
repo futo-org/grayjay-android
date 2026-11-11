@@ -981,13 +981,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                 Logger.i(TAG, "handleUrl(url=$url) found video client");
                 val playlistUrl = PlaylistLinks.findPlaylistUrl(url) { StatePlatform.instance.hasEnabledPlaylistClient(it) };
                 withContext(Dispatchers.Main) {
-                    if (playlistUrl != null) {
-                        Logger.i(TAG, "handleUrl(url=$url) also found playlist client ($playlistUrl)");
-                        UIDialogs.showDialog(this@MainActivity, R.drawable.ic_playlist, getString(R.string.this_link_has_a_video_and_a_playlist), null, null, -1,
-                            UIDialogs.Action(getString(R.string.open_video), { openVideoUrl(url, position) }),
-                            UIDialogs.Action(getString(R.string.open_playlist), { openPlaylistUrl(playlistUrl) }, UIDialogs.ActionStyle.PRIMARY));
-                    } else
-                        openVideoUrl(url, position);
+                    openVideoOrAskForPlaylist(url, position, playlistUrl);
                 }
                 return@withContext true;
             } else if (StatePlatform.instance.hasEnabledChannelClient(url)) {
@@ -1007,6 +1001,38 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             }
             return@withContext false;
         }
+    }
+
+    /**
+     * Opens a link typed or picked in the search box. Playlist and channel links open as before;
+     * a video link that is also in a playlist asks which one to open, the same as [handleUrl].
+     */
+    suspend fun handleSearchUrl(url: String) {
+        Logger.i(TAG, "handleSearchUrl(url=$url)");
+
+        val (isVideo, playlistUrl, isChannel) = withContext(Dispatchers.IO) {
+            val playlistUrl = PlaylistLinks.findPlaylistUrl(url) { StatePlatform.instance.hasEnabledPlaylistClient(it) };
+            Triple(StatePlatform.instance.hasEnabledContentClient(url), playlistUrl, playlistUrl != url && StatePlatform.instance.hasEnabledChannelClient(url));
+        }
+
+        if (isVideo && playlistUrl != null)
+            openVideoOrAskForPlaylist(url, 0, playlistUrl);
+        else if (playlistUrl == url)
+            navigate(_fragMainRemotePlaylist, url);
+        else if (isChannel)
+            navigate(_fragMainChannel, url);
+        else
+            navigate(_fragVideoDetail, url);
+    }
+
+    private fun openVideoOrAskForPlaylist(url: String, position: Int, playlistUrl: String?) {
+        if (playlistUrl != null) {
+            Logger.i(TAG, "openVideoOrAskForPlaylist(url=$url) also found playlist client ($playlistUrl)");
+            UIDialogs.showDialog(this, R.drawable.ic_playlist, getString(R.string.this_link_has_a_video_and_a_playlist), null, null, -1,
+                UIDialogs.Action(getString(R.string.open_video), { openVideoUrl(url, position) }),
+                UIDialogs.Action(getString(R.string.open_playlist), { openPlaylistUrl(playlistUrl) }, UIDialogs.ActionStyle.PRIMARY));
+        } else
+            openVideoUrl(url, position);
     }
 
     private fun openVideoUrl(url: String, position: Int) {
