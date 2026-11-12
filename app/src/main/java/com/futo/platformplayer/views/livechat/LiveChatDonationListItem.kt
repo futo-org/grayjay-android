@@ -1,5 +1,6 @@
 package com.futo.platformplayer.views.livechat
 
+import CSSColor
 import android.graphics.Color
 import android.graphics.drawable.LevelListDrawable
 import android.text.Spannable
@@ -24,6 +25,7 @@ import com.futo.platformplayer.views.adapters.AnyAdapter
 import com.futo.platformplayer.views.overlays.LiveChatOverlay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import toAndroidColor
 
 class LiveChatDonationListItem(viewGroup: ViewGroup)
     : LiveChatListItem(LayoutInflater.from(viewGroup.context).inflate(R.layout.list_chat_donation, viewGroup, false)) {
@@ -55,10 +57,10 @@ class LiveChatDonationListItem(viewGroup: ViewGroup)
             _amount.text = event.amount.trim();
 
             if(event.colorDonation != null && event.colorDonation.isHexColor()) {
-                val color = Color.parseColor(event.colorDonation);
-                _amountContainer.background.setTint(color);
+                val color = CSSColor.parseColor(event.colorDonation);
+                _amountContainer.background.setTint(color.toAndroidColor());
 
-                if((color.green > 140 || color.red > 140 || color.blue > 140) && (color.red + color.green + color.blue) > 400)
+                if(color.lightness > 0.5)
                     _amount.setTextColor(Color.BLACK);
                 else
                     _amount.setTextColor(Color.WHITE);

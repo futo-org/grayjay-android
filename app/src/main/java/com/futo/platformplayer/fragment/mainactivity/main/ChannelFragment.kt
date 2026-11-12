@@ -172,7 +172,7 @@ class ChannelFragment : MainFragment() {
             _buttonSubscribe = findViewById(R.id.button_subscribe)
             _buttonSubscriptionSettings = findViewById(R.id.button_sub_settings)
             _overlayLoading = findViewById(R.id.channel_loading_overlay)
-            _overlayLoadingSpinner = findViewById(R.id.channel_loader)
+            _overlayLoadingSpinner = findViewById(R.id.channel_loader_frag)
             _overlayContainer = findViewById(R.id.overlay_container)
             _buttonSubscribe.onSubscribed.subscribe {
                 UISlideOverlays.showSubscriptionOptionsOverlay(it, _overlayContainer)
@@ -208,6 +208,14 @@ class ChannelFragment : MainFragment() {
 
                     is IPlatformPost -> {
                         fragment.navigate<PostDetailFragment>(v)
+                    }
+                }
+            }
+            adapter.onShortClicked.subscribe { v, _, pagerPair ->
+                when (v) {
+                    is IPlatformVideo -> {
+                        StatePlayer.instance.clearQueue()
+                        fragment.navigate<ShortsFragment>(Triple(v, pagerPair!!.first, pagerPair.second))
                     }
                 }
             }

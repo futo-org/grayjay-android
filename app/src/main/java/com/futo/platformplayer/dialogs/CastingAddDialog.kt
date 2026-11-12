@@ -106,7 +106,7 @@ class CastingAddDialog(context: Context?) : AlertDialog(context) {
         };
 
         _buttonTutorial.setOnClickListener {
-            UIDialogs.showCastingTutorialDialog(context)
+            UIDialogs.showCastingTutorialDialog(context, ownerActivity)
             dismiss()
         }
     }
@@ -130,7 +130,7 @@ class CastingAddDialog(context: Context?) : AlertDialog(context) {
 
     private fun performDismiss(shouldShowCastingDialog: Boolean = true) {
         if (shouldShowCastingDialog) {
-            UIDialogs.showCastingDialog(context);
+            UIDialogs.showCastingDialog(context, ownerActivity);
         }
 
         dismiss();

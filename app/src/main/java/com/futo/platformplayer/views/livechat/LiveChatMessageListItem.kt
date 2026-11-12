@@ -18,6 +18,7 @@ import com.futo.platformplayer.views.adapters.AnyAdapter
 import com.futo.platformplayer.views.overlays.LiveChatOverlay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import toAndroidColor
 
 class LiveChatMessageListItem(viewGroup: ViewGroup)
     : LiveChatListItem(LayoutInflater.from(viewGroup.context).inflate(R.layout.list_chat_message, viewGroup, false)) {
@@ -75,7 +76,7 @@ class LiveChatMessageListItem(viewGroup: ViewGroup)
 
             if (!event.colorName.isNullOrEmpty()) {
                 try {
-                    _authorName.setTextColor(Color.parseColor(event.colorName));
+                    _authorName.setTextColor(CSSColor.parseColor(event.colorName).toAndroidColor());
                 } catch (ex: Throwable) {
                 }
             } else

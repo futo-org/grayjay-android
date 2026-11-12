@@ -348,7 +348,7 @@ class FCastCastingDevice : CastingDevice {
                                 headerBytesRead += read
                             }
 
-                            val size = ((buffer[3].toLong() shl 24) or (buffer[2].toLong() shl 16) or (buffer[1].toLong() shl 8) or buffer[0].toLong()).toInt();
+                            val size = ((buffer[3].toUByte().toLong() shl 24) or (buffer[2].toUByte().toLong() shl 16) or (buffer[1].toUByte().toLong() shl 8) or buffer[0].toUByte().toLong()).toInt();
                             if (size > buffer.size) {
                                 Logger.w(TAG, "Packets larger than $size bytes are not supported.")
                                 break

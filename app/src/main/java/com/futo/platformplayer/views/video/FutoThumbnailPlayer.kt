@@ -126,7 +126,7 @@ class FutoThumbnailPlayer : FutoVideoPlayerBase {
         _evMuteChanged.add(callback);
     }
 
-    fun setPreview(video: IPlatformVideoDetails) {
+    suspend fun setPreview(video: IPlatformVideoDetails) {
         if (video.live != null) {
             setSource(video.live, null,true, false);
         } else {

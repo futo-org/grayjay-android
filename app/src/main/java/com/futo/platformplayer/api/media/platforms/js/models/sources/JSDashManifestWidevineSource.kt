@@ -9,6 +9,8 @@ import com.futo.platformplayer.api.media.platforms.js.models.JSRequestExecutor
 import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.getOrNull
 import com.futo.platformplayer.getOrThrow
+import com.futo.platformplayer.invokeV8
+import com.futo.platformplayer.invokeV8Void
 
 class JSDashManifestWidevineSource : IVideoUrlSource, IDashManifestSource,
     IDashManifestWidevineSource, JSSource {
@@ -45,7 +47,7 @@ class JSDashManifestWidevineSource : IVideoUrlSource, IDashManifestSource,
             return null
 
         val result = V8Plugin.catchScriptErrors<Any>(_config, "[${_config.name}] JSDashManifestWidevineSource", "obj.getLicenseRequestExecutor()") {
-            _obj.invoke("getLicenseRequestExecutor", arrayOf<Any>())
+            _obj.invokeV8("getLicenseRequestExecutor", arrayOf<Any>())
         }
 
         if (result !is V8ValueObject)

@@ -315,8 +315,10 @@ class StatePlaylists {
             if(!Settings.instance.other.playlistAllowDups && playlist.videos.any { it.url == video.url })
                 return false;
 
+            val serializedVideo = SerializedPlatformVideo.fromVideo(video);
+            serializedVideo.addedToPlaylistDateTime = OffsetDateTime.now();
 
-            playlist.videos.add(SerializedPlatformVideo.fromVideo(video));
+            playlist.videos.add(serializedVideo);
             playlist.dateUpdate = OffsetDateTime.now();
             playlistStore.saveAsync(playlist, true);
 

@@ -20,6 +20,7 @@ class RadioView : LinearLayout {
 
     val selected get() = _selected;
     var onClick = Event0();
+    var onLongClick = Event0();
     var onSelectedChange = Event1<Boolean>();
 
     constructor(context: Context, attrs: AttributeSet? = null) : super(context, attrs) {
@@ -32,6 +33,13 @@ class RadioView : LinearLayout {
                 setIsSelected(!_selected)
             }
         };
+        _root.setOnLongClickListener {
+            onLongClick.emit();
+            if (_handleClick) {
+                setIsSelected(!_selected)
+            }
+            return@setOnLongClickListener true;
+        }
 
         _root.setBackgroundResource(R.drawable.background_radio_unselected);
         _textTag.setTextColor(ContextCompat.getColor(context, R.color.gray_67));

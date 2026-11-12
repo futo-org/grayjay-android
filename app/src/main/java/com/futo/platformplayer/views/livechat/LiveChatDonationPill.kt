@@ -13,6 +13,7 @@ import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
 import com.futo.platformplayer.api.media.models.live.LiveEventDonation
 import com.futo.platformplayer.isHexColor
+import toAndroidColor
 
 class LiveChatDonationPill: LinearLayout {
     private val _imageAuthor: ImageView;
@@ -33,10 +34,10 @@ class LiveChatDonationPill: LinearLayout {
 
 
         if(donation.colorDonation != null && donation.colorDonation.isHexColor()) {
-            val color = Color.parseColor(donation.colorDonation);
-            root.background.setTint(color);
+            val color = CSSColor.parseColor(donation.colorDonation);
+            root.background.setTint(color.toAndroidColor());
 
-            if((color.green > 140 || color.red > 140 || color.blue > 140) && (color.red + color.green + color.blue) > 400)
+            if(color.lightness > 0.5)
                 _textAmount.setTextColor(Color.BLACK);
             else
                 _textAmount.setTextColor(Color.WHITE);

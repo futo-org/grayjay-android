@@ -240,7 +240,8 @@ class GestureControlView : LinearLayout {
                     && !_adjustingFullscreenUp
                     && !_adjustingFullscreenDown
                     && !_isPanning
-                    && !_isZooming) {
+                    && !_isZooming
+                    && Settings.instance.playback.getHoldPlaybackSpeed() > 1.0) {
                     _speedHolding = true
                     showHoldSpeedControls()
                     onSpeedHoldStart.emit()

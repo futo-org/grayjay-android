@@ -5,10 +5,16 @@ import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.AnnouncementType
 import com.futo.platformplayer.states.StateAnnouncement
+import com.futo.platformplayer.states.StateApp
+import com.futo.platformplayer.states.StateHistory
+import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.views.fields.DropdownFieldOptions
 import com.futo.platformplayer.views.fields.FieldForm
 import com.futo.platformplayer.views.fields.FormField
+import com.futo.platformplayer.views.fields.FormFieldButton
 import com.futo.platformplayer.views.fields.FormFieldWarning
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -103,12 +109,22 @@ class SourcePluginDescriptor {
             @FormField(R.string.home, FieldForm.TOGGLE, R.string.show_content_in_home_tab, 1)
             var enableHome: Boolean? = null;
 
-
             @FormField(R.string.search, FieldForm.TOGGLE, R.string.show_content_in_search_results, 2)
             var enableSearch: Boolean? = null;
+
+            @FormField(R.string.shorts, FieldForm.TOGGLE, R.string.show_content_in_shorts_tab, 3)
+            var enableShorts: Boolean? = null;
         }
 
-        @FormField(R.string.ratelimit, "group", R.string.ratelimit_description, 3)
+        @FormField(R.string.sync, "group", R.string.sync_desc, 3,"sync")
+        var sync = Sync();
+        @Serializable
+        class Sync {
+            @FormField(R.string.sync_history, FieldForm.TOGGLE, R.string.sync_history_desc, 1,"syncHistory")
+            var enableHistorySync: Boolean? = null;
+        }
+
+        @FormField(R.string.ratelimit, "group", R.string.ratelimit_description, 4)
         var rateLimit = RateLimit();
         @Serializable
         class RateLimit {
@@ -143,6 +159,8 @@ class SourcePluginDescriptor {
                 tabEnabled.enableHome = config.enableInHome
             if(tabEnabled.enableSearch == null)
                 tabEnabled.enableSearch = config.enableInSearch
+            if(tabEnabled.enableShorts == null)
+                tabEnabled.enableShorts = config.enableInShorts
         }
     }
 

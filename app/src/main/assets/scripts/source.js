@@ -251,6 +251,9 @@ class PlatformVideo extends PlatformContent {
         this.duration = obj.duration ?? -1; //Long
         this.viewCount = obj.viewCount ?? -1; //Long
 
+        this.playbackTime = obj.playbackTime ?? -1;
+        this.playbackDate = obj.playbackDate ?? undefined;
+
         this.isLive = obj.isLive ?? false; //Boolean
         this.isShort = !!obj.isShort ?? false;
     }
@@ -464,14 +467,20 @@ class AudioUrlWidevineSource extends AudioUrlSource {
             this.getLicenseRequestExecutor = () => {
                 return {
                     executeRequest: (url, _headers, _method, license_request_data) => {
-                        return http.POST(
+                        const response = http.POST(
                            url,
                            license_request_data,
                            { Authorization: `Bearer ${obj.bearerToken}` },
                            false,
                            true
-                       ).body
-                    }
+                       );
+
+                       if (!response.body) {
+                           throw new ScriptException("Unable to acquire license key");
+                       }
+
+                       return response.body;
+                   }
                 }
             }
         }
@@ -707,11 +716,12 @@ class LiveEventViewCount extends LiveEvent {
     }
 }
 class LiveEventRaid extends LiveEvent {
-    constructor(targetUrl, targetName, targetThumbnail) {
+    constructor(targetUrl, targetName, targetThumbnail, isOutgoing) {
         super(100);
         this.targetUrl = targetUrl;
         this.targetName = targetName;
         this.targetThumbnail = targetThumbnail;
+        this.isOutgoing = isOutgoing ?? true;
     }
 }
 
@@ -784,6 +794,7 @@ let plugin = {
 //To override by plugin
 const source = {
     getHome() { return new ContentPager([], false, {}); },
+    getShorts() { return new VideoPager([], false, {}); },
 
     enable(config){  },
     disable() {},

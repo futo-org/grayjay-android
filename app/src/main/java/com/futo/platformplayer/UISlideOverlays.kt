@@ -129,115 +129,163 @@ class UISlideOverlays {
             val originalVideo = subscription.doFetchVideos;
             val originalPosts = subscription.doFetchPosts;
 
-            val menu = SlideUpMenuOverlay(container.context, container, "Subscription Settings", null, true, listOf());
+            val menu = SlideUpMenuOverlay(
+                container.context,
+                container,
+                "Subscription Settings",
+                null,
+                true,
+                listOf()
+            );
 
-            StateApp.instance.scopeOrNull?.launch(Dispatchers.IO){
-                val plugin = StatePlatform.instance.getChannelClient(subscription.channel.url);
-                val capabilities = plugin.getChannelCapabilities();
+            StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+                try {
+                    val plugin = StatePlatform.instance.getChannelClient(subscription.channel.url);
+                    val capabilities = plugin.getChannelCapabilities();
 
-                withContext(Dispatchers.Main) {
-                    items.addAll(listOf(
-                        SlideUpMenuItem(
-                            container.context,
-                            R.drawable.ic_notifications,
-                            "Notifications",
-                            "",
-                            tag = "notifications",
-                            call = {
-                                subscription.doNotifications = menu?.selectOption(null, "notifications", true, true) ?: subscription.doNotifications;
-                            },
-                            invokeParent = false
-                        ),
-                        if(StateSubscriptionGroups.instance.getSubscriptionGroups().isNotEmpty())
-                            SlideUpMenuGroup(container.context, "Subscription Groups",
-                                "You can select which groups this subscription is part of.",
-                                -1, listOf()) else null,
-                        if(StateSubscriptionGroups.instance.getSubscriptionGroups().isNotEmpty())
-                            SlideUpMenuRecycler(container.context, "as") {
-                                val groups = ArrayList<SubscriptionGroup>(StateSubscriptionGroups.instance.getSubscriptionGroups()
-                                    .map { SubscriptionGroup.Selectable(it, it.urls.contains(subscription.channel.url)) }
-                                    .sortedBy { !it.selected });
-                                var adapter: AnyAdapterView<SubscriptionGroup, SubscriptionGroupBarViewHolder>? = null;
-                                adapter = it.asAny(groups, RecyclerView.HORIZONTAL) {
-                                    it.onClick.subscribe {
-                                        if(it is SubscriptionGroup.Selectable) {
-                                            val actualGroup = StateSubscriptionGroups.instance.getSubscriptionGroup(it.id)
-                                                ?: return@subscribe;
-                                            groups.clear();
-                                            if(it.selected)
-                                                actualGroup.urls.remove(subscription.channel.url);
-                                            else
-                                                actualGroup.urls.add(subscription.channel.url);
+                    withContext(Dispatchers.Main) {
+                        items.addAll(
+                            listOf(
+                                SlideUpMenuItem(
+                                    container.context,
+                                    R.drawable.ic_notifications,
+                                    "Notifications",
+                                    "",
+                                    tag = "notifications",
+                                    call = {
+                                        subscription.doNotifications =
+                                            menu?.selectOption(null, "notifications", true, true)
+                                                ?: subscription.doNotifications;
+                                    },
+                                    invokeParent = false
+                                ),
+                                if (StateSubscriptionGroups.instance.getSubscriptionGroups()
+                                        .isNotEmpty()
+                                )
+                                    SlideUpMenuGroup(
+                                        container.context, "Subscription Groups",
+                                        "You can select which groups this subscription is part of.",
+                                        -1, listOf()
+                                    ) else null,
+                                if (StateSubscriptionGroups.instance.getSubscriptionGroups()
+                                        .isNotEmpty()
+                                )
+                                    SlideUpMenuRecycler(container.context, "as") {
+                                        val groups =
+                                            ArrayList<SubscriptionGroup>(
+                                                StateSubscriptionGroups.instance.getSubscriptionGroups()
+                                                    .map {
+                                                        SubscriptionGroup.Selectable(
+                                                            it,
+                                                            it.urls.contains(subscription.channel.url)
+                                                        )
+                                                    }
+                                                    .sortedBy { !it.selected });
+                                        var adapter: AnyAdapterView<SubscriptionGroup, SubscriptionGroupBarViewHolder>? =
+                                            null;
+                                        adapter = it.asAny(groups, RecyclerView.HORIZONTAL) {
+                                            it.onClick.subscribe {
+                                                if (it is SubscriptionGroup.Selectable) {
+                                                    val actualGroup =
+                                                        StateSubscriptionGroups.instance.getSubscriptionGroup(
+                                                            it.id
+                                                        )
+                                                            ?: return@subscribe;
+                                                    groups.clear();
+                                                    if (it.selected)
+                                                        actualGroup.urls.remove(subscription.channel.url);
+                                                    else
+                                                        actualGroup.urls.add(subscription.channel.url);
 
-                                            StateSubscriptionGroups.instance.updateSubscriptionGroup(actualGroup);
-                                            groups.addAll(StateSubscriptionGroups.instance.getSubscriptionGroups()
-                                                .map { SubscriptionGroup.Selectable(it, it.urls.contains(subscription.channel.url)) }
-                                                .sortedBy { !it.selected });
-                                            adapter?.notifyContentChanged();
-                                        }
-                                    }
-                                };
-                                return@SlideUpMenuRecycler adapter;
-                            } else null,
-                        SlideUpMenuGroup(container.context, "Fetch Settings",
-                            "Depending on the platform you might not need to enable a type for it to be available.",
-                            -1, listOf()),
-                        if(capabilities.hasType(ResultCapabilities.TYPE_LIVE)) SlideUpMenuItem(
-                            container.context,
-                            R.drawable.ic_live_tv,
-                            "Livestreams",
-                            "Check for livestreams",
-                            tag = "fetchLive",
-                            call = {
-                                subscription.doFetchLive = menu?.selectOption(null, "fetchLive", true, true) ?: subscription.doFetchLive;
-                            },
-                            invokeParent = false
-                        ) else null,
-                        if(capabilities.hasType(ResultCapabilities.TYPE_STREAMS)) SlideUpMenuItem(
-                            container.context,
-                            R.drawable.ic_play,
-                            "Streams",
-                            "Check for streams",
-                            tag = "fetchStreams",
-                            call = {
-                                subscription.doFetchStreams = menu?.selectOption(null, "fetchStreams", true, true) ?: subscription.doFetchStreams;
-                            },
-                            invokeParent = false
-                        ) else null,
-                        if(capabilities.hasType(ResultCapabilities.TYPE_VIDEOS))
-                            SlideUpMenuItem(
-                                container.context,
-                                R.drawable.ic_play,
-                                "Videos",
-                                "Check for videos",
-                                tag = "fetchVideos",
-                                call = {
-                                    subscription.doFetchVideos = menu?.selectOption(null, "fetchVideos", true, true) ?: subscription.doFetchVideos;
-                                },
-                                invokeParent = false
-                            ) else if(capabilities.hasType(ResultCapabilities.TYPE_MIXED) || capabilities.types.isEmpty())
-                            SlideUpMenuItem(
-                                container.context,
-                                R.drawable.ic_play,
-                                "Content",
-                                "Check for content",
-                                tag = "fetchVideos",
-                                call = {
-                                    subscription.doFetchVideos = menu?.selectOption(null, "fetchVideos", true, true) ?: subscription.doFetchVideos;
-                                },
-                                invokeParent = false
-                            ) else null,
-                        if(capabilities.hasType(ResultCapabilities.TYPE_POSTS)) SlideUpMenuItem(
-                            container.context,
-                            R.drawable.ic_chat,
-                            "Posts",
-                            "Check for posts",
-                            tag = "fetchPosts",
-                            call = {
-                                subscription.doFetchPosts = menu?.selectOption(null, "fetchPosts", true, true) ?: subscription.doFetchPosts;
-                            },
-                            invokeParent = false
-                        ) else null/*,,
+                                                    StateSubscriptionGroups.instance.updateSubscriptionGroup(
+                                                        actualGroup
+                                                    );
+                                                    groups.addAll(
+                                                        StateSubscriptionGroups.instance.getSubscriptionGroups()
+                                                            .map {
+                                                                SubscriptionGroup.Selectable(
+                                                                    it,
+                                                                    it.urls.contains(subscription.channel.url)
+                                                                )
+                                                            }
+                                                            .sortedBy { !it.selected });
+                                                    adapter?.notifyContentChanged();
+                                                }
+                                            }
+                                        };
+                                        return@SlideUpMenuRecycler adapter;
+                                    } else null,
+                                SlideUpMenuGroup(
+                                    container.context, "Fetch Settings",
+                                    "Depending on the platform you might not need to enable a type for it to be available.",
+                                    -1, listOf()
+                                ),
+                                if (capabilities.hasType(ResultCapabilities.TYPE_LIVE)) SlideUpMenuItem(
+                                    container.context,
+                                    R.drawable.ic_live_tv,
+                                    "Livestreams",
+                                    "Check for livestreams",
+                                    tag = "fetchLive",
+                                    call = {
+                                        subscription.doFetchLive =
+                                            menu?.selectOption(null, "fetchLive", true, true)
+                                                ?: subscription.doFetchLive;
+                                    },
+                                    invokeParent = false
+                                ) else null,
+                                if (capabilities.hasType(ResultCapabilities.TYPE_STREAMS)) SlideUpMenuItem(
+                                    container.context,
+                                    R.drawable.ic_play,
+                                    "Streams",
+                                    "Check for streams",
+                                    tag = "fetchStreams",
+                                    call = {
+                                        subscription.doFetchStreams =
+                                            menu?.selectOption(null, "fetchStreams", true, true)
+                                                ?: subscription.doFetchStreams;
+                                    },
+                                    invokeParent = false
+                                ) else null,
+                                if (capabilities.hasType(ResultCapabilities.TYPE_VIDEOS))
+                                    SlideUpMenuItem(
+                                        container.context,
+                                        R.drawable.ic_play,
+                                        "Videos",
+                                        "Check for videos",
+                                        tag = "fetchVideos",
+                                        call = {
+                                            subscription.doFetchVideos =
+                                                menu?.selectOption(null, "fetchVideos", true, true)
+                                                    ?: subscription.doFetchVideos;
+                                        },
+                                        invokeParent = false
+                                    ) else if (capabilities.hasType(ResultCapabilities.TYPE_MIXED) || capabilities.types.isEmpty())
+                                    SlideUpMenuItem(
+                                        container.context,
+                                        R.drawable.ic_play,
+                                        "Content",
+                                        "Check for content",
+                                        tag = "fetchVideos",
+                                        call = {
+                                            subscription.doFetchVideos =
+                                                menu?.selectOption(null, "fetchVideos", true, true)
+                                                    ?: subscription.doFetchVideos;
+                                        },
+                                        invokeParent = false
+                                    ) else null,
+                                if (capabilities.hasType(ResultCapabilities.TYPE_POSTS)) SlideUpMenuItem(
+                                    container.context,
+                                    R.drawable.ic_chat,
+                                    "Posts",
+                                    "Check for posts",
+                                    tag = "fetchPosts",
+                                    call = {
+                                        subscription.doFetchPosts =
+                                            menu?.selectOption(null, "fetchPosts", true, true)
+                                                ?: subscription.doFetchPosts;
+                                    },
+                                    invokeParent = false
+                                ) else null/*,,
 
                         SlideUpMenuGroup(container.context, "Actions",
                             "Various things you can do with this subscription",
@@ -245,61 +293,82 @@ class UISlideOverlays {
                         SlideUpMenuItem(container.context, R.drawable.ic_list, "Add to Group", "", "btnAddToGroup", {
                             showCreateSubscriptionGroup(container, subscription.channel);
                         }, false)*/
-                        ).filterNotNull());
+                            ).filterNotNull()
+                        );
 
-                    menu.setItems(items);
+                        menu.setItems(items);
 
-                    if(subscription.doNotifications)
-                        menu.selectOption(null, "notifications", true, true);
-                    if(subscription.doFetchLive)
-                        menu.selectOption(null, "fetchLive", true, true);
-                    if(subscription.doFetchStreams)
-                        menu.selectOption(null, "fetchStreams", true, true);
-                    if(subscription.doFetchVideos)
-                        menu.selectOption(null, "fetchVideos", true, true);
-                    if(subscription.doFetchPosts)
-                        menu.selectOption(null, "fetchPosts", true, true);
+                        if (subscription.doNotifications)
+                            menu.selectOption(null, "notifications", true, true);
+                        if (subscription.doFetchLive)
+                            menu.selectOption(null, "fetchLive", true, true);
+                        if (subscription.doFetchStreams)
+                            menu.selectOption(null, "fetchStreams", true, true);
+                        if (subscription.doFetchVideos)
+                            menu.selectOption(null, "fetchVideos", true, true);
+                        if (subscription.doFetchPosts)
+                            menu.selectOption(null, "fetchPosts", true, true);
 
-                    menu.onOK.subscribe {
-                        subscription.save();
-                        menu.hide(true);
+                        menu.onOK.subscribe {
+                            subscription.save();
+                            menu.hide(true);
 
-                        if(subscription.doNotifications && !originalNotif) {
-                            val mainContext = StateApp.instance.contextOrNull;
-                            if(Settings.instance.subscriptions.subscriptionsBackgroundUpdateInterval == 0) {
-                                UIDialogs.toast(container.context, "Enable 'Background Update' in settings for notifications to work");
+                            if (subscription.doNotifications && !originalNotif) {
+                                val mainContext = StateApp.instance.contextOrNull;
+                                if (Settings.instance.subscriptions.subscriptionsBackgroundUpdateInterval == 0) {
+                                    UIDialogs.toast(
+                                        container.context,
+                                        "Enable 'Background Update' in settings for notifications to work"
+                                    );
 
-                                if(mainContext is MainActivity) {
-                                    UIDialogs.showDialog(mainContext, R.drawable.ic_settings, "Background Updating Required",
-                                        "You need to set a Background Updating interval for notifications", null, 0,
-                                        UIDialogs.Action("Cancel", {}),
-                                        UIDialogs.Action("Configure", {
-                                            val intent = Intent(mainContext, SettingsActivity::class.java);
-                                            intent.putExtra("query", mainContext.getString(R.string.background_update));
-                                            mainContext.startActivity(intent);
-                                        }, UIDialogs.ActionStyle.PRIMARY));
+                                    if (mainContext is MainActivity) {
+                                        UIDialogs.showDialog(
+                                            mainContext,
+                                            R.drawable.ic_settings,
+                                            "Background Updating Required",
+                                            "You need to set a Background Updating interval for notifications",
+                                            null,
+                                            0,
+                                            UIDialogs.Action("Cancel", {}),
+                                            UIDialogs.Action("Configure", {
+                                                val intent = Intent(
+                                                    mainContext,
+                                                    SettingsActivity::class.java
+                                                );
+                                                intent.putExtra(
+                                                    "query",
+                                                    mainContext.getString(R.string.background_update)
+                                                );
+                                                mainContext.startActivity(intent);
+                                            }, UIDialogs.ActionStyle.PRIMARY)
+                                        );
+                                    }
+                                    return@subscribe;
+                                } else if (!(mainContext?.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).areNotificationsEnabled()) {
+                                    UIDialogs.toast(
+                                        container.context,
+                                        "Android notifications are disabled"
+                                    );
+                                    if (mainContext is MainActivity) {
+                                        mainContext.requestNotificationPermissions("Notifications are required for subscription updating and notifications to work");
+                                    }
                                 }
-                                return@subscribe;
                             }
-                            else if(!(mainContext?.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).areNotificationsEnabled()) {
-                                UIDialogs.toast(container.context, "Android notifications are disabled");
-                                if(mainContext is MainActivity) {
-                                    mainContext.requestNotificationPermissions("Notifications are required for subscription updating and notifications to work");
-                                }
-                            }
-                        }
-                    };
-                    menu.onCancel.subscribe {
-                        subscription.doNotifications = originalNotif;
-                        subscription.doFetchLive = originalLive;
-                        subscription.doFetchStreams = originalStream;
-                        subscription.doFetchVideos = originalVideo;
-                        subscription.doFetchPosts = originalPosts;
-                    };
+                        };
+                        menu.onCancel.subscribe {
+                            subscription.doNotifications = originalNotif;
+                            subscription.doFetchLive = originalLive;
+                            subscription.doFetchStreams = originalStream;
+                            subscription.doFetchVideos = originalVideo;
+                            subscription.doFetchPosts = originalPosts;
+                        };
 
-                    menu.setOk("Save");
+                        menu.setOk("Save");
 
-                    menu.show();
+                        menu.show();
+                    }
+                } catch (e: Throwable) {
+                    Logger.e(TAG, "Failed to show subscription overlay.", e)
                 }
             }
 

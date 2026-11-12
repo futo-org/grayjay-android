@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="ShortsButton">
+        <attr name="buttonIcon_s" format="reference" />
+        <attr name="buttonText_s" format="string" />
+    </declare-styleable>
+</resources>

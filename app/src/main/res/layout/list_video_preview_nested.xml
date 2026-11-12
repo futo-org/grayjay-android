@@ -107,8 +107,6 @@
                         android:textStyle="normal" />
                 </LinearLayout>
             </androidx.constraintlayout.widget.ConstraintLayout>
-
-
             <LinearLayout
                 android:id="@+id/container_loader"
                 android:layout_width="match_parent"
@@ -116,9 +114,13 @@
                 android:layout_marginBottom="6dp"
                 android:background="#DD000000"
                 android:visibility="gone"
+                android:gravity="center"
                 android:orientation="vertical">
 
-
+                <com.futo.platformplayer.views.LoaderView
+                    android:id="@+id/loader"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp" />
             </LinearLayout>
             <LinearLayout
                 android:id="@+id/container_unavailable"

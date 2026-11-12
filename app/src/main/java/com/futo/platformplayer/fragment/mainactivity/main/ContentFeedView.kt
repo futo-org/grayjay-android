@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import android.view.LayoutInflater
 import android.widget.LinearLayout
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.R
@@ -19,6 +20,7 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.models.JSWeb
 import com.futo.platformplayer.api.media.structures.IPager
+import com.futo.platformplayer.fragment.mainactivity.main.ShortView.Companion
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateMeta
 import com.futo.platformplayer.states.StatePlayer
@@ -34,6 +36,9 @@ import com.futo.platformplayer.views.adapters.feedtypes.PreviewVideoViewHolder
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuItem
 import com.futo.platformplayer.views.overlays.slideup.SlideUpMenuOverlay
 import com.futo.platformplayer.withTimestamp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlin.math.floor
 import kotlin.math.max
 
@@ -59,7 +64,7 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
         player.modifyState("ThumbnailPlayer") { state -> state.muted = true };
         _exoPlayer = player;
 
-        return PreviewContentListAdapter(context, feedStyle, dataset, player, _previewsEnabled, arrayListOf(), arrayListOf(), shouldShowTimeBar).apply {
+        return PreviewContentListAdapter(fragment.lifecycleScope, context, feedStyle, dataset, player, _previewsEnabled, arrayListOf(), arrayListOf(), shouldShowTimeBar).apply {
             attachAdapterEvents(this);
         }
     }
@@ -246,8 +251,15 @@ abstract class ContentFeedView<TFragment> : FeedView<TFragment, IPlatformContent
         }
 
         //TODO: Is this still necessary?
-        if(viewHolder.childViewHolder is ContentPreviewViewHolder)
-            (recyclerData.adapter as PreviewContentListAdapter?)?.preview(viewHolder.childViewHolder)
+        if(viewHolder.childViewHolder is ContentPreviewViewHolder) {
+            fragment.lifecycleScope.launch(Dispatchers.Main) {
+                try {
+                    (recyclerData.adapter as PreviewContentListAdapter?)?.preview(viewHolder.childViewHolder)
+                } catch (e: Throwable) {
+                    Logger.e(TAG, "playPreview failed", e)
+                }
+            }
+        }
     }
 
     private fun stopVideo() {

@@ -53,7 +53,7 @@ class CastingHelpDialog(context: Context?) : AlertDialog(context) {
 
         findViewById<BigButton>(R.id.button_close).onClick.subscribe {
             dismiss()
-            UIDialogs.showCastingAddDialog(context)
+            UIDialogs.showCastingAddDialog(context, ownerActivity)
         }
     }
 

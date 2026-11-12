@@ -136,7 +136,7 @@ class V8RemoteObject {
         }
 
 
-        fun List<V8RemoteObject>.serialize() : String {
+        fun List<V8RemoteObject?>.serialize() : String {
             return _gson.toJson(this);
         }
     }

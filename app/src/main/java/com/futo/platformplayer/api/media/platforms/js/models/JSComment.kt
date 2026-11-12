@@ -12,6 +12,7 @@ import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.getOrThrowNullable
+import com.futo.platformplayer.invokeV8
 import com.futo.platformplayer.serializers.OffsetDateTimeNullableSerializer
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
@@ -60,7 +61,7 @@ class JSComment : IPlatformComment {
         if(!_hasGetReplies)
             return null;
 
-        val obj = _comment!!.invoke<V8ValueObject>("getReplies", arrayOf<Any>());
+        val obj = _comment!!.invokeV8<V8ValueObject>("getReplies", arrayOf<Any>());
         val plugin = if(client is JSClient) client else throw NotImplementedError("Only implemented for JSClient");
         return JSCommentPager(_config!!, plugin, obj);
     }

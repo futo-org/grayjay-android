@@ -636,6 +636,20 @@ class StateApp {
                 }
             }
         }
+
+        scopeOrNull?.launch(Dispatchers.IO) {
+            val enabledPlugins = StatePlatform.instance.getEnabledClients();
+            for(plugin in enabledPlugins) {
+                try {
+                    if(plugin is JSClient) {
+                        if(plugin.descriptor.appSettings.sync.enableHistorySync == true)
+                            StateHistory.instance.syncRemoteHistory(plugin);
+                    }
+                } catch (ex: Throwable) {
+                    Logger.e(TAG, "Failed to update remote history for ${plugin.name}", ex);
+                }
+            }
+        }
     }
 
     fun mainAppStartedWithExternalFiles(context: Context) {

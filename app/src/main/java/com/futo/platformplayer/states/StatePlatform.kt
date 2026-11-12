@@ -395,8 +395,9 @@ class StatePlatform {
     }
     suspend fun selectClients(afterLoad: (() -> Unit)?, vararg ids: String) {
         withContext(Dispatchers.IO) {
+            var removed: MutableList<IPlatformClient>;
             synchronized(_clientsLock) {
-                val removed = _enabledClients.toMutableList();
+                removed = _enabledClients.toMutableList();
                 _enabledClients.clear();
                 for (id in ids) {
                     val client = getClient(id);
@@ -412,11 +413,11 @@ class StatePlatform {
                 }
                 _enabledClientsPersistent.set(*ids);
                 _enabledClientsPersistent.save();
+            }
 
-                for (oldClient in removed) {
-                    oldClient.disable();
-                    onSourceDisabled.emit(oldClient);
-                }
+            for (oldClient in removed) {
+                oldClient.disable();
+                onSourceDisabled.emit(oldClient);
             }
             afterLoad?.invoke();
         };
@@ -459,6 +460,47 @@ class StatePlatform {
             .associateWith { 1f };
 
         val pager = MultiDistributionContentPager(pages);
+        pager.initialize();
+        return pager;
+    }
+    fun getShorts(): IPager<IPlatformVideo> {
+        Logger.i(TAG, "Platform - getShorts");
+        var clientIdsOngoing = mutableListOf<String>();
+        val clients = getSortedEnabledClient().filter { if (it is JSClient) it.enableInShorts else true };
+
+        StateApp.instance.scopeOrNull?.let {
+            it.launch(Dispatchers.Default) {
+                try {
+                    // plugins that take longer than 5 seconds to load are considered "slow"
+                    delay(5000);
+                    val slowClients = synchronized(clientIdsOngoing) {
+                        return@synchronized clients.filter { clientIdsOngoing.contains(it.id) };
+                    };
+                    for(client in slowClients)
+                        UIDialogs.toast("${client.name} is still loading..\nConsider disabling it for Home", false);
+                } catch (e: Throwable) {
+                    Logger.e(TAG, "Failed to show toast for slow source.", e)
+                }
+            }
+        }
+
+        val pages = clients.parallelStream()
+            .map {
+                Logger.i(TAG, "getShorts - ${it.name}")
+                synchronized(clientIdsOngoing) {
+                    clientIdsOngoing.add(it.id);
+                }
+                val shortsResult = it.fromPool(_pagerClientPool).getShorts();
+                synchronized(clientIdsOngoing) {
+                    clientIdsOngoing.remove(it.id);
+                }
+                return@map shortsResult;
+            }
+            .asSequence()
+            .toList()
+            .associateWith { 1f };
+
+        val pager = MultiDistributionContentPager(pages, 2);
         pager.initialize();
         return pager;
     }
@@ -969,7 +1011,7 @@ class StatePlatform {
             return EmptyPager();
 
         if(!StateApp.instance.privateMode)
-            return client.fromPool(_mainClientPool).getComments(url);
+            return client.fromPool(_pagerClientPool).getComments(url);
         else
             return client.fromPool(_privateClientPool).getComments(url);
     }
@@ -993,6 +1035,16 @@ class StatePlatform {
         var client = getContentClient(url);
         return client.getLiveChatWindow(url);
     }
+
+    //Account
+    fun getUserHistory(id: String): IPager<IPlatformContent> {
+        val client = getClient(id);
+        if(client is JSClient && client.isLoggedIn) {
+            return client.fromPool(_pagerClientPool).getUserHistory()
+        }
+        return EmptyPager<IPlatformContent>();
+    }
+
 
 
     fun injectDevPlugin(source: SourcePluginConfig, script: String): String? {

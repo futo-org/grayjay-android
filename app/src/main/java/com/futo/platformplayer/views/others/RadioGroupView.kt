@@ -50,6 +50,29 @@ class RadioGroupView : FlexboxLayout {
             radioView.layoutParams = LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
             radioView.setInfo(option.first, initiallySelectedOptions.contains(option.second));
             radioView.setPadding(_padding_px, _padding_px, _padding_px, _padding_px);
+            if(multiSelect)
+                radioView.onLongClick.subscribe {
+                    val selected = !radioView.selected;
+                    if (selected) {
+                        selectedOptions.clear();
+                        for(v in radioViews)
+                            v.setIsSelected(true);
+                        selectedOptions.addAll(options.map { it.second });
+                    } else {
+                        if(atLeastOne) {
+                            for(v in radioViews)
+                                v.setIsSelected(false);
+                            selectedOptions.clear();
+                            selectedOptions.add(option.second);
+                        }
+                        else {
+                            for(v in radioViews)
+                                v.setIsSelected(false);
+                            selectedOptions.clear();
+                        }
+                    }
+                    onSelectedChange.emit(selectedOptions);
+                }
             radioView.onClick.subscribe {
                 val selected = !radioView.selected;
                 if (selected) {

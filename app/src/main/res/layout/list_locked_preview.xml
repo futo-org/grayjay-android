@@ -116,8 +116,8 @@
                 android:layout_marginBottom="6dp"
                 android:background="#DD000000"
                 android:visibility="gone"
+                android:gravity="center"
                 android:orientation="vertical">
-
 
             </LinearLayout>
             <LinearLayout

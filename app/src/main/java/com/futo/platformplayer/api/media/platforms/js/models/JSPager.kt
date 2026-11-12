@@ -10,6 +10,7 @@ import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrThrow
+import com.futo.platformplayer.invokeV8
 import com.futo.platformplayer.warnIfMainThread
 
 abstract class JSPager<T> : IPager<T> {
@@ -18,8 +19,8 @@ abstract class JSPager<T> : IPager<T> {
     protected var pager: V8ValueObject;
 
     private var _lastResults: List<T>? = null;
-    private var _resultChanged: Boolean = true;
-    private var _hasMorePages: Boolean = false;
+    protected var _resultChanged: Boolean = true;
+    protected var _hasMorePages: Boolean = false;
     //private var _morePagesWasFalse: Boolean = false;
 
     val isAvailable get() = plugin.getUnderlyingPlugin()._runtime?.let { !it.isClosed && !it.isDead } ?: false;
@@ -40,7 +41,7 @@ abstract class JSPager<T> : IPager<T> {
     }
 
     override fun hasMorePages(): Boolean {
-        return _hasMorePages;
+        return _hasMorePages && !pager.isClosed;
     }
 
     override fun nextPage() {
@@ -49,7 +50,7 @@ abstract class JSPager<T> : IPager<T> {
         val pluginV8 = plugin.getUnderlyingPlugin();
         pluginV8.busy {
             pager = pluginV8.catchScriptErrors("[${plugin.config.name}] JSPager", "pager.nextPage()") {
-                pager.invoke("nextPage", arrayOf<Any>());
+                pager.invokeV8("nextPage", arrayOf<Any>());
             };
             _hasMorePages = pager.getOrDefault(config, "hasMore", "Pager", false) ?: false;
             _resultChanged = true;

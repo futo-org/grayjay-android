@@ -68,15 +68,7 @@ class CommentsList : ConstraintLayout {
         UIDialogs.showGeneralRetryErrorDialog(context, it.message ?: "", it, { loadNextPage() });
     };
 
-    private val _scrollListener = object : RecyclerView.OnScrollListener() {
-        override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-            super.onScrolled(recyclerView, dx, dy);
-            onScrolled();
-
-            val totalScrollDistance = recyclerView.computeVerticalScrollOffset()
-            _layoutScrollToTop.visibility = if (totalScrollDistance > recyclerView.height) View.VISIBLE else View.GONE
-        }
-    };
+    private val _scrollListener: RecyclerView.OnScrollListener
 
     private var _loader: (suspend () -> IPager<IPlatformComment>)? = null;
     private val _adapterComments: InsertedViewAdapterWithLoader<CommentViewHolder>;
@@ -131,6 +123,14 @@ class CommentsList : ConstraintLayout {
         _llmReplies = LinearLayoutManager(context);
         _recyclerComments.layoutManager = _llmReplies;
         _recyclerComments.adapter = _adapterComments;
+        _scrollListener = object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy);
+                onScrolled();
+
+                _layoutScrollToTop.visibility = if (_llmReplies.findFirstCompletelyVisibleItemPosition() > 5) View.VISIBLE else View.GONE
+            }
+        };
         _recyclerComments.addOnScrollListener(_scrollListener);
     }
 

@@ -58,7 +58,7 @@ class PreviewPlaceholderViewHolder : ContentPreviewViewHolder {
         }
     }
 
-    override fun preview(details: IPlatformContentDetails?, paused: Boolean) { }
+    override suspend fun preview(details: IPlatformContentDetails?, paused: Boolean) { }
     override fun stopPreview() { }
     override fun pausePreview() { }
     override fun resumePreview() { }

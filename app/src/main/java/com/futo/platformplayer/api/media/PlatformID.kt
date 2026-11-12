@@ -2,6 +2,7 @@ package com.futo.platformplayer.api.media
 
 import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
+import com.futo.platformplayer.ensureIsBusy
 import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrThrow
 import com.futo.platformplayer.getOrThrowNullable
@@ -44,6 +45,7 @@ class PlatformID {
         val NONE = PlatformID("Unknown", null);
 
         fun fromV8(config: SourcePluginConfig, value: V8ValueObject): PlatformID {
+            value.ensureIsBusy();
             val contextName = "PlatformID";
             return PlatformID(
                 value.getOrThrow(config, "platform", contextName),

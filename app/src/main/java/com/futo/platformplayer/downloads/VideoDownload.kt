@@ -303,9 +303,10 @@ class VideoDownload {
                         try {
                             val playlistResponse = client.get(source.url)
                             if (playlistResponse.isOk) {
+                                val resolvedPlaylistUrl = playlistResponse.url
                                 val playlistContent = playlistResponse.body?.string()
                                 if (playlistContent != null) {
-                                    videoSources.addAll(HLS.parseAndGetVideoSources(source, playlistContent, source.url))
+                                    videoSources.addAll(HLS.parseAndGetVideoSources(source, playlistContent, resolvedPlaylistUrl))
                                 }
                             }
                         } catch (e: Throwable) {
@@ -351,9 +352,10 @@ class VideoDownload {
                             try {
                                 val playlistResponse = client.get(source.url)
                                 if (playlistResponse.isOk) {
+                                    val resolvedPlaylistUrl = playlistResponse.url
                                     val playlistContent = playlistResponse.body?.string()
                                     if (playlistContent != null) {
-                                        audioSources.addAll(HLS.parseAndGetAudioSources(source, playlistContent, source.url))
+                                        audioSources.addAll(HLS.parseAndGetAudioSources(source, playlistContent, resolvedPlaylistUrl))
                                     }
                                 }
                             } catch (e: Throwable) {
@@ -717,7 +719,7 @@ class VideoDownload {
 
             Logger.i(TAG, "Download $name Dash, CueCount: " + foundCues.count().toString());
 
-            var written = 0;
+            var written: Long = 0;
             var indexCounter = 0;
             onProgress(foundCues.count().toLong(), 0, 0);
             for(cue in foundCues) {
@@ -742,7 +744,7 @@ class VideoDownload {
 
                 indexCounter++;
             }
-            sourceLength = written.toLong();
+            sourceLength = written;
 
             Logger.i(TAG, "$name downloadSource Finished");
         }

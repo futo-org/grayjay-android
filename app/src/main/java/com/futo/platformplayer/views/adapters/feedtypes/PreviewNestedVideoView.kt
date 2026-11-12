@@ -185,7 +185,7 @@ class PreviewNestedVideoView : PreviewVideoView {
         }
     }
 
-    override fun preview(video: IPlatformContentDetails?, paused: Boolean) {
+    override suspend fun preview(video: IPlatformContentDetails?, paused: Boolean) {
         if(video != null) {
             super.preview(video, paused);
         } else if(_content is IPlatformVideoDetails) _contentNested?.let {

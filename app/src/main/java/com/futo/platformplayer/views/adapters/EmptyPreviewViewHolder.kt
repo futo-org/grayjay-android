@@ -11,7 +11,7 @@ class EmptyPreviewViewHolder(viewGroup: ViewGroup) : ContentPreviewViewHolder(Vi
 
     override fun bind(content: IPlatformContent) {}
 
-    override fun preview(details: IPlatformContentDetails?, paused: Boolean) {}
+    override suspend fun preview(details: IPlatformContentDetails?, paused: Boolean) {}
 
     override fun stopPreview() {}
 

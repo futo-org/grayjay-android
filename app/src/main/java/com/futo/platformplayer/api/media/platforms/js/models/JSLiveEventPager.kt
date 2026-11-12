@@ -15,7 +15,7 @@ class JSLiveEventPager : JSPager<IPlatformLiveEvent>, IPlatformLiveEventPager {
         nextRequest = pager.getOrThrow(config, "nextRequest", "LiveEventPager");
     }
 
-    override fun nextPage() {
+    override fun nextPage() = plugin.isBusyWith("JSLiveEventPager.nextPage") {
         super.nextPage();
         nextRequest = pager.getOrThrow(config, "nextRequest", "LiveEventPager");
     }

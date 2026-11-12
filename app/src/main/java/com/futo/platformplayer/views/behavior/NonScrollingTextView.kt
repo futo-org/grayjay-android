@@ -108,12 +108,20 @@ class NonScrollingTextView : androidx.appcompat.widget.AppCompatTextView {
                                     }
 
                                     withContext(Dispatchers.Main) {
-                                        c.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link.url)))
+                                        try {
+                                            c.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link.url)))
+                                        } catch (e: Throwable) {
+                                            Logger.i(TAG, "Failed to start activity.", e)
+                                        }
                                     }
                                 }
                             } else {
                                 StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
-                                    c.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link.url)))
+                                    try {
+                                        c.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link.url)))
+                                    } catch (e: Throwable) {
+                                        Logger.i(TAG, "Failed to start activity.", e)
+                                    }
                                 }
                             }
                         }

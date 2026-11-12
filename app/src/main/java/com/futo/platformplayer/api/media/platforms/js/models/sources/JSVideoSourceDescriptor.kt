@@ -6,6 +6,7 @@ import com.futo.platformplayer.api.media.models.streams.IVideoSourceDescriptor
 import com.futo.platformplayer.api.media.models.streams.VideoMuxedSourceDescriptor
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
 import com.futo.platformplayer.api.media.platforms.js.JSClient
+import com.futo.platformplayer.ensureIsBusy
 import com.futo.platformplayer.getOrThrow
 
 class JSVideoSourceDescriptor : VideoMuxedSourceDescriptor {
@@ -31,6 +32,7 @@ class JSVideoSourceDescriptor : VideoMuxedSourceDescriptor {
 
 
         fun fromV8(plugin: JSClient, obj: V8ValueObject) : IVideoSourceDescriptor {
+            obj.ensureIsBusy();
             val type = obj.getString("plugin_type")
             return when(type) {
                 TYPE_MUXED -> JSVideoSourceDescriptor(plugin, obj);

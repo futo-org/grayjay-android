@@ -14,6 +14,8 @@ import com.futo.platformplayer.engine.exceptions.ScriptException
 import com.futo.platformplayer.engine.exceptions.ScriptImplementationException
 import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrThrow
+import com.futo.platformplayer.invokeV8
+import com.futo.platformplayer.invokeV8Void
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateDeveloper
 import kotlinx.serialization.Serializable
@@ -55,7 +57,7 @@ class JSRequestExecutor {
                         "[${_config.name}] JSRequestExecutor",
                         "builder.modifyRequest()"
                     ) {
-                        _executor.invoke("executeRequest", url, headers, method, body);
+                        _executor.invokeV8("executeRequest", url, headers, method, body);
                     } as V8Value;
                 }
             else V8Plugin.catchScriptErrors<Any>(
@@ -63,7 +65,7 @@ class JSRequestExecutor {
                 "[${_config.name}] JSRequestExecutor",
                 "builder.modifyRequest()"
             ) {
-                _executor.invoke("executeRequest", url, headers, method, body);
+                _executor.invokeV8("executeRequest", url, headers, method, body);
             } as V8Value;
 
             try {
@@ -110,7 +112,7 @@ class JSRequestExecutor {
                         "[${_config.name}] JSRequestExecutor",
                         "builder.modifyRequest()"
                     ) {
-                        _executor.invokeVoid("cleanup", null);
+                        _executor.invokeV8("cleanup", null);
                     };
                 }
             else V8Plugin.catchScriptErrors<Any>(
@@ -118,7 +120,7 @@ class JSRequestExecutor {
                 "[${_config.name}] JSRequestExecutor",
                 "builder.modifyRequest()"
             ) {
-                _executor.invokeVoid("cleanup", null);
+                _executor.invokeV8("cleanup", null);
             };
         }
     }

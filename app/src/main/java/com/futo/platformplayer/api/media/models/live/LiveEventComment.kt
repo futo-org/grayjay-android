@@ -4,6 +4,7 @@ import com.caoccao.javet.values.reference.V8ValueArray
 import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.api.media.models.ratings.RatingLikes
 import com.futo.platformplayer.engine.IV8PluginConfig
+import com.futo.platformplayer.ensureIsBusy
 import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrThrow
 
@@ -17,16 +18,21 @@ class LiveEventComment: IPlatformLiveEvent, ILiveEventChatMessage {
     val colorName: String?;
     val badges: List<String>;
 
-    constructor(name: String, thumbnail: String?, message: String, colorName: String? = null, badges: List<String>? = null) {
+    override var time: Long = -1;
+
+    constructor(name: String, thumbnail: String?, message: String, colorName: String? = null, badges: List<String>? = null, time: Long = -1) {
         this.name = name;
         this.message = message;
         this.thumbnail = thumbnail;
         this.colorName = colorName;
         this.badges = badges ?: listOf();
+        this.time = time;
     }
 
     companion object {
         fun fromV8(config: IV8PluginConfig, obj: V8ValueObject) : LiveEventComment {
+            obj.ensureIsBusy();
+
             val contextName = "LiveEventComment"
 
             val colorName = obj.getOrDefault<String>(config, "colorName", contextName, null);
@@ -36,7 +42,8 @@ class LiveEventComment: IPlatformLiveEvent, ILiveEventChatMessage {
                 obj.getOrThrow(config, "name", contextName),
                 obj.getOrThrow(config, "thumbnail", contextName, true),
                 obj.getOrThrow(config, "message", contextName),
-                colorName, badges);
+                colorName, badges,
+                obj.getOrDefault(config, "time", contextName, -1) ?: -1);
         }
     }
 }

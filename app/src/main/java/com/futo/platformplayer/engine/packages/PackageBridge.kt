@@ -27,6 +27,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.util.concurrent.ConcurrentHashMap
 
 class PackageBridge : V8Package {
     @Transient
@@ -83,7 +84,8 @@ class PackageBridge : V8Package {
     fun supportedFeatures(): Array<String> {
         return arrayOf(
             "ReloadRequiredException",
-            "HttpBatchClient"
+            "HttpBatchClient",
+            "Async"
         );
     }
 
@@ -110,7 +112,7 @@ class PackageBridge : V8Package {
     }
 
     var timeoutCounter = 0;
-    var timeoutMap = HashSet<Int>();
+    var timeoutMap = ConcurrentHashMap<Int, Any?>();
     @V8Function
     fun setTimeout(func: V8ValueFunction, timeout: Long): Int {
         val id = timeoutCounter++;
@@ -118,47 +120,42 @@ class PackageBridge : V8Package {
 
         StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
             delay(timeout);
-            if(_plugin.isStopped)
+            if (_plugin.isStopped)
                 return@launch;
-            synchronized(timeoutMap) {
-                if(!timeoutMap.contains(id)) {
-                    _plugin.busy {
-                        if(!_plugin.isStopped)
-                            JavetResourceUtils.safeClose(funcClone);
-                    }
-                    return@launch;
+            if (!timeoutMap.containsKey(id)) {
+                _plugin.busy {
+                    if (!_plugin.isStopped)
+                        JavetResourceUtils.safeClose(funcClone);
                 }
-                timeoutMap.remove(id);
+                return@launch;
             }
+            timeoutMap.remove(id);
             try {
+                Logger.w(TAG, "setTimeout before busy (${timeout}): ${_plugin.isBusy}");
                 _plugin.busy {
-                    if(!_plugin.isStopped)
+                    Logger.w(TAG, "setTimeout in busy");
+                    if (!_plugin.isStopped)
                         funcClone.callVoid(null, arrayOf<Any>());
+                    Logger.w(TAG, "setTimeout after");
                 }
-            }
-            catch(ex: Throwable) {
+            } catch (ex: Throwable) {
                 Logger.e(TAG, "Failed timeout callback", ex);
-            }
-            finally {
+            } finally {
                 _plugin.busy {
-                    if(!_plugin.isStopped)
+                    if (!_plugin.isStopped)
                         JavetResourceUtils.safeClose(funcClone);
                 }
                 //_plugin.whenNotBusy {
                 //}
             }
         };
-        synchronized(timeoutMap) {
-            timeoutMap.add(id);
-        }
+        timeoutMap.put(id, true);
         return id;
     }
     @V8Function
     fun clearTimeout(id: Int) {
-        synchronized(timeoutMap) {
-            if(timeoutMap.contains(id))
-                timeoutMap.remove(id);
-        }
+        if (timeoutMap.containsKey(id))
+            timeoutMap.remove(id);
     }
     @V8Function
     fun sleep(length: Int) {
@@ -197,7 +194,11 @@ class PackageBridge : V8Package {
 
         val stackTrace = Thread.currentThread().stackTrace;
         val callerMethod = stackTrace.findLast {
-            it.className == JSClient::class.java.name
+            it.className == JSClient::class.java.name &&
+                    it.methodName != "isBusy" &&
+                    it.methodName != "busy" &&
+                    it.methodName != "getCopy" &&
+                    it.methodName != "isBusyWith"
         }?.methodName ?: "";
         val session = StateApp.instance.sessionId;
         val pluginId = _plugin.config.id;

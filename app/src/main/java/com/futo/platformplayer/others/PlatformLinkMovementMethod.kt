@@ -13,6 +13,8 @@ import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.receivers.MediaControlReceiver
 import com.futo.platformplayer.timestampRegex
+import com.futo.platformplayer.views.behavior.NonScrollingTextView
+import com.futo.platformplayer.views.behavior.NonScrollingTextView.Companion
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -91,7 +93,11 @@ class PlatformLinkMovementMethod(private val _context: Context) : LinkMovementMe
                                 }
 
                                 withContext(Dispatchers.Main) {
-                                    c.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link.url)))
+                                    try {
+                                        c.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link.url)))
+                                    } catch (e: Throwable) {
+                                        Logger.i(TAG, "Failed to start activity.", e)
+                                    }
                                 }
                             }
                         }

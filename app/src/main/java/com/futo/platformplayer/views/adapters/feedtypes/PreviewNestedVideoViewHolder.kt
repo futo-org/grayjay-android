@@ -40,7 +40,7 @@ class PreviewNestedVideoViewHolder : ContentPreviewViewHolder {
         view.bind(content);
     }
 
-    override fun preview(details: IPlatformContentDetails?, paused: Boolean) {
+    override suspend fun preview(details: IPlatformContentDetails?, paused: Boolean) {
         view.preview(details, paused);
     }
 

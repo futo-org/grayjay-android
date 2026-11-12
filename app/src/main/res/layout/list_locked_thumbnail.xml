@@ -118,7 +118,10 @@
                 android:layout_height="match_parent"
                 android:background="#BB000000"
                 android:visibility="gone"
-                android:orientation="vertical" />
+                android:gravity="center"
+                android:orientation="vertical">
+
+            </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/container_locked"

@@ -6,6 +6,7 @@ import com.futo.platformplayer.api.media.platforms.js.JSClient
 import com.futo.platformplayer.api.media.platforms.js.models.JSRequestExecutor
 import com.futo.platformplayer.engine.V8Plugin
 import com.futo.platformplayer.getOrThrow
+import com.futo.platformplayer.invokeV8
 
 class JSVideoUrlWidevineSource : JSVideoUrlSource, IVideoUrlWidevineSource {
     override val licenseUri: String
@@ -25,7 +26,7 @@ class JSVideoUrlWidevineSource : JSVideoUrlSource, IVideoUrlWidevineSource {
             return null
 
         val result = V8Plugin.catchScriptErrors<Any>(_config, "[${_config.name}] JSAudioUrlWidevineSource", "obj.getLicenseRequestExecutor()") {
-            _obj.invoke("getLicenseRequestExecutor", arrayOf<Any>())
+            _obj.invokeV8("getLicenseRequestExecutor", arrayOf<Any>())
         }
 
         if (result !is V8ValueObject)

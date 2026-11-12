@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
+import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.api.media.models.PlatformAuthorLink
 import com.futo.platformplayer.api.media.models.contents.ContentType
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
@@ -15,6 +16,8 @@ import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.Event2
 import com.futo.platformplayer.constructs.TaskHandler
 import com.futo.platformplayer.debug.Stopwatch
+import com.futo.platformplayer.fragment.mainactivity.main.ShortView
+import com.futo.platformplayer.fragment.mainactivity.main.ShortView.Companion
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePlatform
@@ -23,6 +26,9 @@ import com.futo.platformplayer.views.FeedStyle
 import com.futo.platformplayer.views.adapters.ContentPreviewViewHolder
 import com.futo.platformplayer.views.adapters.EmptyPreviewViewHolder
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import okhttp3.internal.platform.Platform
 
 class PreviewContentListAdapter : InsertedViewAdapterWithLoader<ContentPreviewViewHolder> {
@@ -33,6 +39,7 @@ class PreviewContentListAdapter : InsertedViewAdapterWithLoader<ContentPreviewVi
     private val _feedStyle : FeedStyle;
     private var _paused: Boolean = false;
     private val _shouldShowTimeBar: Boolean
+    private val _scope: CoroutineScope
 
     val onUrlClicked = Event1<String>();
     val onContentUrlClicked = Event2<String, ContentType>();
@@ -43,15 +50,9 @@ class PreviewContentListAdapter : InsertedViewAdapterWithLoader<ContentPreviewVi
     val onAddToWatchLaterClicked = Event1<IPlatformContent>();
     val onLongPress = Event1<IPlatformContent>();
 
-    private var _taskLoadContent = TaskHandler<Pair<ContentPreviewViewHolder, IPlatformContent>, Pair<ContentPreviewViewHolder, IPlatformContentDetails>>(
-        StateApp.instance.scopeGetter, { (viewHolder, video) ->
-        val stopwatch = Stopwatch()
-        val contentDetails = StatePlatform.instance.getContentDetails(video.url).await();
-        stopwatch.logAndNext(TAG, "Retrieving video detail (IO thread)")
-        return@TaskHandler Pair(viewHolder, contentDetails)
-    }).exception<Throwable> { Logger.e(TAG, "Failed to retrieve preview content.", it) }.success { previewContentDetails(it.first, it.second) }
+    private var _taskLoadContent: TaskHandler<Pair<ContentPreviewViewHolder, IPlatformContent>, Pair<ContentPreviewViewHolder, IPlatformContentDetails>>
 
-    constructor(context: Context, feedStyle : FeedStyle, dataSet: ArrayList<IPlatformContent>, exoPlayer: PlayerManager? = null,
+    constructor(scope: CoroutineScope, context: Context, feedStyle : FeedStyle, dataSet: ArrayList<IPlatformContent>, exoPlayer: PlayerManager? = null,
                 initialPlay: Boolean = false, viewsToPrepend: ArrayList<View> = arrayListOf(),
                 viewsToAppend: ArrayList<View> = arrayListOf(), shouldShowTimeBar: Boolean = true) : super(context, viewsToPrepend, viewsToAppend) {
 
@@ -60,6 +61,24 @@ class PreviewContentListAdapter : InsertedViewAdapterWithLoader<ContentPreviewVi
         this._initialPlay = initialPlay;
         this._exoPlayer = exoPlayer;
         this._shouldShowTimeBar = shouldShowTimeBar
+        this._scope = scope
+
+        _taskLoadContent = TaskHandler<Pair<ContentPreviewViewHolder, IPlatformContent>, Pair<ContentPreviewViewHolder, IPlatformContentDetails>>(
+            { scope }, { (viewHolder, video) ->
+                val stopwatch = Stopwatch()
+                val contentDetails = StatePlatform.instance.getContentDetails(video.url).await();
+                stopwatch.logAndNext(TAG, "Retrieving video detail (IO thread)")
+                return@TaskHandler Pair(viewHolder, contentDetails)
+            }).exception<Throwable> { Logger.e(TAG, "Failed to retrieve preview content.", it) }.success {
+
+            _scope.launch(Dispatchers.Main) {
+                try {
+                    previewContentDetails(it.first, it.second)
+                } catch (e: Throwable) {
+                    Logger.e(TAG, "bindChild preview failed", e)
+                }
+            }
+        }
     }
 
     override fun getChildCount(): Int = _dataSet.size;
@@ -132,12 +151,18 @@ class PreviewContentListAdapter : InsertedViewAdapterWithLoader<ContentPreviewVi
             _initialPlay = false;
 
             if (_feedStyle != FeedStyle.THUMBNAIL) {
-                preview(holder);
+                _scope.launch(Dispatchers.Main) {
+                    try {
+                        preview(holder)
+                    } catch (e: Throwable) {
+                        Logger.e(TAG, "bindChild preview failed", e)
+                    }
+                }
             }
         }
     }
 
-    fun preview(viewHolder: ContentPreviewViewHolder) {
+    suspend fun preview(viewHolder: ContentPreviewViewHolder) {
         Log.v(TAG, "previewing content");
         if (viewHolder == _previewingViewHolder)
             return
@@ -175,7 +200,7 @@ class PreviewContentListAdapter : InsertedViewAdapterWithLoader<ContentPreviewVi
         onAddToWatchLaterClicked.clear();
     }
 
-    private fun previewContentDetails(viewHolder: ContentPreviewViewHolder, videoDetails: IPlatformContentDetails?) {
+    private suspend fun previewContentDetails(viewHolder: ContentPreviewViewHolder, videoDetails: IPlatformContentDetails?) {
         _previewingViewHolder?.stopPreview();
         viewHolder.preview(videoDetails, _paused);
         _previewingViewHolder = viewHolder;

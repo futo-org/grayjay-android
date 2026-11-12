@@ -26,7 +26,7 @@ body:
       label: Reproduction steps
       description: Please provide us with the steps to reproduce the issue if possible. This step makes a big difference if we are going to be able to fix it so be as precise as possible.
       placeholder: |
-        0. Play a Youtube video
+        0. Play a YouTube video
         1. Press on Download button
         2. Select quality 1440p
         3. Grayjay crashes when attempting to download
@@ -83,7 +83,7 @@ body:
         - "Spotify"
         - "TedTalks"
         - "Twitch"
-        - "Youtube"
+        - "YouTube"
         - "Other"
     validations:
       required: true

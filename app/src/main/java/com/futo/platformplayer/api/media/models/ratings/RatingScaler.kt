@@ -2,6 +2,7 @@ package com.futo.platformplayer.api.media.models.ratings
 
 import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.engine.IV8PluginConfig
+import com.futo.platformplayer.ensureIsBusy
 import com.futo.platformplayer.getOrThrow
 
 /**
@@ -13,6 +14,7 @@ class RatingScaler(val value: Float) : IRating {
 
     companion object {
         fun fromV8(config: IV8PluginConfig, obj: V8ValueObject) : RatingScaler {
+            obj.ensureIsBusy()
             return RatingScaler(obj.getOrThrow(config, "value", "RatingScaler"));
         }
     }

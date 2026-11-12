@@ -2,11 +2,14 @@ package com.futo.platformplayer.views.overlays
 
 import android.animation.LayoutTransition
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.PointF
+import android.net.Uri
 import android.util.AttributeSet
 import android.util.DisplayMetrics
 import android.view.View
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Button
@@ -14,14 +17,12 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.graphics.blue
-import androidx.core.graphics.green
-import androidx.core.graphics.red
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearSmoothScroller
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
+import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.LiveChatManager
 import com.futo.platformplayer.api.media.models.live.ILiveChatWindowDescriptor
 import com.futo.platformplayer.api.media.models.live.ILiveEventChatMessage
@@ -43,6 +44,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import toAndroidColor
+import androidx.core.net.toUri
 
 
 class LiveChatOverlay : LinearLayout {
@@ -66,10 +69,11 @@ class LiveChatOverlay : LinearLayout {
 
     private val _overlayRaid: ConstraintLayout;
     private val _overlayRaid_Name: TextView;
+    private val _overlayRaid_Message: TextView;
     private val _overlayRaid_Thumbnail: ImageView;
 
     private val _overlayRaid_ButtonGo: Button;
-    private val _overlayRaid_ButtonPrevent: Button;
+    private val _overlayRaid_ButtonDismiss: Button;
 
     private val _textViewers: TextView;
 
@@ -93,6 +97,7 @@ class LiveChatOverlay : LinearLayout {
 
     val onRaidNow = Event1<LiveEventRaid>();
     val onRaidPrevent = Event1<LiveEventRaid>();
+    val onUrlClick = Event1<Uri>()
 
     private val _argJsonSerializer = Json;
 
@@ -116,6 +121,18 @@ class LiveChatOverlay : LinearLayout {
                     //Cleanup every second as fallback
                     view?.evaluateJavascript("setInterval(()=>{" + toRemoveJSInterval + "}, 1000)") {};
                 };
+            }
+
+            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                onUrlClick.emit(request.url)
+                return true
+            }
+
+            // API < 24
+            @Suppress("DEPRECATION")
+            override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
+                onUrlClick.emit(url.toUri())
+                return true
             }
         };
 
@@ -148,9 +165,10 @@ class LiveChatOverlay : LinearLayout {
 
         _overlayRaid = findViewById(R.id.overlay_raid);
         _overlayRaid_Name = findViewById(R.id.raid_name);
+        _overlayRaid_Message = findViewById(R.id.textRaidMessage);
         _overlayRaid_Thumbnail = findViewById(R.id.raid_thumbnail);
         _overlayRaid_ButtonGo = findViewById(R.id.raid_button_go);
-        _overlayRaid_ButtonPrevent = findViewById(R.id.raid_button_prevent);
+        _overlayRaid_ButtonDismiss = findViewById(R.id.raid_button_prevent);
 
         _overlayRaid.visibility = View.GONE;
 
@@ -159,7 +177,7 @@ class LiveChatOverlay : LinearLayout {
                 onRaidNow.emit(it);
             }
         }
-        _overlayRaid_ButtonPrevent.setOnClickListener {
+        _overlayRaid_ButtonDismiss.setOnClickListener {
             _currentRaid?.let {
                 _currentRaid = null;
                 _overlayRaid.visibility = View.GONE;
@@ -202,6 +220,8 @@ class LiveChatOverlay : LinearLayout {
 
         if(viewerCount != null)
             _textViewers.text = viewerCount.toHumanNumber() + " " + context.getString(R.string.viewers);
+        else if(manager != null && manager.isVOD)
+            _textViewers.text = manager.viewCount.toHumanNumber() + " past viewers";
         else if(manager != null)
             _textViewers.text = manager.viewCount.toHumanNumber() + " " + context.getString(R.string.viewers);
         else
@@ -291,10 +311,10 @@ class LiveChatOverlay : LinearLayout {
             _overlayDonation_Amount.text = donation.amount.trim();
             _overlayDonation.visibility = VISIBLE;
             if(donation.colorDonation != null && donation.colorDonation.isHexColor()) {
-                val color = Color.parseColor(donation.colorDonation);
-                _overlayDonation_AmountContainer.background.setTint(color);
+                val color = CSSColor.parseColor(donation.colorDonation);
+                _overlayDonation_AmountContainer.background.setTint(color.toAndroidColor());
 
-                if((color.green > 140 || color.red > 140 || color.blue > 140) && (color.red + color.green + color.blue) > 400)
+                if(color.lightness > 0.5)
                     _overlayDonation_Amount.setTextColor(Color.BLACK)
                 else
                     _overlayDonation_Amount.setTextColor(Color.WHITE);
@@ -372,6 +392,15 @@ class LiveChatOverlay : LinearLayout {
             }
             else
                 _overlayRaid.visibility = View.GONE;
+
+            if(raid?.isOutgoing ?: false) {
+                _overlayRaid_ButtonGo.visibility = View.VISIBLE
+                _overlayRaid_Message.text = "Viewers are raiding";
+            }
+            else {
+                _overlayRaid_ButtonGo.visibility = View.GONE;
+                _overlayRaid_Message.text = "Raid incoming from";
+            }
         }
     }
     fun setViewCount(viewCount: Int) {

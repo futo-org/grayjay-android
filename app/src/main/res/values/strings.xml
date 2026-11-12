@@ -11,6 +11,8 @@
     <string name="general">General</string>
     <string name="channel">Channel</string>
     <string name="home">Home</string>
+    <string name="sync_history">Sync Remote History</string>
+    <string name="sync_history_desc">Synchronize account history from this platform on startup</string>
     <string name="progress_bar">Progress Bar</string>
     <string name="advanced_settings">Advanced Settings</string>
     <string name="advanced_settings_description">If advanced settings should be shown, this exposes additional settings to finetune your experience.</string>
@@ -27,6 +29,7 @@
     <string name="failed_to_retrieve_data_are_you_connected">Failed to retrieve data, are you connected?</string>
     <string name="settings">Settings</string>
     <string name="history">History</string>
+    <string name="shorts">Shorts</string>
     <string name="sources">Sources</string>
     <string name="buy">Buy</string>
     <string name="faq">FAQ</string>
@@ -37,6 +40,7 @@
     <string name="preferred_quality">Preferred Quality</string>
     <string name="preferred_quality_description">Default quality for watching a video</string>
     <string name="update">Update</string>
+    <string name="refresh">Refresh Feed</string>
     <string name="close">Close</string>
     <string name="never">Never</string>
     <string name="import_options">Select any of the following available import options.</string>
@@ -85,6 +89,8 @@
     <string name="these_creators_not_in_group">These creators are not in this group.</string>
     <string name="disabled">Disabled</string>
     <string name="watch_later">Watch Later</string>
+    <string name="no_results">Nothing to see here</string>
+    <string name="no_results_shorts">The enabled sources do not have any short video results.</string>
     <string name="create">Create</string>
     <string name="ok">OK</string>
     <string name="yes">Yes</string>
@@ -178,6 +184,7 @@
     <string name="copy">Copy</string>
     <string name="copy_your_identity_to_clipboard">Copy your identity to clipboard</string>
     <string name="polycentric">Polycentric</string>
+    <string name="platform">Platform</string>
     <string name="profile_name">Profile Name</string>
     <string name="this_will_be_visible_to_other_users">This will be visible to other users</string>
     <string name="create_profile">Create Profile</string>
@@ -240,6 +247,7 @@
     <string name="membership">Membership</string>
     <string name="store">Store</string>
     <string name="live_chat">Live Chat</string>
+    <string name="vod_chat">VOD Chat</string>
     <string name="remove">Remove</string>
     <string name="space_videos">Videos</string>
     <string name="playlist">Playlist</string>
@@ -330,6 +338,8 @@
     <string name="test_background_worker">Test Background Worker</string>
     <string name="test_background_worker_description"></string>
     <string name="clear_payment">Clear Payment</string>
+    <string name="configure_sync_server">Configure Sync Server</string>
+    <string name="configure_sync_server_description">Allows you to change the Sync Server to a self-hosted one.</string>
     <string name="clears_cookies_when_you_log_out">Clears cookies when you log out</string>
     <string name="clears_in_app_browser_cookies">Clears in-app browser cookies</string>
     <string name="configure_browsing_behavior">Configure browsing behavior</string>
@@ -428,6 +438,11 @@
     <string name="allow_full_screen_portrait">Allow full-screen portrait when watching horizontal videos</string>
     <string name="delete_watchlist_on_finish">Delete from WatchLater when watched</string>
     <string name="delete_watchlist_on_finish_description">After you leave a video that you mostly watched, it will be removed from watch later.</string>
+    <string name="shorts_pregenerate">Pre-generate shorts sources</string>
+    <string name="shorts_pregenerate_description">Generates short sources (when applicable) one video ahead</string>
+    <string name="shorts_fit_video">Fit Shorts Video</string>
+    <string name="shorts_fit_video_description">Will scale the video to fit the view, instead of filling the view properly.</string>
+    <string name="shorts_fit_video_warning">This setting will require you to reboot Grayjay.</string>
     <string name="seek_offset">Seek duration</string>
     <string name="min_playback_speed">Minimum Playback Speed</string>
     <string name="min_playback_speed_description">Minimum Available Speed</string>
@@ -463,6 +478,7 @@
     <string name="number_of_concurrent_threads_to_multiply_download_speeds_from_throttled_sources">Number of concurrent threads to multiply download speeds from throttled sources</string>
     <string name="payment">Payment</string>
     <string name="payment_status">Payment Status</string>
+    <string name="relay_server">Sync Relay Server</string>
     <string name="bypass_rotation_prevention">Bypass Rotation Prevention</string>
     <string name="playlist_delete_confirmation">Playlist Delete Confirmation</string>
     <string name="playlist_delete_confirmation_description">Show confirmation dialog when deleting media from a playlist</string>
@@ -587,6 +603,8 @@
     <string name="various_tests_against_a_custom_source">Various tests against a custom source</string>
     <string name="writes_to_disk_till_no_space_is_left">Writes to disk till no space is left</string>
     <string name="visibility">Visibility</string>
+    <string name="sync">Sync</string>
+    <string name="sync_desc">Synchronization of platform data</string>
     <string name="check_for_updates_setting">Check for updates</string>
     <string name="check_for_updates_setting_description">If a plugin should be checked for updates on startup</string>
     <string name="automatic_update_setting">Automatic Update</string>
@@ -601,6 +619,7 @@
     <string name="enable_where_this_plugins_content_are_visible">Enable where this plugin\'s content are visible</string>
     <string name="show_content_in_home_tab">Show content in home tab</string>
     <string name="show_content_in_search_results">Show content in search results</string>
+    <string name="show_content_in_shorts_tab">Show content in shorts tab</string>
     <string name="no_valid_url_provided">No valid URL provided..</string>
     <string name="invalid_config_format">Invalid Config Format</string>
     <string name="failed_to_fetch_configuration">Failed to fetch configuration</string>
@@ -881,6 +900,7 @@
     <string name="cd_button_settings">Settings</string>
     <string name="cd_image_group">Group image</string>
     <string name="cd_button_edit">Edit</string>
+    <string name="cd_button_sort">Sort</string>
     <string name="cd_button_download">Download</string>
     <string name="cd_minimize_close">Close</string>
     <string name="cd_minimize_pause">Pause</string>
@@ -1112,6 +1132,7 @@
         <item>5.0</item>
     </string-array>
     <string-array name="hold_playback_speeds">
+        <item>Disabled</item>
         <item>1.25</item>
         <item>1.5</item>
         <item>1.75</item>

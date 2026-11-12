@@ -73,6 +73,10 @@ class VideoLocal: IPlatformVideoDetails, IStoreItem {
 
     override val isShort: Boolean get() = videoSerialized.isShort;
 
+    override var playbackTime: Long = -1;
+    @kotlinx.serialization.Serializable(with = OffsetDateTimeNullableSerializer::class)
+    override var playbackDate: OffsetDateTime? = null;
+
     //TODO: Offline subtitles
     override val subtitles: List<ISubtitleSource> = listOf();
 

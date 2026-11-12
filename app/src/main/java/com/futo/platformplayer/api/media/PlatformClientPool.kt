@@ -34,8 +34,10 @@ class PlatformClientPool {
             isDead = true;
             onDead.emit(parentClient, this);
 
-            for(clientPair in _pool) {
-                clientPair.key.disable();
+            synchronized(_pool) {
+                for (clientPair in _pool) {
+                    clientPair.key.disable();
+                }
             }
         };
     }

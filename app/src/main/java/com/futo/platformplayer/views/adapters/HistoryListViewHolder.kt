@@ -43,7 +43,6 @@ class HistoryListViewHolder : ViewHolder {
     constructor(viewGroup: ViewGroup) : super(LayoutInflater.from(viewGroup.context).inflate(R.layout.list_history, viewGroup, false)) {
         _root = itemView.findViewById(R.id.root);
         _imageThumbnail = itemView.findViewById(R.id.image_video_thumbnail);
-        _imageThumbnail.clipToOutline = true;
         _textName = itemView.findViewById(R.id.text_video_name);
         _textAuthor = itemView.findViewById(R.id.text_author);
         _textMetadata = itemView.findViewById(R.id.text_video_metadata);

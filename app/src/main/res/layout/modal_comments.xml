@@ -1,0 +1,337 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/standard_bottom_sheet"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <!-- Drag handle for accessibility -->
+    <com.google.android.material.bottomsheet.BottomSheetDragHandleView
+        android:id="@+id/drag_handle"
+        style="@style/Widget.Material3.BottomSheet.DragHandle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="0dp" />
+
+    <FrameLayout
+        android:id="@+id/content_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:id="@+id/videodetail_container_main"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/black"
+            android:orientation="vertical"
+            tools:ignore="SpeakableTextPresentCheck">
+
+            <LinearLayout
+                android:id="@+id/layout_top"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!--Title Segment-->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <!--Title + Meta-->
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="14dp"
+                        android:layout_marginEnd="14dp">
+
+                        <TextView
+                            android:id="@+id/videodetail_title"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="10dp"
+                            android:fontFamily="@font/inter_medium"
+                            android:textColor="@color/white"
+                            android:textSize="17sp"
+                            app:layout_constraintLeft_toLeftOf="parent"
+                            app:layout_constraintRight_toLeftOf="@id/layout_title_right"
+                            app:layout_constraintTop_toTopOf="parent"
+                            tools:text="Some Text" />
+
+                        <TextView
+                            android:id="@+id/videodetail_meta"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="10dp"
+                            android:fontFamily="@font/inter_regular"
+                            android:textColor="#ACACAC"
+                            android:textSize="11sp"
+                            app:layout_constraintLeft_toLeftOf="@id/videodetail_title"
+                            app:layout_constraintRight_toLeftOf="@id/layout_title_right"
+                            app:layout_constraintTop_toBottomOf="@id/videodetail_title"
+                            tools:text="51K views - 3 years ago" />
+
+                        <!--Source Button-->
+                        <LinearLayout
+                            android:id="@+id/layout_title_right"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="end"
+                            android:orientation="vertical"
+                            app:layout_constraintRight_toRightOf="parent"
+                            app:layout_constraintTop_toTopOf="parent">
+
+                            <com.futo.platformplayer.views.platform.PlatformIndicator
+                                android:id="@+id/videodetail_platform"
+                                android:layout_width="25dp"
+                                android:layout_height="25dp"
+                                app:layout_constraintRight_toRightOf="parent"
+                                app:layout_constraintTop_toTopOf="parent" />
+
+                            <LinearLayout
+                                android:id="@+id/layout_rating"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="vertical">
+
+                                <LinearLayout
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal">
+
+                                    <ImageView
+                                        android:id="@+id/image_like_icon"
+                                        android:layout_width="14dp"
+                                        android:layout_height="14dp"
+                                        android:contentDescription="@string/cd_image_like_icon"
+                                        app:srcCompat="@drawable/ic_thumb_up"
+                                        app:tint="#ACACAC" />
+
+                                    <TextView
+                                        android:id="@+id/text_likes"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginStart="4dp"
+                                        android:gravity="center_vertical"
+                                        android:textColor="#ACACAC"
+                                        android:textSize="11sp"
+                                        tools:text="500K" />
+                                </LinearLayout>
+
+                                <LinearLayout
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal">
+
+                                    <ImageView
+                                        android:id="@+id/image_dislike_icon"
+                                        android:layout_width="14dp"
+                                        android:layout_height="14dp"
+                                        android:layout_marginTop="2dp"
+                                        android:contentDescription="@string/cd_image_dislike_icon"
+                                        app:srcCompat="@drawable/ic_thumb_down"
+                                        app:tint="#ACACAC" />
+
+                                    <TextView
+                                        android:id="@+id/text_dislikes"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginStart="4dp"
+                                        android:gravity="center_vertical"
+                                        android:textColor="#ACACAC"
+                                        android:textSize="11sp"
+                                        tools:text="500K" />
+                                </LinearLayout>
+                            </LinearLayout>
+                        </LinearLayout>
+
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+                </LinearLayout>
+
+                <!--Channel/Subscribe Segment-->
+                <LinearLayout
+                    android:id="@+id/videodetail_channel_button"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="14dp"
+                    android:layout_marginTop="17dp"
+                    android:layout_marginRight="14dp"
+                    android:layout_marginBottom="10dp"
+                    android:orientation="horizontal">
+
+                    <com.futo.platformplayer.views.others.CreatorThumbnail
+                        android:id="@+id/creator_thumbnail"
+                        android:layout_width="35dp"
+                        android:layout_height="35dp"
+                        android:contentDescription="@string/cd_creator_thumbnail" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="10dp"
+                        android:layout_marginTop="5dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/videodetail_channel_name"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:textColor="@color/white"
+                            android:textSize="11sp"
+                            tools:text="Channel Name" />
+
+                        <TextView
+                            android:id="@+id/videodetail_channel_meta"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:textColor="#ACACAC"
+                            android:textSize="11sp"
+                            tools:text="" />
+
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!--Description-->
+                <LinearLayout
+                    android:id="@+id/videodetail_description_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="14dp"
+                    android:layout_marginRight="14dp"
+                    android:animateLayoutChanges="true"
+                    android:background="@drawable/background_videodetail_description"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingLeft="12dp"
+                    android:paddingTop="3dp"
+                    android:paddingRight="12dp"
+                    android:paddingBottom="5dp">
+
+                    <com.futo.platformplayer.views.behavior.NonScrollingTextView
+                        android:id="@+id/videodetail_description"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="5dp"
+                        android:background="@color/transparent"
+                        android:fontFamily="@font/inter_light"
+                        android:isScrollContainer="false"
+                        android:maxWidth="500dp"
+                        android:maxLines="3"
+                        android:textColor="@color/white"
+                        android:textSize="11sp"
+                        tools:text="@string/lorem_ipsum" />
+
+                    <TextView
+                        android:id="@+id/videodetail_description_view_more"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:background="@color/transparent"
+                        android:fontFamily="@font/inter_regular"
+                        android:text="@string/click_to_read_more"
+                        android:textAlignment="center"
+                        android:textColor="#838181"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <com.futo.platformplayer.views.MonetizationView
+                    android:id="@+id/monetization"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+                <LinearLayout
+                    android:id="@+id/layout_change_bottom_section"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="14dp"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginRight="14dp"
+                    android:layout_marginBottom="10dp"
+                    android:background="@drawable/background_videodetail_description"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/button_polycentric"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="90dp"
+                        android:background="?android:attr/selectableItemBackground"
+                        android:ellipsize="marquee"
+                        android:lines="1"
+                        android:maxWidth="100dp"
+                        android:padding="10dp"
+                        android:text="@string/polycentric"
+                        android:textColor="#fff"
+                        android:textSize="11sp" />
+
+                    <Button
+                        android:id="@+id/button_platform"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="?android:attr/selectableItemBackground"
+                        android:ellipsize="marquee"
+                        android:lines="1"
+                        android:maxWidth="100dp"
+                        android:padding="10dp"
+                        android:text="@string/platform"
+                        android:textColor="#fff"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <com.futo.platformplayer.views.comments.AddCommentView
+                    android:id="@+id/add_comment_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="28dp"
+                    android:layout_marginTop="12dp"
+                    android:layout_marginEnd="28dp"
+                    android:layout_marginBottom="12dp" />
+            </LinearLayout>
+
+            <com.futo.platformplayer.views.segments.CommentsList
+                android:id="@+id/comments_list"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="400dp"
+                app:layout_behavior="@string/appbar_scrolling_view_behavior"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/layout_top" />
+        </LinearLayout>
+
+        <com.futo.platformplayer.views.overlays.DescriptionOverlay
+            android:id="@+id/videodetail_container_description"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+
+        <com.futo.platformplayer.views.overlays.WebviewOverlay
+            android:id="@+id/videodetail_container_webview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+
+        <com.futo.platformplayer.views.overlays.RepliesOverlay
+            android:id="@+id/videodetail_container_replies"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+
+        <com.futo.platformplayer.views.overlays.SupportOverlay
+            android:id="@+id/videodetail_container_support"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+    </FrameLayout>
+</LinearLayout>

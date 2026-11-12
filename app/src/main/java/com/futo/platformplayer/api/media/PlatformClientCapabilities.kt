@@ -20,7 +20,8 @@ data class PlatformClientCapabilities(
     val hasGetContentChapters: Boolean = false,
     val hasPeekChannelContents: Boolean = false,
     val hasGetChannelPlaylists: Boolean = false,
-    val hasGetContentRecommendations: Boolean = false
+    val hasGetContentRecommendations: Boolean = false,
+    val hasGetUserHistory: Boolean = false
 ) {
 
 }

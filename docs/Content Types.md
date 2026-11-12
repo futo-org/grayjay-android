@@ -70,7 +70,7 @@ A feed object representing a community post with text, and optionally images.
 
 *Usage:*
 ```javascript
-new PlatformPost{
+new PlatformPost({
 	id: new PlatformID(config.name, item?.id, config.id),
 	name: item?.attributes?.title,
 	author: getPlatformAuthorLink(item, context),
@@ -274,6 +274,52 @@ new PlatformPostDetails{
 	textType: Type.Text.Html/Raw/Markup,
 	content: "Your post content in either raw, html, or in future markup."
 });
+```
+
+# Request Modifiers
+Sources support request modifiers that allow to modify HTTP headers before sending requests. This is useful when a source requires specific headers for authentication, content type specification, or other requirements.
+
+## Using requestModifier property
+
+```
+new HLSSource({
+    //Your other properties...
+    requestModifier: {
+        headers: {
+            "Referer": "https://www.example.com/",
+            "Origin": "https://www.example.com"
+        }
+    }
+})
+```
+
+## Custom source implementation
+
+```
+class YourAudioSource extends AudioUrlRangeSource {
+    constructor(obj) {
+        super(obj);
+    }
+
+    getRequestModifier() {
+        return new YourRequestModifier();
+    }
+}
+
+class YourRequestModifier extends RequestModifier {
+    constructor() {
+        super();
+    }
+    modifyRequest(url, headers) {
+        //modify headers
+
+        return {
+            url: url,
+            headers: headers
+        }
+    }
+}
+
 ```
 
 

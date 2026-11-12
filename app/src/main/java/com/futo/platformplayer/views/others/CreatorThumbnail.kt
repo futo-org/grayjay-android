@@ -14,6 +14,7 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.getDataLinkFromUrl
 import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
+import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.views.IdenticonView
 import userpackage.Protocol
 
@@ -82,14 +83,14 @@ class CreatorThumbnail : ConstraintLayout {
             Glide.with(_imageChannelThumbnail)
                 .load(url)
                 .placeholder(R.drawable.placeholder_channel_thumbnail)
-                .diskCacheStrategy(DiskCacheStrategy.DATA)
+                .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
                 .crossfade()
-                .into(_imageChannelThumbnail);
+                .into(_imageChannelThumbnail)
         } else {
             Glide.with(_imageChannelThumbnail)
                 .load(url)
                 .placeholder(R.drawable.placeholder_channel_thumbnail)
-                .diskCacheStrategy(DiskCacheStrategy.DATA)
+                .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
                 .into(_imageChannelThumbnail);
         }
     }

@@ -10,7 +10,7 @@ abstract class ContentPreviewViewHolder(itemView: View) : ViewHolder(itemView) {
 
     abstract fun bind(content: IPlatformContent);
 
-    abstract fun preview(details: IPlatformContentDetails?, paused: Boolean);
+    abstract suspend fun preview(details: IPlatformContentDetails?, paused: Boolean);
     abstract fun stopPreview();
     abstract fun pausePreview();
     abstract fun resumePreview();

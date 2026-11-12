@@ -23,6 +23,7 @@ import com.futo.platformplayer.api.media.models.live.IPlatformLiveEvent
 import com.futo.platformplayer.api.media.models.playback.IPlaybackTracker
 import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylist
 import com.futo.platformplayer.api.media.models.playlists.IPlatformPlaylistDetails
+import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.api.media.platforms.js.internal.JSCallDocs
 import com.futo.platformplayer.api.media.platforms.js.internal.JSDocs
 import com.futo.platformplayer.api.media.platforms.js.internal.JSDocsParameter
@@ -43,6 +44,7 @@ import com.futo.platformplayer.api.media.platforms.js.models.JSLiveEventPager
 import com.futo.platformplayer.api.media.platforms.js.models.JSPlaybackTracker
 import com.futo.platformplayer.api.media.platforms.js.models.JSPlaylistDetails
 import com.futo.platformplayer.api.media.platforms.js.models.JSPlaylistPager
+import com.futo.platformplayer.api.media.platforms.js.models.JSVideoPager
 import com.futo.platformplayer.api.media.structures.EmptyPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.constructs.Event1
@@ -59,6 +61,9 @@ import com.futo.platformplayer.states.AnnouncementType
 import com.futo.platformplayer.states.StateAnnouncement
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlugins
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.time.OffsetDateTime
@@ -122,6 +127,7 @@ open class JSClient : IPlatformClient {
 
     val enableInSearch get() = descriptor.appSettings.tabEnabled.enableSearch ?: true
     val enableInHome get() = descriptor.appSettings.tabEnabled.enableHome ?: true
+    val enableInShorts get() = descriptor.appSettings.tabEnabled.enableShorts ?: true
 
     fun getSubscriptionRateLimit(): Int? {
         val pluginRateLimit = config.subscriptionRateLimit;
@@ -267,7 +273,8 @@ open class JSClient : IPlatformClient {
             hasGetContentChapters = plugin.executeBoolean("!!source.getContentChapters") ?: false,
             hasPeekChannelContents = plugin.executeBoolean("!!source.peekChannelContents") ?: false,
             hasGetChannelPlaylists = plugin.executeBoolean("!!source.getChannelPlaylists") ?: false,
-            hasGetContentRecommendations = plugin.executeBoolean("!!source.getContentRecommendations") ?: false
+            hasGetContentRecommendations = plugin.executeBoolean("!!source.getContentRecommendations") ?: false,
+            hasGetUserHistory = plugin.executeBoolean("!!source.getUserHistory") ?: false
         );
 
         try {
@@ -326,6 +333,13 @@ open class JSClient : IPlatformClient {
             plugin.executeTyped("source.getHome()"));
     }
 
+    @JSDocs(2, "source.getShorts()", "Gets the Shorts feed of the platform")
+    override fun getShorts(): IPager<IPlatformVideo> = isBusyWith("getShorts") {
+        ensureEnabled()
+        return@isBusyWith JSVideoPager(config, this,
+            plugin.executeTyped("source.getShorts()"))
+    }
+
     @JSDocs(3, "source.searchSuggestions(query)", "Gets search suggestions for a given query")
     @JSDocsParameter("query", "Query to complete suggestions for")
     override fun searchSuggestions(query: String): Array<String> = isBusyWith("searchSuggestions") {
@@ -344,8 +358,10 @@ open class JSClient : IPlatformClient {
                 return _searchCapabilities!!;
             }
 
-            _searchCapabilities = ResultCapabilities.fromV8(config, plugin.executeTyped("source.getSearchCapabilities()"));
-            return _searchCapabilities!!;
+            return busy {
+                _searchCapabilities = ResultCapabilities.fromV8(config, plugin.executeTyped("source.getSearchCapabilities()"));
+                return@busy _searchCapabilities!!;
+            }
         }
         catch(ex: Throwable) {
             announcePluginUnhandledException("getSearchCapabilities", ex);
@@ -373,8 +389,10 @@ open class JSClient : IPlatformClient {
         if (_searchChannelContentsCapabilities != null)
             return _searchChannelContentsCapabilities!!;
 
-        _searchChannelContentsCapabilities = ResultCapabilities.fromV8(config, plugin.executeTyped("source.getSearchChannelContentsCapabilities()"));
-        return _searchChannelContentsCapabilities!!;
+        return busy {
+            _searchChannelContentsCapabilities = ResultCapabilities.fromV8(config, plugin.executeTyped("source.getSearchChannelContentsCapabilities()"));
+            return@busy _searchChannelContentsCapabilities!!;
+        }
     }
     @JSDocs(5, "source.searchChannelContents(query)", "Searches for videos on the platform")
     @JSDocsParameter("channelUrl", "Channel url to search")
@@ -431,9 +449,10 @@ open class JSClient : IPlatformClient {
             if (_channelCapabilities != null) {
                 return _channelCapabilities!!;
             }
-
-            _channelCapabilities = ResultCapabilities.fromV8(config, plugin.executeTyped("source.getChannelCapabilities()"));
-            return _channelCapabilities!!;
+            return busy {
+                _channelCapabilities = ResultCapabilities.fromV8(config, plugin.executeTyped("source.getChannelCapabilities()"));
+                return@busy _channelCapabilities!!;
+            };
         }
         catch(ex: Throwable) {
             announcePluginUnhandledException("getChannelCapabilities", ex);
@@ -625,7 +644,6 @@ open class JSClient : IPlatformClient {
             plugin.executeTyped("source.getLiveEvents(${Json.encodeToString(url)})"));
     }
 
-
     @JSDocs(19, "source.getContentRecommendations(url)", "Gets recommendations of a content page")
     @JSDocsParameter("url", "Url of content")
     override fun getContentRecommendations(url: String): IPager<IPlatformContent>? = isBusyWith("getContentRecommendations") {
@@ -694,6 +712,13 @@ open class JSClient : IPlatformClient {
             .toArray()
             .map { (it as V8ValueString).value }
             .toTypedArray();
+    }
+
+    @JSOptional
+    @JSDocs(23, "source.getUserHistory()", "Gets the history of the current user")
+    override fun getUserHistory(): IPager<IPlatformContent> {
+        ensureEnabled();
+        return JSContentPager(config, this, plugin.executeTyped("source.getUserHistory()"));
     }
 
     fun validate() {
@@ -770,6 +795,13 @@ open class JSClient : IPlatformClient {
     fun <T> busy(handle: ()->T): T {
         return _plugin.busy {
             return@busy handle();
+        }
+    }
+    fun <T> busyBlockingSuspended(handle: suspend ()->T): T {
+        return _plugin.busy {
+            return@busy runBlocking {
+                return@runBlocking handle();
+            }
         }
     }
 

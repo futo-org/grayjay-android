@@ -11,6 +11,8 @@ import com.futo.platformplayer.engine.exceptions.ScriptImplementationException
 import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrNull
 import com.futo.platformplayer.getOrThrow
+import com.futo.platformplayer.invokeV8
+import com.futo.platformplayer.invokeV8Void
 
 class JSRequestModifier: IRequestModifier {
     private val _plugin: JSClient;
@@ -40,7 +42,7 @@ class JSRequestModifier: IRequestModifier {
 
         return _plugin.busy {
             val result = V8Plugin.catchScriptErrors<Any>(_config, "[${_config.name}] JSRequestModifier", "builder.modifyRequest()") {
-                _modifier.invoke("modifyRequest", url, headers);
+                _modifier.invokeV8("modifyRequest", url, headers);
             } as V8ValueObject;
 
             val req = JSRequest(_plugin, result, url, headers);

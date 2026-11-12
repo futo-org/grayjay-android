@@ -145,6 +145,79 @@ class PlaylistFragment : MainFragment() {
                 );
             };
 
+            setOnSort {
+                val playlist = _playlist ?: return@setOnSort;
+
+                UISlideOverlays.showOverlay(overlayContainer, "Sort " + context.getString(R.string.playlist) + " [${playlist.name}] by:", null, {},
+                    SlideUpMenuItem(
+                        context,
+                        R.drawable.ic_sort,
+                        "Name (Ascending)",
+                        "",
+                        tag = 1,
+                        call = {
+                            playlist.videos.sortBy { it.name }
+                            StatePlaylists.instance.createOrUpdatePlaylist(playlist);
+                            onShown(playlist)
+                        }),
+                    SlideUpMenuItem(
+                        context,
+                        R.drawable.ic_sort,
+                        "Name (Descending)",
+                        "",
+                        tag = 2,
+                        call = {
+                            playlist.videos.sortByDescending { it.name }
+                            StatePlaylists.instance.createOrUpdatePlaylist(playlist);
+                            onShown(playlist)
+                        }),
+                    SlideUpMenuItem(
+                        context,
+                        R.drawable.ic_sort,
+                        "Added Date (Oldest)",
+                        "",
+                        tag = 3,
+                        call = {
+                            playlist.videos.sortBy { it.addedToPlaylistDateTime }
+                            StatePlaylists.instance.createOrUpdatePlaylist(playlist);
+                            onShown(playlist)
+                        }),
+                    SlideUpMenuItem(
+                        context,
+                        R.drawable.ic_sort,
+                        "Added Date (Newest)",
+                        "",
+                        tag = 4,
+                        call = {
+                            playlist.videos.sortByDescending { it.addedToPlaylistDateTime }
+                            StatePlaylists.instance.createOrUpdatePlaylist(playlist);
+                            onShown(playlist)
+                        }),
+                    SlideUpMenuItem(
+                        context,
+                        R.drawable.ic_sort,
+                        "Release Date (Oldest)",
+                        "",
+                        tag = 5,
+                        call = {
+                            playlist.videos.sortBy { it.datetime }
+                            StatePlaylists.instance.createOrUpdatePlaylist(playlist);
+                            onShown(playlist)
+                        }),
+                    SlideUpMenuItem(
+                        context,
+                        R.drawable.ic_sort,
+                        "Release Date (Newest)",
+                        "",
+                        tag = 6,
+                        call = {
+                            playlist.videos.sortByDescending { it.datetime }
+                            StatePlaylists.instance.createOrUpdatePlaylist(playlist);
+                            onShown(playlist)
+                        })
+                );
+            };
+
             _taskLoadPlaylist = TaskHandler<String, Playlist>(
                 StateApp.instance.scopeGetter,
                 {

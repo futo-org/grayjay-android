@@ -32,7 +32,6 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentContainerView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.whenStateAtLeast
 import androidx.lifecycle.withStateAtLeast
 import androidx.media3.common.util.UnstableApi
 import com.futo.platformplayer.BuildConfig
@@ -63,6 +62,7 @@ import com.futo.platformplayer.fragment.mainactivity.main.PlaylistSearchResultsF
 import com.futo.platformplayer.fragment.mainactivity.main.PlaylistsFragment
 import com.futo.platformplayer.fragment.mainactivity.main.PostDetailFragment
 import com.futo.platformplayer.fragment.mainactivity.main.RemotePlaylistFragment
+import com.futo.platformplayer.fragment.mainactivity.main.ShortsFragment
 import com.futo.platformplayer.fragment.mainactivity.main.SourceDetailFragment
 import com.futo.platformplayer.fragment.mainactivity.main.SourcesFragment
 import com.futo.platformplayer.fragment.mainactivity.main.SubscriptionGroupFragment
@@ -114,7 +114,6 @@ import java.io.PrintWriter
 import java.io.StringWriter
 import java.lang.reflect.InvocationTargetException
 import java.util.LinkedList
-import java.util.Queue
 import java.util.UUID
 import java.util.concurrent.ConcurrentLinkedQueue
 
@@ -171,6 +170,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     lateinit var _fragMainRemotePlaylist: RemotePlaylistFragment;
     lateinit var _fragWatchlist: WatchLaterFragment;
     lateinit var _fragHistory: HistoryFragment;
+    lateinit var _fragShorts: ShortsFragment;
     lateinit var _fragSourceDetail: SourceDetailFragment;
     lateinit var _fragDownloads: DownloadsFragment;
     lateinit var _fragImportSubscriptions: ImportSubscriptionsFragment;
@@ -340,6 +340,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragWebDetail = WebDetailFragment.newInstance();
         _fragWatchlist = WatchLaterFragment.newInstance();
         _fragHistory = HistoryFragment.newInstance();
+        _fragShorts = ShortsFragment.newInstance();
         _fragSourceDetail = SourceDetailFragment.newInstance();
         _fragDownloads = DownloadsFragment();
         _fragImportSubscriptions = ImportSubscriptionsFragment.newInstance();
@@ -610,6 +611,8 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                 }, UIDialogs.ActionStyle.PRIMARY)
             )
         }
+
+        //startActivity(Intent(this, TestActivity::class.java))
     }
 
     /*
@@ -1253,6 +1256,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             WebDetailFragment::class -> _fragWebDetail as T;
             WatchLaterFragment::class -> _fragWatchlist as T;
             HistoryFragment::class -> _fragHistory as T;
+            ShortsFragment::class -> _fragShorts as T;
             SourceDetailFragment::class -> _fragSourceDetail as T;
             DownloadsFragment::class -> _fragDownloads as T;
             ImportSubscriptionsFragment::class -> _fragImportSubscriptions as T;

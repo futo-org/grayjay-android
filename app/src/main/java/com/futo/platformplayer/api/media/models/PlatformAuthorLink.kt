@@ -6,6 +6,7 @@ import com.futo.platformplayer.api.media.models.contents.ContentType
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.platforms.js.SourcePluginConfig
 import com.futo.platformplayer.api.media.platforms.js.models.JSContent
+import com.futo.platformplayer.ensureIsBusy
 import com.futo.platformplayer.getOrDefault
 import com.futo.platformplayer.getOrThrow
 
@@ -33,6 +34,7 @@ open class PlatformAuthorLink {
         val UNKNOWN = PlatformAuthorLink(PlatformID.NONE, "Unknown", "", null, null);
 
         fun fromV8(config: SourcePluginConfig, value: V8ValueObject): PlatformAuthorLink {
+            value.ensureIsBusy();
             if(value.has("membershipUrl"))
                 return PlatformAuthorMembershipLink.fromV8(config, value);
 

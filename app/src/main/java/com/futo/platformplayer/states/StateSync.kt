@@ -57,9 +57,12 @@ class StateSync {
             return
         }
 
+        var relayServerUrl = Settings.instance.synchronization.syncServer;
+        Logger.i(TAG, "Relay used: ${relayServerUrl}");
+
         syncService = SyncService(
             SERVICE_NAME,
-            RELAY_SERVER,
+            relayServerUrl,
             RELAY_PUBLIC_KEY,
             APP_ID,
             StoreBasedSyncDatabaseProvider(),
@@ -78,7 +81,13 @@ class StateSync {
             onAuthorized = { sess, isNewlyAuthorized, isNewSession ->
                 if (isNewSession) {
                     deviceUpdatedOrAdded.emit(sess.remotePublicKey, sess)
-                    StateApp.instance.scope.launch(Dispatchers.IO) { checkForSync(sess) }
+                    StateApp.instance.scope.launch(Dispatchers.IO) {
+                        try {
+                            checkForSync(sess)
+                        } catch (e: Throwable) {
+                            Logger.e(TAG, "Failed to check for sync.", e)
+                        }
+                    }
                 }
             }
 
