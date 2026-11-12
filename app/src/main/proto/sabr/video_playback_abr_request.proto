@@ -1,0 +1,95 @@
+syntax = "proto3";
+
+package sabr;
+
+import "sabr/common.proto";
+
+option java_package = "com.futo.platformplayer.sabr.proto";
+option java_multiple_files = true;
+
+enum MediaType {
+  MEDIA_TYPE_NONE = 0;
+  MEDIA_TYPE_AUDIO = 1;
+  MEDIA_TYPE_VIDEO = 2;
+  MEDIA_TYPE_AUDIO_VIDEO = 3;
+}
+
+message ClientAbrState {
+  int64 time_since_last_manual_format_selection_ms = 13;
+  int32 last_manual_direction = 14;
+  int64 last_manual_selected_resolution = 16;
+  int32 detailed_network_type = 17;
+  int64 client_viewport_width = 18;
+  int64 client_viewport_height = 19;
+  int64 sticky_resolution = 21;
+  int64 bandwidth_estimate = 23;
+  optional int64 player_time_ms = 28;
+  int64 time_since_last_seek_ms = 29;
+  optional int64 visibility = 34;
+  int64 time_since_last_request_ms = 36;
+  MediaCapabilities media_capabilities = 38;
+  int64 time_since_last_action_ms = 39;
+  MediaType enabled_track_types_bitfield = 40;
+  int32 player_state = 44;
+  bool drc_enabled = 46;
+  int64 network_latency_ms = 57;
+  optional bool prefer_vp9 = 58;
+  int64 selected_quality_height = 59;
+  bool is_prefetch = 61;
+  bytes sabr_license_constraint = 63;
+  int64 allow_proxima_live_latency = 64;
+  float playback_rate = 285;
+}
+
+message MediaCapabilities {
+  repeated int32 video_format_capabilities = 1;
+  repeated int32 audio_format_capabilities = 2;
+  int32 hdr_mode_bitmask = 5;
+}
+
+message BufferedRange {
+  FormatId format_id = 1;
+  int64 start_time_ms = 2;
+  int64 duration_ms = 3;
+  int64 start_segment_index = 4;
+  int64 end_segment_index = 5;
+  TimeRange time_range = 6;
+}
+
+message ClientInfo {
+  string device_make = 12;
+  string device_model = 13;
+  int32 client_name = 16;
+  string client_version = 17;
+  string os_name = 18;
+  string os_version = 19;
+}
+
+message SabrContext {
+  int32 type = 1;
+  bytes value = 2;
+}
+
+message StreamerContext {
+  ClientInfo client_info = 1;
+  bytes po_token = 2;
+  bytes playback_cookie = 3;
+  repeated SabrContext sabr_contexts = 5;
+  repeated int32 unsent_sabr_contexts = 6;
+}
+
+message AdCuepointConfig {
+  string cuepoint_id = 7;
+  int32 magic_value = 8;
+}
+
+message VideoPlaybackAbrRequest {
+  ClientAbrState client_abr_state = 1;
+  repeated FormatId selected_format_ids = 2;
+  repeated BufferedRange buffered_ranges = 3;
+  bytes video_playback_ustreamer_config = 5;
+  repeated FormatId preferred_audio_format_ids = 16;
+  repeated FormatId preferred_video_format_ids = 17;
+  StreamerContext streamer_context = 19;
+  repeated AdCuepointConfig ad_cuepoints = 24;
+}

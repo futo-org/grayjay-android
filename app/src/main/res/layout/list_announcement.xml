@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:layout_marginTop="0dp"
+    android:layout_marginBottom="0dp"
+    android:id="@+id/root"
+    android:clickable="true"
+    android:paddingTop="10dp"
+    android:paddingLeft="10dp"
+    android:paddingRight="10dp">
+
+    <ImageView
+        android:id="@+id/icon"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:visibility="gone"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="@id/text_metadata" />
+
+    <TextView
+        android:id="@+id/text_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:textSize="13dp"
+        android:textColor="@color/white"
+        android:fontFamily="@font/inter_regular"
+        tools:text="Example Artist"
+        android:maxLines="1"
+        app:layout_constraintLeft_toRightOf="@id/icon"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintRight_toLeftOf="@id/button_ignore"
+        android:layout_marginRight="20dp"
+        android:layout_marginTop="10dp"
+        app:layout_constraintBottom_toTopOf="@id/text_metadata"
+        android:layout_marginStart="10dp" />
+
+    <TextView
+        android:id="@+id/text_metadata"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:textSize="12dp"
+        android:textColor="#888888"
+        android:fontFamily="@font/inter_regular"
+        tools:text="3 videos"
+        android:maxLines="2"
+        app:layout_constraintTop_toBottomOf="@id/text_name"
+        app:layout_constraintLeft_toRightOf="@id/icon"
+        app:layout_constraintRight_toLeftOf="@id/button_ignore"
+        android:layout_marginRight="20dp"
+        android:paddingBottom="10dp"
+        android:layout_marginStart="10dp" />
+
+    <ImageView
+        android:id="@+id/button_ignore"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:src="@drawable/ic_close"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="@id/text_metadata" />
+
+    <com.futo.platformplayer.views.LoaderView
+        android:id="@+id/loader"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="@id/text_metadata" />
+
+    <LinearLayout
+        android:id="@+id/container_buttons"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/text_metadata"
+        app:layout_constraintBottom_toTopOf="@id/separator"
+        android:gravity="center"
+        android:paddingBottom="10dp"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:id="@+id/button_never"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/background_button_accent"
+            android:layout_marginLeft="5dp"
+            android:layout_marginRight="5dp">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
+                android:paddingStart="28dp"
+                android:paddingEnd="28dp"
+                android:text="Never" />
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/button_extra"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/background_button_accent"
+            android:layout_marginLeft="5dp"
+            android:layout_marginRight="5dp">
+            <TextView
+                android:id="@+id/button_extra_text"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
+                android:paddingStart="28dp"
+                android:paddingEnd="28dp"
+                android:text="Extra" />
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/button_action"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="5dp"
+            android:layout_marginRight="5dp"
+            android:background="@drawable/background_button_primary"
+            android:clickable="true">
+
+            <TextView
+                android:id="@+id/button_action_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Action"
+                android:textSize="14dp"
+                android:textColor="@color/white"
+                android:fontFamily="@font/inter_regular"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
+                android:paddingStart="28dp"
+                android:paddingEnd="28dp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <ProgressBar
+        android:id="@+id/progress"
+        style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        android:layout_marginBottom="1dp"
+        android:progressTint="@color/primary"
+        />
+
+    <View
+        android:id="@+id/separator"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/container_buttons"
+        android:layout_width="match_parent"
+        android:layout_height="1px"
+        android:background="#181818" />
+</androidx.constraintlayout.widget.ConstraintLayout>

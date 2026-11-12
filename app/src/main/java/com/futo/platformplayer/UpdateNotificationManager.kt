@@ -1,0 +1,190 @@
+package com.futo.platformplayer
+
+import android.Manifest
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.app.PendingIntent.FLAG_MUTABLE
+import android.app.PendingIntent.FLAG_UPDATE_CURRENT
+import android.app.PendingIntent.getBroadcast
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
+import com.futo.platformplayer.activities.InstallUpdateActivity
+import java.io.File
+
+object UpdateNotificationManager {
+    private const val CHANNEL_ID = "app_updates"
+    private const val CHANNEL_NAME = "App updates"
+    private const val CHANNEL_DESCRIPTION = "Notifications about new app versions"
+
+    const val ACTION_DOWNLOAD_CANCEL = "com.futo.platformplayer.UPDATE_CANCEL"
+    const val ACTION_INSTALL_NOW = "com.futo.platformplayer.UPDATE_INSTALL"
+    private const val REQUEST_CODE_INSTALL = 1001
+
+    const val EXTRA_VERSION = "version"
+    const val EXTRA_APK_PATH = "apk_path"
+
+    const val NOTIF_ID_DOWNLOADING = 2002
+    const val NOTIF_ID_READY = 2003
+    const val NOTIF_ID_INSTALL_FAILED = 2004
+    const val NOTIF_ID_INSTALL_SUCCEEDED = 2005
+
+    fun ensureChannel(context: Context) {
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        if (manager.getNotificationChannel(CHANNEL_ID) == null) {
+            val channel = NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT).apply {
+                description = CHANNEL_DESCRIPTION
+                enableVibration(false)
+                enableLights(false)
+                setSound(null, null)
+            }
+            manager.createNotificationChannel(channel)
+        }
+    }
+
+    fun showInstallSucceededNotification(context: Context, version: Int) {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            return
+        }
+
+        ensureChannel(context)
+
+        val launchIntent = context.packageManager
+            .getLaunchIntentForPackage(context.packageName)
+            ?.apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
+            }
+
+        val launchPendingIntent = launchIntent?.let {
+            PendingIntent.getActivity(context, REQUEST_CODE_INSTALL, it, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        }
+
+        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.foreground)
+            .setContentTitle("Update installed")
+            .setContentText("Version $version installed. Tap to open.")
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setAutoCancel(true)
+            .setSilent(true)
+
+        if (launchPendingIntent != null) {
+            builder.setContentIntent(launchPendingIntent)
+            builder.addAction(0, "Open app", launchPendingIntent)
+        }
+
+        NotificationManagerCompat.from(context).notify(NOTIF_ID_INSTALL_SUCCEEDED, builder.build())
+    }
+
+    fun buildDownloadProgressNotification(context: Context, version: Int, progress: Int, indeterminate: Boolean): Notification {
+        ensureChannel(context)
+
+        val cancelIntent = Intent(context, UpdateActionReceiver::class.java).apply {
+            action = ACTION_DOWNLOAD_CANCEL
+            putExtra(EXTRA_VERSION, version)
+        }
+        val cancelPendingIntent = getBroadcast(
+            context,
+            3,
+            cancelIntent,
+            FLAG_MUTABLE or FLAG_UPDATE_CURRENT
+        )
+
+        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.foreground)
+            .setContentTitle("Downloading update")
+            .setContentText("Downloading version $version")
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setOngoing(true)
+            .setSilent(true)
+            .addAction(0, "Cancel", cancelPendingIntent)
+
+        if (indeterminate) {
+            builder.setProgress(0, 0, true)
+        } else {
+            builder.setProgress(100, progress, false)
+        }
+
+        return builder.build()
+    }
+
+    fun updateDownloadProgress(context: Context, version: Int, progress: Int, indeterminate: Boolean) {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            return
+        }
+        val notification = buildDownloadProgressNotification(context, version, progress, indeterminate)
+        NotificationManagerCompat.from(context).notify(NOTIF_ID_DOWNLOADING, notification)
+    }
+
+
+    fun showDownloadCompleteNotification(context: Context, version: Int, apkFile: File) {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            return
+        }
+        ensureChannel(context)
+
+        val installIntent = InstallUpdateActivity.createIntent(context, version, apkFile.absolutePath)
+        val installPendingIntent = PendingIntent.getActivity(context, REQUEST_CODE_INSTALL, installIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+
+        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.foreground)
+            .setContentTitle("Update downloaded")
+            .setContentText("Tap to install version $version.")
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setContentIntent(installPendingIntent)
+            .setAutoCancel(true)
+            .setSilent(true)
+            .addAction(0, "Install", installPendingIntent)
+
+        NotificationManagerCompat.from(context).notify(NOTIF_ID_READY, builder.build())
+    }
+
+
+    fun showDownloadFailedNotification(context: Context, version: Int, error: Throwable?) {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            return
+        }
+        ensureChannel(context)
+
+        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.foreground)
+            .setContentTitle("Failed to download update")
+            .setContentText(error?.message ?: "Unknown error")
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setAutoCancel(true)
+            .setSilent(true)
+
+        NotificationManagerCompat.from(context).notify(NOTIF_ID_READY, builder.build())
+    }
+
+    fun showInstallFailedNotification(context: Context, version: Int, apkFile: File, error: String?) {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
+            return
+
+        ensureChannel(context)
+
+        val installIntent = InstallUpdateActivity.createIntent(context, version, apkFile.absolutePath)
+        val installPendingIntent = PendingIntent.getActivity(context, REQUEST_CODE_INSTALL, installIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.foreground)
+            .setContentTitle("Failed to install update")
+            .setContentText(if (error != null && error.isNotBlank()) "$error Tap to try again." else "Tap to try again.")
+            .setAutoCancel(true)
+            .setSilent(true)
+            .setContentIntent(installPendingIntent)
+            .addAction(0, "Install again", installPendingIntent)
+
+        NotificationManagerCompat.from(context).notify(NOTIF_ID_INSTALL_FAILED, builder.build())
+    }
+
+    fun cancelAll(context: Context) {
+        NotificationManagerCompat.from(context).cancel(NOTIF_ID_DOWNLOADING)
+        NotificationManagerCompat.from(context).cancel(NOTIF_ID_READY)
+        NotificationManagerCompat.from(context).cancel(NOTIF_ID_INSTALL_FAILED)
+        NotificationManagerCompat.from(context).cancel(NOTIF_ID_INSTALL_SUCCEEDED)
+    }
+}

@@ -1,0 +1,137 @@
+syntax = "proto3";
+
+package sabr;
+
+import "sabr/common.proto";
+
+option java_package = "com.futo.platformplayer.sabr.proto";
+option java_multiple_files = true;
+
+message MediaHeader {
+  int32 header_id = 1;
+  string video_id = 2;
+  int32 itag = 3;
+  uint64 lmt = 4;
+  string xtags = 5;
+  int64 start_data_range = 6;
+  bool is_init_segment = 8;
+  int32 sequence_number = 9;
+  int64 field10 = 10;
+  int64 start_ms = 11;
+  int64 duration_ms = 12;
+  int64 content_length = 14;
+  TimeRange time_range = 15;
+}
+
+message LiveMetadata {
+  int32 head_sequence_number = 3;
+  int64 head_sequence_time_ms = 4;
+  bool field8 = 8;
+  int64 field10 = 10;
+  int64 min_seekable_time_ticks = 12;
+  int32 min_seekable_timescale = 13;
+  int64 max_seekable_time_ticks = 14;
+  int32 max_seekable_timescale = 15;
+}
+
+message NextRequestPolicy {
+  int32 target_audio_readahead_ms = 1;
+  int32 target_video_readahead_ms = 2;
+  int32 backoff_time_ms = 4;
+  bytes playback_cookie = 7;
+  string video_id = 8;
+}
+
+message FormatMetadata {
+  int32 bitrate = 6;
+  int32 width = 7;
+  int32 height = 8;
+  int32 fps = 25;
+  int32 average_bitrate = 31;
+  int32 audio_sample_rate = 45;
+  int32 audio_channels = 46;
+}
+
+message FormatInitializationMetadata {
+  string video_id = 1;
+  FormatId format_id = 2;
+  int64 end_time_ms = 3;
+  int32 end_segment_number = 4;
+  string mime_type = 5;
+  ByteRange init_range = 6;
+  ByteRange index_range = 7;
+  FormatMetadata format = 8;
+}
+
+message SabrRedirect {
+  string url = 1;
+}
+
+message SabrSeek {
+  int64 seek_media_time = 1;
+  int32 seek_media_timescale = 2;
+  int32 seek_source = 3;
+}
+
+message SabrError {
+  string type = 1;
+  int32 code = 2;
+}
+
+message SabrContextUpdate {
+  int32 type = 1;
+  int32 scope = 2;
+  bytes value = 3;
+  bool send_by_default = 4;
+}
+
+message SabrContextSendingPolicy {
+  repeated int32 start_policy = 1;
+  repeated int32 stop_policy = 2;
+  repeated int32 discard_policy = 3;
+}
+
+message StreamProtectionStatus {
+  int32 status = 1;
+  int32 max_retries = 2;
+}
+
+message SnackbarMessage {
+  int32 id = 1;
+}
+
+enum CuepointEvent {
+  CUEPOINT_EVENT_UNKNOWN = 0;
+  CUEPOINT_EVENT_START = 1;
+  CUEPOINT_EVENT_CONTINUE = 2;
+  CUEPOINT_EVENT_STOP = 3;
+  CUEPOINT_EVENT_INSERTION = 4;
+  CUEPOINT_EVENT_PREDICT_START = 5;
+}
+
+enum CuepointType {
+  CUEPOINT_TYPE_UNKNOWN = 0;
+  CUEPOINT_TYPE_AD = 1;
+  CUEPOINT_TYPE_SLATE = 2;
+}
+
+message Cuepoint {
+  CuepointType type = 1;
+  CuepointEvent event = 2;
+  double duration_sec = 3;
+  double offset_sec = 4;
+  string context = 5;
+  string identifier = 6;
+}
+
+message CuepointInfo {
+  Cuepoint cuepoint = 1;
+  int32 track_type = 2;
+  int32 sequence_number = 3;
+  TimeRange time_range = 4;
+  string tile_context = 5;
+}
+
+message CuepointList {
+  repeated CuepointInfo cuepoint_info = 1;
+}

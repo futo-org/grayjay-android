@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="120dp"
+    android:layout_height="160dp"
+    android:layout_marginLeft="5dp"
+    android:layout_marginRight="5dp"
+    android:layout_marginTop="3dp"
+    android:layout_marginBottom="3dp"
+    android:orientation="vertical">
+    <FrameLayout
+        android:id="@+id/player_container"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        android:layout_width="120dp"
+        android:layout_height="66dp">
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/image_video_thumbnail"
+            android:layout_width="120dp"
+            android:layout_height="66dp"
+            android:scaleType="centerCrop"
+            android:contentDescription="@string/thumbnail"
+            app:shapeAppearanceOverlay="@style/roundedCorners_4dp"
+            app:srcCompat="@drawable/placeholder_video_thumbnail"
+            android:background="@drawable/video_thumbnail_outline" />
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <LinearLayout
+                android:id="@+id/thumbnail_duration_container"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentBottom="true"
+                android:layout_alignParentEnd="true"
+                android:layout_gravity="end"
+                android:paddingStart="2dp"
+                android:paddingEnd="2dp"
+                android:layout_marginEnd="4dp"
+                android:layout_marginBottom="4dp"
+                android:paddingTop="0dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:background="@drawable/background_thumbnail_duration">
+
+                <TextView
+                    android:id="@+id/thumbnail_duration"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:includeFontPadding="false"
+                    android:paddingLeft="2dp"
+                    android:paddingRight="2dp"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12dp"
+                    tools:text="0:00"
+                    android:layout_gravity="center"
+                    android:textStyle="normal" />
+            </LinearLayout>
+
+        </RelativeLayout>
+    </FrameLayout>
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="0dp"
+        android:layout_height="70dp"
+        app:layout_constraintTop_toBottomOf="@id/player_container"
+        app:layout_constraintLeft_toLeftOf="@id/player_container"
+        app:layout_constraintRight_toRightOf="@id/player_container"
+        android:layout_marginStart="6dp"
+        android:layout_marginEnd="6dp">
+
+
+        <TextView
+            android:id="@+id/text_video_name"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:paddingBottom="2dp"
+            android:layout_marginTop="5dp"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:textSize="11dp"
+            android:textColor="@color/white"
+            android:fontFamily="@font/inter_light"
+            tools:text="Legendary grant recipient: Marvin Wißfeld of MicroG Very loong title fff"
+            android:maxLines="2"
+            android:ellipsize="end"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintRight_toRightOf="parent" />
+
+        <TextView
+            android:id="@+id/text_video_metadata"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:maxLines="1"
+            android:gravity="center_vertical"
+            android:textSize="10dp"
+            android:textColor="@color/gray_e0"
+            android:fontFamily="@font/inter_extra_light"
+            tools:text="57K views • 1 day ago"
+            app:layout_constraintLeft_toLeftOf="@id/text_video_name"
+            app:layout_constraintTop_toBottomOf="@id/text_video_name"
+            app:layout_constraintRight_toRightOf="parent"
+            android:layout_marginStart="0dp"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

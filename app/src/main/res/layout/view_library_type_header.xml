@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/root">
+
+    <LinearLayout
+        android:id="@+id/container_tags"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        android:layout_margin="7dp"
+        android:orientation="horizontal">
+
+        <com.futo.platformplayer.views.PillV2
+            android:id="@+id/pill_artist"
+            app:pillV2Text="Artist"
+            android:layout_margin="3dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+        <com.futo.platformplayer.views.PillV2
+            android:id="@+id/pill_albums"
+            app:pillV2Text="Albums"
+            android:layout_margin="3dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/text_metadata"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:layout_margin="3dp"
+        android:gravity="center_vertical"
+        android:textSize="13sp"
+        android:textColor="#D0D0D0"
+        android:text="0 artists"
+        app:layout_constraintLeft_toLeftOf="@id/container_tags"
+        app:layout_constraintTop_toBottomOf="@id/container_tags"
+        />
+
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

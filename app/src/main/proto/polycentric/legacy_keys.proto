@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package com.futo.platformplayer.polycentric;
+
+option java_package = "com.futo.platformplayer.polycentric";
+option java_multiple_files = true;
+
+// Polycentric v1 wire format, kept such that signing keys created for v1 can
+// still be decoded and used in Polycentric v2. Note that the v1 `Process`
+// (16 random bytes) is written for parity but is not used in v2.
+
+// A v1 `Protocol.PrivateKey` or `Protocol.PublicKey`, which share the same layout.
+message Key {
+  uint64 key_type = 1;
+  bytes key = 2;
+}
+
+message Process {
+  bytes process = 1;
+}
+
+message StorageTypeProcessSecret {
+  Key system = 1;
+  Process process = 2;
+}
+
+// Polycentric v1 profile export format (`polycentric://` links), kept such that
+// v1 exports can be imported and migrated to Harbor. Field numbers match v1's
+// `URLInfo`, `ExportBundle` and `KeyPair`. The bundle's events are not read.
+
+message LegacyURLInfo {
+  // url_type 3 = ExportBundle
+  uint64 url_type = 1;
+  bytes body = 2;
+}
+
+message LegacyExportBundle {
+  LegacyKeyPair key_pair = 1;
+}
+
+message LegacyKeyPair {
+  uint64 key_type = 1;
+  bytes private_key = 2;
+  bytes public_key = 3;
+}

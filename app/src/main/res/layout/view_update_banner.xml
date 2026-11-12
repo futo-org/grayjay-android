@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:id="@+id/root">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/background_16_round_4dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginTop="6dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginBottom="0dp"
+        android:minHeight="40dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingLeft="12dp"
+        android:paddingTop="6dp"
+        android:paddingRight="8dp"
+        android:paddingBottom="6dp">
+
+        <ImageView android:id="@+id/icon_update"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:src="@drawable/ic_update"
+            android:layout_marginRight="10dp"
+            android:alpha="0.9"
+            android:importantForAccessibility="no" />
+
+        <TextView android:id="@+id/text_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            tools:text="Downloading v123 - 42%"
+            android:fontFamily="@font/inter_semibold"
+            android:textSize="14sp"
+            android:textColor="@color/white"
+            android:ellipsize="end"
+            android:maxLines="1" />
+
+        <ProgressBar android:id="@+id/update_banner_progress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="78dp"
+            android:layout_height="4dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="4dp"
+            android:max="100"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <FrameLayout android:id="@+id/button_action"
+            android:layout_width="wrap_content"
+            android:layout_height="28dp"
+            android:layout_marginLeft="10dp"
+            android:background="@drawable/background_button_primary_round_4dp">
+
+            <TextView android:id="@+id/text_action"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                tools:text="Install"
+                android:fontFamily="@font/inter_regular"
+                android:textSize="12sp"
+                android:textColor="@color/white"
+                android:paddingLeft="13dp"
+                android:paddingRight="13dp" />
+        </FrameLayout>
+    </LinearLayout>
+</FrameLayout>

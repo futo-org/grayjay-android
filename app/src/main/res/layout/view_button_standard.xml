@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="48dp"
+    android:layout_gravity="bottom"
+    android:orientation="vertical"
+    android:background="@drawable/background_button_accent"
+    android:gravity="center"
+    android:id="@+id/root">
+
+    <TextView
+        android:id="@+id/text_button"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:autoSizeTextType="uniform"
+        android:padding="12dp"
+        android:text="Play all" />
+
+
+</LinearLayout>

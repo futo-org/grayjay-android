@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="PillV2">
+        <attr name="pillV2Enabled" format="boolean" />
+        <attr name="pillV2Text" format="string" />
+    </declare-styleable>
+</resources>

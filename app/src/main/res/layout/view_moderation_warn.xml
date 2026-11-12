@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:parentTag="android.widget.LinearLayout"
+    tools:orientation="horizontal">
+
+    <ImageView
+        android:id="@+id/image_warning"
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        android:layout_gravity="center_vertical"
+        android:importantForAccessibility="no"
+        app:srcCompat="@drawable/ic_warning"
+        app:tint="@color/gray_ac" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_gravity="center_vertical"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="10dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/text_warning"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/inter_regular"
+            android:textColor="@color/white"
+            android:textSize="13sp"
+            tools:text="Content warning: Hate, Violence" />
+
+        <TextView
+            android:id="@+id/text_applied_by"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:fontFamily="@font/inter_light"
+            android:textColor="@color/gray_ac"
+            android:textSize="12sp"
+            tools:text="Applied by Harbor Moderation" />
+    </LinearLayout>
+
+    <com.futo.platformplayer.views.pills.PillButton
+        android:id="@+id/button_show"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        app:pillText="@string/moderation_level_show" />
+</merge>
