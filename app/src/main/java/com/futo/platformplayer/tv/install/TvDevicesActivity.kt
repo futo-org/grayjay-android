@@ -14,7 +14,6 @@ import android.widget.RadioGroup
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -28,6 +27,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.futo.platformplayer.BuildConfig
 import com.futo.platformplayer.R
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.activities.SyncPairActivity
 import com.futo.platformplayer.states.StateSync
 import com.futo.platformplayer.stores.FragmentedStorage
@@ -228,12 +228,10 @@ class TvDevicesActivity : AppCompatActivity() {
                 contentDescription = getString(R.string.tv_install_more, device.name)
                 setOnClickListener {
                     StateSync.instance.confirmStarted(this@TvDevicesActivity, {
-                        AlertDialog.Builder(this@TvDevicesActivity)
-                            .setTitle(R.string.tv_sync_remove)
-                            .setMessage(getString(R.string.tv_sync_remove_hint, device.name))
-                            .setNegativeButton(R.string.cancel, null)
-                            .setPositiveButton(R.string.tv_sync_remove) { _, _ -> _model.forgetSync(device.key) }
-                            .show()
+                        UIDialogs.showDialog(this@TvDevicesActivity, R.drawable.ic_error,
+                            getString(R.string.tv_sync_remove), getString(R.string.tv_sync_remove_hint, device.name), null, 0,
+                            UIDialogs.Action(getString(R.string.cancel), {}, UIDialogs.ActionStyle.ACCENT),
+                            UIDialogs.Action(getString(R.string.tv_sync_remove), { _model.forgetSync(device.key) }, UIDialogs.ActionStyle.DANGEROUS))
                     }, {})
                 }
             }
@@ -430,21 +428,17 @@ class TvDevicesActivity : AppCompatActivity() {
     }
 
     private fun confirmStop() {
-        AlertDialog.Builder(this)
-            .setTitle(R.string.tv_install_cancel_title)
-            .setMessage(R.string.tv_install_cancel_description)
-            .setNegativeButton(R.string.cancel, null)
-            .setPositiveButton(R.string.tv_install_stop) { _, _ -> _model.cancel() }
-            .show()
+        UIDialogs.showDialog(this, R.drawable.ic_error,
+            getString(R.string.tv_install_cancel_title), getString(R.string.tv_install_cancel_description), null, 0,
+            UIDialogs.Action(getString(R.string.cancel), {}, UIDialogs.ActionStyle.ACCENT),
+            UIDialogs.Action(getString(R.string.tv_install_stop), { _model.cancel() }, UIDialogs.ActionStyle.DANGEROUS))
     }
 
     private fun confirmForget(device: TvInstallDevice) {
-        AlertDialog.Builder(this)
-            .setTitle(R.string.tv_install_forget)
-            .setMessage(getString(R.string.tv_install_forget_description, device.name))
-            .setNegativeButton(R.string.cancel, null)
-            .setPositiveButton(R.string.tv_install_forget) { _, _ -> _model.forget(device) }
-            .show()
+        UIDialogs.showDialog(this, R.drawable.ic_error,
+            getString(R.string.tv_install_forget), getString(R.string.tv_install_forget_description, device.name), null, 0,
+            UIDialogs.Action(getString(R.string.cancel), {}, UIDialogs.ActionStyle.ACCENT),
+            UIDialogs.Action(getString(R.string.tv_install_forget), { _model.forget(device) }, UIDialogs.ActionStyle.DANGEROUS))
     }
 
     private fun hideKeyboard() {

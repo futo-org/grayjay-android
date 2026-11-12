@@ -14,6 +14,8 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.tv.views.TvUi.dp
+import com.futo.platformplayer.tv.views.TvUi.setHistoryProgress
+import com.futo.platformplayer.tv.views.TvUi.setPublishedDate
 import com.futo.platformplayer.tv.views.TvUi.lines
 
 internal class TvVideoAdapter(
@@ -33,6 +35,8 @@ internal class TvVideoAdapter(
         val video = videos[position]
         holder.title.text = video.name
         holder.author.text = video.author.name
+        holder.published.setPublishedDate(video)
+        holder.progress.setHistoryProgress(video)
         holder.author.visibility = if (showAuthor) View.VISIBLE else View.GONE
         holder.duration.text = if (video.isLive) holder.root.context.getString(R.string.tv_live) else TvUi.duration(video.duration)
         holder.duration.visibility = if (video.isLive || video.duration > 0) View.VISIBLE else View.GONE
@@ -44,7 +48,7 @@ internal class TvVideoAdapter(
         val sourceIcon = StatePlatform.instance.getPlatformIcon(video.id.pluginId)
         holder.sourceIcon.visibility = if (sourceIcon == null) View.GONE else View.VISIBLE
         sourceIcon?.setImageView(holder.sourceIcon)
-        holder.root.contentDescription = "${video.name}, ${video.author.name}"
+        holder.root.contentDescription = listOf(video.name, video.author.name, holder.published.text).filter { it.isNotBlank() }.joinToString(", ")
         holder.root.setOnClickListener { open(video) }
         holder.root.setOnLongClickListener {
             options(video)
@@ -79,6 +83,7 @@ internal class TvVideoAdapter(
     class Card(val root: LinearLayout) : RecyclerView.ViewHolder(root) {
         val requests = Glide.with(root)
         val image = TvUi.image(root.context)
+        val progress = TvUi.watchProgress(root.context)
         val sourceIcon = ImageView(root.context).apply {
             id = R.id.tv_video_source_icon
             scaleType = ImageView.ScaleType.FIT_CENTER
@@ -90,6 +95,11 @@ internal class TvVideoAdapter(
             minLines = 2
         }
         val author = TvUi.text(root.context, "", 13f, true).apply { lines(1) }
+        val published = TvUi.text(root.context, "", 13f, true).apply {
+            id = R.id.tv_video_published
+            lines(1)
+            visibility = View.GONE
+        }
         val duration = TvUi.text(root.context, "", 12f).apply {
             setBackgroundColor(0xCC000000.toInt())
             setPadding(context.dp(5), context.dp(2), context.dp(5), context.dp(2))
@@ -119,6 +129,7 @@ internal class TvVideoAdapter(
                 FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM or Gravity.END).apply {
                     setMargins(0, 0, context.dp(7), context.dp(7))
                 })
+            picture.addView(progress, FrameLayout.LayoutParams(-1, context.dp(3), Gravity.BOTTOM))
             root.addView(picture, LinearLayout.LayoutParams(-1, -2))
             root.addView(
                 title,
@@ -126,6 +137,8 @@ internal class TvVideoAdapter(
             root.addView(
                 author,
                 LinearLayout.LayoutParams(-1, -2).apply { setMargins(context.dp(4), context.dp(3), context.dp(4), 0) })
+            root.addView(published,
+                LinearLayout.LayoutParams(-1, -2).apply { setMargins(context.dp(4), context.dp(2), context.dp(4), 0) })
             root.descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS
             TvUi.focusable(root)
             root.background = null

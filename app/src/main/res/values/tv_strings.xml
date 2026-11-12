@@ -15,6 +15,7 @@
     <string name="tv_sources">Sources</string>
     <string name="tv_sources_hint">Choose which sources you want to browse</string>
     <string name="tv_loading">Loading…</string>
+    <string name="tv_first_video_loading">First video may take longer to load</string>
     <string name="tv_retry">Try again</string>
     <string name="tv_refresh">Refresh</string>
     <string name="tv_more">Load more</string>

@@ -36,6 +36,7 @@ internal class TvPlaylistAdapter(
         val playlist = playlists[position]
         holder.title.text = playlist.name
         holder.author.visibility = View.GONE
+        holder.published.visibility = View.GONE
         holder.duration.text = if (playlist.videoCount >= 0) holder.root.context.getString(R.string.tv_playlist_count, playlist.videoCount)
         else holder.root.context.getString(R.string.playlists)
         TvUi.load(holder.image, playlist.thumbnail)

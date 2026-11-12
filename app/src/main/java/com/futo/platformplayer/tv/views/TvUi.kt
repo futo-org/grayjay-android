@@ -3,6 +3,7 @@ package com.futo.platformplayer.tv.views
 import android.content.Context
 import android.graphics.Color
 import android.graphics.Typeface
+import android.text.format.DateUtils
 import android.text.TextUtils
 import android.view.Gravity
 import android.view.View
@@ -15,6 +16,9 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
+import com.futo.platformplayer.api.media.models.video.IPlatformVideo
+import com.futo.platformplayer.states.StateHistory
+import com.futo.platformplayer.views.others.ProgressBar
 import java.text.NumberFormat
 
 internal object TvUi {
@@ -98,6 +102,26 @@ internal object TvUi {
 
     fun load(image: ImageView, url: String?) {
         Glide.with(image).load(url).centerCrop().into(image)
+    }
+
+    fun TextView.setPublishedDate(video: IPlatformVideo) {
+        text = video.datetime?.let {
+            DateUtils.getRelativeTimeSpanString(it.toInstant().toEpochMilli(), System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS)
+        } ?: ""
+        visibility = if (text.isNotEmpty()) View.VISIBLE else View.GONE
+    }
+
+    fun watchProgress(context: Context) = ProgressBar(context).apply {
+        id = R.id.time_bar
+        inactiveColor = 0x55EEEEEE
+        visibility = View.GONE
+        importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+    }
+
+    fun ProgressBar.setHistoryProgress(video: IPlatformVideo) {
+        val position = StateHistory.instance.getHistoryPosition(video.url)
+        progress = if (video.duration > 0) (position.toFloat() / video.duration).coerceIn(0f, 1f) else 0f
+        visibility = if (position > 0 && video.duration > 0 && !video.isLive) View.VISIBLE else View.GONE
     }
 
     fun count(value: Long): String = NumberFormat.getIntegerInstance().format(value)

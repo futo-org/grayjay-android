@@ -1,13 +1,12 @@
 package com.futo.platformplayer.tv.install
 
 import android.app.Dialog
-import android.view.ContextThemeWrapper
+import android.text.method.ScrollingMovementMethod
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.core.widget.NestedScrollView
@@ -15,6 +14,7 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.R
+import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.tv.sync.TvPluginCredentials
 import com.futo.platformplayer.states.StatePlugins
 import com.futo.platformplayer.models.ImageVariable
@@ -27,7 +27,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 internal class TvCredentialDialog(private val activity: AppCompatActivity) : DefaultLifecycleObserver {
-    private val _context = ContextThemeWrapper(activity, R.style.TvCredentialsDialog)
     private var _dialog: Dialog? = null
     private var _operation: Job? = null
 
@@ -36,7 +35,7 @@ internal class TvCredentialDialog(private val activity: AppCompatActivity) : Def
     }
 
     fun show(key: String, name: String, onFinished: () -> Unit) {
-        if (_dialog != null || _operation?.isActive == true) return
+        if (_dialog?.isShowing == true || _operation?.isActive == true) return
         _operation = activity.lifecycleScope.launch {
             progress(R.string.tv_credentials_checking)
             try {
@@ -118,12 +117,10 @@ internal class TvCredentialDialog(private val activity: AppCompatActivity) : Def
     }
 
     private fun confirm(key: String, name: String, plugins: List<TvPluginCredentials.Plugin>, onFinished: () -> Unit) {
-        display(AlertDialog.Builder(_context)
-            .setTitle(activity.getString(R.string.tv_credentials_choose, name))
-            .setMessage(R.string.tv_credentials_warning)
-            .setNegativeButton(R.string.cancel, null)
-            .setPositiveButton(R.string.tv_credentials_send) { _, _ -> send(key, plugins, onFinished) }
-            .create())
+        display(UIDialogs.showDialog(activity, R.drawable.ic_lock,
+            activity.getString(R.string.tv_credentials_choose, name), activity.getString(R.string.tv_credentials_warning), null, 0,
+            UIDialogs.Action(activity.getString(R.string.cancel), {}, UIDialogs.ActionStyle.ACCENT),
+            UIDialogs.Action(activity.getString(R.string.tv_credentials_send), { send(key, plugins, onFinished) }, UIDialogs.ActionStyle.PRIMARY)))
     }
 
     private fun send(key: String, plugins: List<TvPluginCredentials.Plugin>, onFinished: () -> Unit) {
@@ -139,14 +136,7 @@ internal class TvCredentialDialog(private val activity: AppCompatActivity) : Def
                     }
                     activity.getString(status, plugin.name)
                 }
-                display(AlertDialog.Builder(_context)
-                    .setTitle(R.string.tv_credentials_result)
-                    .setMessage(text)
-                    .setPositiveButton(android.R.string.ok) { _, _ ->
-                        if (results.none { it.status == "failed" }) onFinished()
-                    }
-                    .setCancelable(false)
-                    .create())
+                result(text, results.none { it.status == "failed" }, onFinished)
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
@@ -155,23 +145,35 @@ internal class TvCredentialDialog(private val activity: AppCompatActivity) : Def
         }
     }
 
+    private fun result(text: String, success: Boolean, onFinished: () -> Unit) {
+        display(UIDialogs.showDialog(activity, R.drawable.device_sync,
+            activity.getString(R.string.tv_credentials_result), text, null, -2,
+            UIDialogs.Action(activity.getString(android.R.string.ok), {
+                if (success) onFinished()
+            }, UIDialogs.ActionStyle.PRIMARY)).apply {
+            findViewById<TextView>(R.id.dialog_text_details).apply {
+                maxHeight = (activity.resources.displayMetrics.heightPixels * 0.35f).toInt()
+                movementMethod = ScrollingMovementMethod.getInstance()
+            }
+        })
+    }
+
     private fun progress(message: Int, cancelable: Boolean = true) {
-        val builder = AlertDialog.Builder(_context).setMessage(message).setCancelable(cancelable)
-        if (cancelable) builder.setNegativeButton(R.string.cancel) { _, _ -> _operation?.cancel() }
-        val dialog = builder.create()
-        dialog.setOnCancelListener { _operation?.cancel() }
-        display(dialog)
+        val actions = if (cancelable) arrayOf(UIDialogs.Action(activity.getString(R.string.cancel),
+            { _operation?.cancel() }, UIDialogs.ActionStyle.ACCENT)) else emptyArray()
+        display(UIDialogs.showDialog(activity, R.drawable.ic_loader_animated, true,
+            activity.getString(message), null, null, if (cancelable) 0 else -2, *actions))
     }
 
     private fun message(message: Int) {
-        display(AlertDialog.Builder(_context).setTitle(R.string.tv_credentials_title)
-            .setMessage(message).setPositiveButton(android.R.string.ok, null).create())
+        display(UIDialogs.showDialog(activity, R.drawable.device_sync,
+            activity.getString(R.string.tv_credentials_title), activity.getString(message), null, 0,
+            UIDialogs.Action(activity.getString(android.R.string.ok), {}, UIDialogs.ActionStyle.PRIMARY)))
     }
 
     private fun display(dialog: Dialog) {
         _dialog?.dismiss()
         _dialog = dialog
-        dialog.setOnDismissListener { if (_dialog === dialog) _dialog = null }
         dialog.show()
     }
 }

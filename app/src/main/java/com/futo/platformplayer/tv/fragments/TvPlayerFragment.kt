@@ -10,7 +10,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -29,10 +28,14 @@ import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.tv.TvActivity
 import com.futo.platformplayer.tv.playlists.TvPlaylistQueue
 import com.futo.platformplayer.tv.views.TvCommentsPanel
+import com.futo.platformplayer.tv.views.TvMenuDialog
 import com.futo.platformplayer.tv.views.TvPlayerPanel
+import com.futo.platformplayer.tv.views.TvVideoInfoPanel
+import com.futo.platformplayer.tv.views.TvUi
 import com.futo.platformplayer.tv.views.TvUi.dp
 import com.futo.platformplayer.views.video.FutoVideoPlayer
 import com.futo.platformplayer.views.video.FutoVideoPlayerBase
+import com.google.android.material.progressindicator.CircularProgressIndicator
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
@@ -52,7 +55,7 @@ class TvPlayerFragment : Fragment() {
     private var positionLoaded = false
     private var resumePlaying = true
     private var sourceLoaded = false
-    private var errorDialog: AlertDialog? = null
+    private var errorDialog: TvMenuDialog? = null
     private lateinit var videoTitle: TextView
     private lateinit var videoAuthor: TextView
     private lateinit var stage: FrameLayout
@@ -65,6 +68,9 @@ class TvPlayerFragment : Fragment() {
     private var subtitle = -1
     private var queue: TvPlaylistQueue? = null
     private var listener: Player.Listener? = null
+    private var firstLoadHint: TextView? = null
+    private var loadingIndicator: CircularProgressIndicator? = null
+    private var generatingSource = false
 
     private val host
         get() = requireActivity() as TvActivity
@@ -100,12 +106,37 @@ class TvPlayerFragment : Fragment() {
         }
         playerView = player
         stage.addView(player, FrameLayout.LayoutParams(-1, -1))
+        loadingIndicator = CircularProgressIndicator(context).apply {
+            id = R.id.tv_player_loading
+            isIndeterminate = true
+            indicatorSize = context.dp(40)
+            trackThickness = context.dp(3)
+            setIndicatorColor(Color.WHITE)
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        }
+        stage.addView(loadingIndicator, FrameLayout.LayoutParams(context.dp(48), context.dp(48), Gravity.CENTER))
+        player.loaderGameVisibilityChanged.subscribe(this) { loading ->
+            activity?.runOnUiThread {
+                generatingSource = loading
+                player.findViewById<View>(R.id.loader_overlay).visibility = View.GONE
+                updateLoading()
+            }
+        }
         val controller = inflater.inflate(R.layout.tv_player, stage, false) as PlayerControlView
         controls = controller
         controller.player = player.exoPlayer?.player
         controller.setShowNextButton(false)
         controller.setShowPreviousButton(false)
         stage.addView(controller)
+        firstLoadHint = TvUi.text(context, getString(R.string.tv_first_video_loading), 14f, true).apply {
+            id = R.id.tv_first_video_loading
+            gravity = Gravity.CENTER
+            translationY = context.dp(48).toFloat()
+            setPadding(context.dp(24), 0, context.dp(24), 0)
+            visibility = if (state?.getBoolean("firstLoadHint") ?: !firstVideoOpened) View.VISIBLE else View.GONE
+        }
+        stage.addView(firstLoadHint, FrameLayout.LayoutParams(-1, -2, Gravity.CENTER))
+        firstVideoOpened = true
         videoTitle = controller.findViewById(R.id.tv_player_title)
         videoTitle.setText(R.string.tv_loading)
         videoAuthor = controller.findViewById(R.id.tv_player_author)
@@ -153,17 +184,7 @@ class TvPlayerFragment : Fragment() {
         }
         controller.findViewById<View>(R.id.tv_player_comments).setOnClickListener { showComments() }
         controller.findViewById<View>(R.id.tv_player_settings).setOnClickListener { showSettings() }
-        controller.findViewById<View>(R.id.tv_video_info).setOnClickListener {
-            val video = details ?: return@setOnClickListener
-            host.currentVideo = video
-            host.navigate(
-                TvVideoDetailsFragment().apply {
-                    arguments = Bundle().apply {
-                        putString("url", video.url)
-                        putBoolean("fromPlayer", true)
-                    }
-                })
-        }
+        controller.findViewById<View>(R.id.tv_video_info).setOnClickListener { showInfo() }
         controller.addVisibilityListener {
             if (it != View.VISIBLE && sidePanel == null) player.requestFocus()
         }
@@ -194,6 +215,8 @@ class TvPlayerFragment : Fragment() {
                     }
 
                     override fun onPlaybackStateChanged(state: Int) {
+                        updateLoading()
+                        if (state == Player.STATE_READY || state == Player.STATE_ENDED) firstLoadHint?.visibility = View.GONE
                         if (state == Player.STATE_ENDED && queue?.next(automatic = true) != true) showControls()
                     }
                 }.also { listener = it })
@@ -246,6 +269,7 @@ class TvPlayerFragment : Fragment() {
         outState.putLong("position", if (sourceLoaded) playerView?.position ?: position else position)
         outState.putBoolean("positionLoaded", positionLoaded)
         outState.putBoolean("playing", resumePlaying)
+        outState.putBoolean("firstLoadHint", firstLoadHint?.visibility == View.VISIBLE)
         super.onSaveInstanceState(outState)
     }
 
@@ -265,6 +289,7 @@ class TvPlayerFragment : Fragment() {
             player.onDatasourceError.remove(this)
             player.onPlayChanged.remove(this)
             player.onReloadRequired.remove(this)
+            player.loaderGameVisibilityChanged.remove(this)
             player.stopAllGestures()
             player.stopAndReleaseSabrSession()
             player.clear()
@@ -272,11 +297,14 @@ class TvPlayerFragment : Fragment() {
             player.changePlayer(null)
         }
         sourceLoaded = false
+        loadingIndicator = null
+        generatingSource = false
         controls?.player = null
         controls = null
         revealKey = null
         listener = null
         playerView = null
+        firstLoadHint = null
         super.onDestroyView()
     }
 
@@ -287,7 +315,7 @@ class TvPlayerFragment : Fragment() {
         }
         val controller = controls ?: return false
         if (!controller.isFullyVisible) return false
-        controller.hideImmediately()
+        controller.hide()
         return true
     }
 
@@ -321,6 +349,16 @@ class TvPlayerFragment : Fragment() {
             return true
         }
         if (sidePanel != null) return false
+        val timeline = controls?.findViewById<View>(androidx.media3.ui.R.id.exo_progress)
+        if ((code == KeyEvent.KEYCODE_DPAD_LEFT || code == KeyEvent.KEYCODE_DPAD_RIGHT) &&
+            (controls?.isFullyVisible != true || player.hasFocus() || timeline?.hasFocus() == true)) {
+            if (event.action == KeyEvent.ACTION_DOWN) {
+                controls?.show()
+                timeline?.requestFocus()
+                seek(if (code == KeyEvent.KEYCODE_DPAD_RIGHT) 5_000 else -5_000)
+            }
+            return true
+        }
         if (revealKey == code) {
             if (event.action == KeyEvent.ACTION_UP) revealKey = null
             return true
@@ -346,6 +384,8 @@ class TvPlayerFragment : Fragment() {
     }
 
     private fun loadVideo(refresh: Boolean = false) {
+        sourceLoaded = false
+        updateLoading()
         trackerJob?.cancel()
         playbackTracking.cleanupTracker()
         sourceJob?.cancel()
@@ -391,6 +431,7 @@ class TvPlayerFragment : Fragment() {
                 player.setPlaybackRate(settings.getDefaultPlaybackSpeed().toFloat())
                 player.seekTo(position)
                 sourceLoaded = true
+                updateLoading()
                 loadPlaybackTracker(video)
                 queue?.loaded(video)
                 if (resumePlaying && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED))
@@ -402,6 +443,12 @@ class TvPlayerFragment : Fragment() {
                 showError()
             }
         }
+    }
+
+    private fun updateLoading() {
+        val state = playerView?.exoPlayer?.player?.playbackState
+        val loading = !sourceLoaded || generatingSource || state == Player.STATE_IDLE || state == Player.STATE_BUFFERING
+        loadingIndicator?.visibility = if (loading && errorDialog?.isShowing != true) View.VISIBLE else View.GONE
     }
 
     private fun loadPlaybackTracker(video: IPlatformVideoDetails) {
@@ -435,6 +482,7 @@ class TvPlayerFragment : Fragment() {
     }
 
     private fun playQueuedVideo(url: String) {
+        firstLoadHint?.visibility = View.GONE
         savePosition()
         playerView?.pause()
         if (sidePanel != null) closePanel()
@@ -492,7 +540,11 @@ class TvPlayerFragment : Fragment() {
     private fun resizeStage(compact: Boolean) {
         val root = view as? FrameLayout ?: return
         resizeAnimation?.cancel()
-        val width = if (compact) (root.width * 0.38f).toInt().coerceAtMost(requireContext().dp(360)) else 0
+        val width = when {
+            !compact -> 0
+            sidePanel is TvVideoInfoPanel -> root.width / 2
+            else -> (root.width * 0.38f).toInt().coerceAtMost(requireContext().dp(360))
+        }
         if (compact)
             panelContainer.layoutParams = (panelContainer.layoutParams as FrameLayout.LayoutParams).apply { this.width = width }
         val target = if (compact) root.width - width - requireContext().dp(24) else root.width
@@ -515,6 +567,15 @@ class TvPlayerFragment : Fragment() {
             }
             start()
         }
+    }
+
+    private fun showInfo() {
+        val video = details ?: return
+        val panel = TvVideoInfoPanel(requireContext(), video, {
+            host.openChannel(video.author.url, video.author.name, video.author.thumbnail)
+        }, ::closePanel)
+        openPanel(panel, R.id.tv_video_info)
+        panel.findViewById<View>(R.id.tv_info_description).requestFocus()
     }
 
     private fun showComments() {
@@ -650,15 +711,25 @@ class TvPlayerFragment : Fragment() {
 
     private fun showError() {
         activity?.runOnUiThread {
+            firstLoadHint?.visibility = View.GONE
+            loadingIndicator?.visibility = View.GONE
             if (!isAdded || view == null || errorDialog?.isShowing == true) return@runOnUiThread
-            errorDialog = AlertDialog.Builder(requireContext())
-                .setMessage(R.string.tv_player_error)
-                .setPositiveButton(R.string.tv_retry) { _, _ ->
+            errorDialog = TvMenuDialog(requireContext()).also { dialog ->
+                dialog.panel.title(getString(R.string.tv_player_error))
+                val menu = dialog.panel.menu()
+                val retry = dialog.panel.option(getString(R.string.tv_retry)) {
+                    dialog.dismiss()
                     position = playerView?.position ?: position
                     loadVideo(refresh = true)
                 }
-                .setNegativeButton(R.string.tv_close) { _, _ -> host.supportFragmentManager.popBackStack() }
-                .show()
+                menu.addView(retry)
+                menu.addView(dialog.panel.option(getString(R.string.tv_close)) {
+                    dialog.dismiss()
+                    host.supportFragmentManager.popBackStack()
+                })
+                dialog.setOnShowListener { retry.requestFocus() }
+                dialog.show()
+            }
         }
     }
 
@@ -672,5 +743,9 @@ class TvPlayerFragment : Fragment() {
                 StateHistory.instance.updateHistoryPosition(video, it, true, position / 1000)
             }
         }
+    }
+
+    companion object {
+        private var firstVideoOpened = false
     }
 }

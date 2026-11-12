@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:focusable="true"
     app:controller_layout_id="@layout/tv_player_controls"
-    app:animation_enabled="false"
-    app:play_icon="@drawable/ic_play_white_nopad"
+    app:animation_enabled="true"
+    app:play_icon="@drawable/ic_play_notif"
     app:pause_icon="@drawable/ic_pause_white"
     app:show_timeout="5000" />

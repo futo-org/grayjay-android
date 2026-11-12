@@ -1,18 +1,16 @@
 package com.futo.platformplayer.tv.history
 
-import android.content.res.ColorStateList
-import android.view.Gravity
 import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
-import android.widget.FrameLayout
-import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.R
 import com.futo.platformplayer.models.HistoryVideo
 import com.futo.platformplayer.tv.views.TvUi
 import com.futo.platformplayer.tv.views.TvUi.dp
+import com.futo.platformplayer.tv.views.TvUi.setHistoryProgress
+import com.futo.platformplayer.tv.views.TvUi.setPublishedDate
 import com.futo.platformplayer.tv.views.TvVideoAdapter
 import java.time.LocalDate
 import java.time.ZoneId
@@ -60,15 +58,14 @@ internal class TvHistoryAdapter(
         val card = holder.card
         card.title.text = video.name
         card.author.text = video.author.name
+        card.published.setPublishedDate(video)
         card.duration.visibility = if (video.isLive || video.duration > 0) View.VISIBLE else View.GONE
         card.duration.text = if (video.isLive) c.getString(R.string.tv_live) else TvUi.duration(video.duration)
         if (video.isLive) card.duration.setBackgroundResource(R.drawable.background_thumbnail_live)
         else card.duration.setBackgroundColor(0xCC000000.toInt())
         card.duration.setPadding(c.dp(5), c.dp(2), c.dp(5), c.dp(2))
         TvUi.load(card.image, video.thumbnails.getHQThumbnail())
-        holder.progress.visibility = if (item.position > 0 && video.duration > 0) View.VISIBLE else View.GONE
-        holder.progress.progress =
-            if (video.duration > 0) (item.position.toDouble() / video.duration * 1000).toInt().coerceIn(0, 1000) else 0
+        card.progress.setHistoryProgress(video)
         val time = item.date
             .atZoneSameInstant(ZoneId.systemDefault())
             .format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT))
@@ -78,7 +75,7 @@ internal class TvHistoryAdapter(
                 item.position > 0 -> "  ·  ${c.getString(R.string.tv_history_resume, TvUi.duration(item.position))}"
                 else -> ""
             }
-        card.root.contentDescription = "${video.name}, ${video.author.name}, ${holder.watched.text}"
+        card.root.contentDescription = listOf(video.name, video.author.name, card.published.text, holder.watched.text).filter { it.isNotBlank() }.joinToString(", ")
         card.root.setOnClickListener { play(item) }
         card.root.setOnLongClickListener {
             options(item)
@@ -135,19 +132,11 @@ internal class TvHistoryAdapter(
     private class Header(val text: TextView) : RecyclerView.ViewHolder(text)
 
     private class Video(val card: TvVideoAdapter.Card) : RecyclerView.ViewHolder(card.root) {
-        val progress = ProgressBar(card.root.context, null, android.R.attr.progressBarStyleHorizontal).apply {
-            max = 1000
-            progressTintList = ColorStateList.valueOf(0xFFF1F1F1.toInt())
-            progressBackgroundTintList = ColorStateList.valueOf(0xCC555555.toInt())
-            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-        }
         val watched = TvUi.text(card.root.context, "", 12f, true).apply {
             setPadding(context.dp(4), context.dp(5), context.dp(4), 0)
         }
 
         init {
-            (card.image.parent as FrameLayout).addView(
-                progress, FrameLayout.LayoutParams(-1, card.root.context.dp(3), Gravity.BOTTOM))
             card.root.addView(watched)
         }
     }
