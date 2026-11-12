@@ -20,7 +20,10 @@ class LocalVideoFileSource: IVideoSource {
     override val duration: Long;
     override val priority: Boolean = false;
 
+    var file: File;
+
     constructor(file: File) {
+        this.file = file;
         name = file.name;
         width = 0;
         height = 0;

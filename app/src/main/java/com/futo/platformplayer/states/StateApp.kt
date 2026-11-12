@@ -49,6 +49,8 @@ import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.v2.ManagedStore
 import com.futo.platformplayer.views.ToastView
 import com.futo.polycentric.core.ApiMethods
+import com.futo.polycentric.core.toBase64Url
+import com.futo.platformplayer.polycentric.ModerationsManager
 import kotlinx.coroutines.*
 import java.io.File
 import java.util.*
@@ -135,8 +137,12 @@ class StateApp {
         return _scope;
     }
     val scope: CoroutineScope get() {
-        val thisScope = scopeOrNull
-            ?: throw IllegalStateException("Attempted to use a global lifetime scope while MainActivity is no longer available");
+        val thisScope = scopeOrNull;
+        if(thisScope == null) {
+            //throw IllegalStateException("Attempted to use a global lifetime scope while MainActivity is no longer available");
+            Logger.w(TAG, "Attempted to use a global lifetime scope while MainActivity is no longer available, USING GLOBAL SCOPE");
+            return GlobalScope;
+        }
         return thisScope;
     }
     val scopeGetter: ()->CoroutineScope get() {
@@ -379,6 +385,29 @@ class StateApp {
         if(Settings.instance.other.polycentricLocalCache) {
             Logger.i(TAG, "Initialize Polycentric Disk Cache")
             _cacheDirectory?.let { ApiMethods.initCache(it) };
+        }
+
+        Logger.i(TAG, "MainApp Starting: Initializing [ModerationsManager]");
+        ModerationsManager.initialize(context);
+
+        Logger.i(TAG, "MainApp Starting: Setting [ModerationLevelProvider]");
+        ApiMethods.setModerationLevelProvider {
+            try {
+                ModerationsManager.getInstance().getCurrentModerationLevels()
+            } catch (e: IllegalStateException) {
+                Logger.e(TAG, "Failed to get moderation levels from manager", e);
+                null
+            }
+        }
+
+        Logger.i(TAG, "MainApp Starting: Setting [ModerationExemptSystemProvider]");
+        ApiMethods.setModerationExemptSystemProvider {
+            try {
+                StatePolycentric.instance.processHandle?.system?.toProto()?.toByteArray()?.toBase64Url()
+            } catch (e: Throwable) {
+                Logger.e(TAG, "Failed to get moderation exempt system from manager", e);
+                null
+            }
         }
 
         val logFile = File(context.filesDir, "log.txt");

@@ -2,12 +2,7 @@ package com.futo.platformplayer.views.casting
 
 import android.content.Context
 import android.util.AttributeSet
-import android.view.LayoutInflater
 import android.view.View
-import android.widget.FrameLayout
-import android.widget.ImageButton
-import android.widget.LinearLayout
-import android.widget.TextView
 import androidx.core.content.ContextCompat
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings

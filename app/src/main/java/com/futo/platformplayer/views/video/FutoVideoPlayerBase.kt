@@ -64,7 +64,12 @@ import com.futo.platformplayer.api.media.platforms.js.models.sources.JSDashManif
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSHLSManifestAudioSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSVideoUrlRangeSource
+import com.futo.platformplayer.api.media.platforms.local.models.sources.LocalAudioContentSource
+import com.futo.platformplayer.api.media.platforms.local.models.sources.LocalAudioFileSource
+import com.futo.platformplayer.api.media.platforms.local.models.sources.LocalVideoContentSource
+import com.futo.platformplayer.api.media.platforms.local.models.sources.LocalVideoFileSource
 import com.futo.platformplayer.api.media.structures.IPager
+import com.futo.platformplayer.awaitCancelConverted
 import com.futo.platformplayer.constructs.Event0
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.constructs.TaskHandler
@@ -480,6 +485,8 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             is IHLSManifestSource -> { swapVideoSourceHLS(videoSource); true; }
             is IVideoUrlWidevineSource -> { swapVideoSourceUrlWidevine(videoSource); true; }
             is IVideoUrlSource -> { swapVideoSourceUrl(videoSource); true; }
+            is LocalVideoFileSource -> { swapVideoSourceLocalFile(videoSource); true; }
+            is LocalVideoContentSource -> { swapVideoSourceLocalContent(videoSource); true; }
             null -> { _lastVideoMediaSource = null; true;}
             else -> throw IllegalArgumentException("Unsupported video source [${videoSource.javaClass.simpleName}]");
         }
@@ -496,6 +503,8 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             is JSDashManifestRawAudioSource -> swapAudioSourceDashRaw(audioSource, play, resume, swapId);
             is IAudioUrlWidevineSource -> { swapAudioSourceUrlWidevine(audioSource); true; }
             is IAudioUrlSource -> { swapAudioSourceUrl(audioSource); true; }
+            is LocalAudioFileSource -> { swapAudioSourceLocalFile(audioSource); true; }
+            is LocalAudioContentSource -> { swapAudioSourceLocalContent(audioSource); true; }
             null -> { _lastAudioMediaSource = null; true; }
             else -> throw IllegalArgumentException("Unsupported video source [${audioSource.javaClass.simpleName}]");
         }
@@ -512,6 +521,23 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             throw IllegalArgumentException("File for this video does not exist");
         _lastVideoMediaSource = ProgressiveMediaSource.Factory(DefaultDataSource.Factory(context))
             .createMediaSource(MediaItem.fromUri(Uri.fromFile(file)));
+    }
+    @OptIn(UnstableApi::class)
+    private fun swapVideoSourceLocalFile(videoSource: LocalVideoFileSource) {
+        Logger.i(TAG, "Loading VideoSource [Local]");
+        val file = videoSource.file;
+        if(!file.exists())
+            throw IllegalArgumentException("File for this video does not exist");
+        _lastVideoMediaSource = ProgressiveMediaSource.Factory(DefaultDataSource.Factory(context))
+            .createMediaSource(MediaItem.fromUri(Uri.fromFile(file)));
+    }
+    @OptIn(UnstableApi::class)
+    private fun swapVideoSourceLocalContent(videoSource: LocalVideoContentSource) {
+        Logger.i(TAG, "Loading VideoSource [Local]");
+        if(!videoSource.contentUrl.startsWith("content://"))
+            throw IllegalArgumentException("Not a content uri");
+        _lastVideoMediaSource = ProgressiveMediaSource.Factory(DefaultDataSource.Factory(context))
+            .createMediaSource(MediaItem.fromUri(videoSource.contentUrl));
     }
     @OptIn(UnstableApi::class)
     private fun swapVideoSourceUrlRange(videoSource: JSVideoUrlRangeSource) {
@@ -618,7 +644,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
                             setLoading(true)
                         }
                     }
-                    val generated = generatedDef.await();
+                    val generated = generatedDef.awaitCancelConverted();
                     if (_swapIdVideo.get() != swapId) {
                         return@launch
                     }
@@ -707,6 +733,23 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
             .createMediaSource(MediaItem.fromUri(Uri.fromFile(file)));
     }
     @OptIn(UnstableApi::class)
+    private fun swapAudioSourceLocalFile(audioSource: LocalAudioFileSource) {
+        Logger.i(TAG, "Loading VideoSource [Local]");
+        val file = audioSource.file;
+        if(!file.exists())
+            throw IllegalArgumentException("File for this video does not exist");
+        _lastAudioMediaSource = ProgressiveMediaSource.Factory(DefaultDataSource.Factory(context))
+            .createMediaSource(MediaItem.fromUri(Uri.fromFile(file)));
+    }
+    @OptIn(UnstableApi::class)
+    private fun swapAudioSourceLocalContent(audioSource: LocalAudioContentSource) {
+        Logger.i(TAG, "Loading VideoSource [Local]");
+        if(!audioSource.contentUrl.startsWith("content://"))
+            throw IllegalArgumentException("Not a content uri");
+        _lastAudioMediaSource = ProgressiveMediaSource.Factory(DefaultDataSource.Factory(context))
+            .createMediaSource(MediaItem.fromUri(audioSource.contentUrl));
+    }
+    @OptIn(UnstableApi::class)
     private fun swapAudioSourceUrlRange(audioSource: JSAudioUrlRangeSource) {
         Logger.i(TAG, "Loading JSAudioUrlRangeSource");
         if(audioSource.hasItag) {
@@ -765,7 +808,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
                             setLoading(true)
                         }
                     }
-                    val generated = generatedDef.await();
+                    val generated = generatedDef.awaitCancelConverted();
                     if (_swapIdAudio.get() != swapId) {
                         return@launch
                     }

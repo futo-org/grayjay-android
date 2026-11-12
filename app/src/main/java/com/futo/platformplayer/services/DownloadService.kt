@@ -66,10 +66,9 @@ class DownloadService : Service() {
                 return START_NOT_STICKY;
 
             if(!FragmentedStorage.isInitialized) {
-                Logger.i(TAG, "Attempted to start DownloadService without initialized files");
-                stopSelf()
-                closeDownloadSession();
-                return START_NOT_STICKY;
+                Logger.i(TAG, "Attempted to start DownloadService without initialized files")
+                closeDownloadSession()
+                return START_NOT_STICKY
             }
             _started = true;
         }
@@ -107,12 +106,19 @@ class DownloadService : Service() {
         return START_STICKY;
     }
     fun setupNotificationRequirements() {
-        _notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager;
-        _notificationChannel = NotificationChannel(DOWNLOAD_NOTIF_CHANNEL_ID, DOWNLOAD_NOTIF_CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT).apply {
-            this.enableVibration(false);
-            this.setSound(null, null);
-        };
-        _notificationManager!!.createNotificationChannel(_notificationChannel!!);
+        _notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        if (_notificationChannel == null) {
+            _notificationChannel = NotificationChannel(
+                DOWNLOAD_NOTIF_CHANNEL_ID,
+                DOWNLOAD_NOTIF_CHANNEL_NAME,
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                enableVibration(false)
+                setSound(null, null)
+                setShowBadge(false)
+            }
+        }
+        _notificationManager?.createNotificationChannel(_notificationChannel!!)
     }
 
     override fun onCreate() {
@@ -293,21 +299,28 @@ class DownloadService : Service() {
         val notif = builder.build();
         notif.flags = notif.flags or NotificationCompat.FLAG_ONGOING_EVENT or NotificationCompat.FLAG_NO_CLEAR;
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(DOWNLOAD_NOTIF_ID, notif, FOREGROUND_SERVICE_TYPE_DATA_SYNC);
+        if (_isForeground) {
+            _notificationManager?.notify(DOWNLOAD_NOTIF_ID, notif)
         } else {
-            startForeground(DOWNLOAD_NOTIF_ID, notif);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+                startForeground(DOWNLOAD_NOTIF_ID, notif, FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+            else
+                startForeground(DOWNLOAD_NOTIF_ID, notif)
+            _isForeground = true
         }
     }
 
     fun closeDownloadSession() {
-        Logger.i(TAG, "closeDownloadSession");
-        stopForeground(STOP_FOREGROUND_REMOVE);
-        _notificationManager?.cancel(DOWNLOAD_NOTIF_ID);
-        stopService();
-        _started = false;
-        super.stopSelf();
+        Logger.i(TAG, "closeDownloadSession")
+        if (_isForeground) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            _isForeground = false
+        }
+        _notificationManager?.cancel(DOWNLOAD_NOTIF_ID)
+        _started = false
+        super.stopSelf()
     }
+
     override fun onDestroy() {
         Logger.i(TAG, "onDestroy");
         _instance = null;

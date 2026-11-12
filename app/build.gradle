@@ -39,7 +39,7 @@ protobuf {
 
 android {
     namespace 'com.futo.platformplayer'
-    compileSdk 34
+    compileSdk 36
     flavorDimensions "buildType"
     productFlavors {
         stable {
@@ -97,7 +97,7 @@ android {
 
     defaultConfig {
         minSdk 28
-        targetSdk 34
+        targetSdk 35
         versionCode gitVersionCode
         versionName gitVersionName
 
@@ -231,4 +231,10 @@ dependencies {
     testImplementation "org.mockito:mockito-core:5.4.0"
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+
+    //Rust casting SDK
+    implementation('org.futo.gitlab.videostreaming.fcast-sdk-jitpack:sender-sdk-minimal:0.3.1') {
+        // Polycentricandroid includes this
+        exclude group: 'net.java.dev.jna'
+    }
 }

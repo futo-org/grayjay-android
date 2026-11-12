@@ -12,12 +12,11 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.futo.platformplayer.R
+import com.futo.platformplayer.Settings
 import com.futo.platformplayer.activities.MainActivity
-import com.futo.platformplayer.casting.AirPlayCastingDevice
 import com.futo.platformplayer.casting.CastConnectionState
+import com.futo.platformplayer.casting.CastProtocolType
 import com.futo.platformplayer.casting.CastingDevice
-import com.futo.platformplayer.casting.ChromecastCastingDevice
-import com.futo.platformplayer.casting.FCastCastingDevice
 import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.fragment.mainactivity.main.VideoDetailFragment
 import com.futo.platformplayer.logging.Logger
@@ -69,18 +68,18 @@ class ConnectedCastingDialog(context: Context?) : AlertDialog(context) {
 
         _buttonPlay = findViewById(R.id.button_play);
         _buttonPlay.setOnClickListener {
-            StateCasting.instance.activeDevice?.resumeVideo()
+            StateCasting.instance.resumeVideo()
         }
 
         _buttonPause = findViewById(R.id.button_pause);
         _buttonPause.setOnClickListener {
-            StateCasting.instance.activeDevice?.pauseVideo()
+            StateCasting.instance.pauseVideo()
         }
 
         _buttonStop = findViewById(R.id.button_stop);
         _buttonStop.setOnClickListener {
             (ownerActivity as MainActivity?)?.getFragment<VideoDetailFragment>()?.closeVideoDetails()
-            StateCasting.instance.activeDevice?.stopVideo()
+            StateCasting.instance.stopVideo()
         }
 
         _buttonNext = findViewById(R.id.button_next);
@@ -90,7 +89,11 @@ class ConnectedCastingDialog(context: Context?) : AlertDialog(context) {
 
         _buttonClose.setOnClickListener { dismiss(); };
         _buttonDisconnect.setOnClickListener {
-            StateCasting.instance.activeDevice?.stopCasting();
+            try {
+                StateCasting.instance.activeDevice?.disconnect()
+            } catch (e: Throwable) {
+                Logger.e(TAG, "Active device failed to disconnect: $e")
+            }
             dismiss();
         };
 
@@ -99,12 +102,7 @@ class ConnectedCastingDialog(context: Context?) : AlertDialog(context) {
                 return@OnChangeListener
             }
 
-            val activeDevice = StateCasting.instance.activeDevice ?: return@OnChangeListener;
-            try {
-                activeDevice.seekVideo(value.toDouble());
-            } catch (e: Throwable) {
-                Logger.e(TAG, "Failed to change volume.", e);
-            }
+            StateCasting.instance.videoSeekTo(value.toDouble())
         });
 
         //TODO: Check if volume slider is properly hidden in all cases
@@ -113,14 +111,7 @@ class ConnectedCastingDialog(context: Context?) : AlertDialog(context) {
                 return@OnChangeListener
             }
 
-            val activeDevice = StateCasting.instance.activeDevice ?: return@OnChangeListener;
-            if (activeDevice.canSetVolume) {
-                try {
-                    activeDevice.changeVolume(value.toDouble());
-                } catch (e: Throwable) {
-                    Logger.e(TAG, "Failed to change volume.", e);
-                }
-            }
+            StateCasting.instance.changeVolume(value.toDouble())
         });
 
         setLoading(false);
@@ -172,15 +163,25 @@ class ConnectedCastingDialog(context: Context?) : AlertDialog(context) {
     private fun updateDevice() {
         val d = StateCasting.instance.activeDevice ?: return;
 
-        if (d is ChromecastCastingDevice) {
-            _imageDevice.setImageResource(R.drawable.ic_chromecast);
-            _textType.text = "Chromecast";
-        } else if (d is AirPlayCastingDevice) {
-            _imageDevice.setImageResource(R.drawable.ic_airplay);
-            _textType.text = "AirPlay";
-        } else if (d is FCastCastingDevice) {
-            _imageDevice.setImageResource(R.drawable.ic_fc);
-            _textType.text = "FastCast";
+        when (d.protocolType) {
+            CastProtocolType.CHROMECAST -> {
+                _imageDevice.setImageResource(R.drawable.ic_chromecast);
+                _textType.text = "Chromecast";
+            }
+            CastProtocolType.AIRPLAY -> {
+                _imageDevice.setImageResource(R.drawable.ic_airplay);
+                _textType.text = "AirPlay";
+            }
+            CastProtocolType.FCAST -> {
+                _imageDevice.setImageResource(
+                    if (Settings.instance.casting.experimentalCasting) {
+                        R.drawable.ic_exp_fc
+                    } else {
+                        R.drawable.ic_fc
+                    }
+                )
+                _textType.text = "FCast";
+            }
         }
 
         _textName.text = d.name;
@@ -192,7 +193,7 @@ class ConnectedCastingDialog(context: Context?) : AlertDialog(context) {
         _sliderPosition.value = d.time.toFloat().coerceAtLeast(0.0f).coerceAtMost(dur)
         _sliderPosition.valueTo = dur
 
-        if (d.canSetVolume) {
+        if (d.canSetVolume()) {
             _layoutVolumeAdjustable.visibility = View.VISIBLE;
             _layoutVolumeFixed.visibility = View.GONE;
         } else {
@@ -214,8 +215,7 @@ class ConnectedCastingDialog(context: Context?) : AlertDialog(context) {
             CastConnectionState.CONNECTED -> {
                 enableControls(interactiveControls)
             }
-            CastConnectionState.CONNECTING,
-            CastConnectionState.DISCONNECTED -> {
+            CastConnectionState.CONNECTING, CastConnectionState.DISCONNECTED -> {
                 disableControls(interactiveControls)
             }
         }

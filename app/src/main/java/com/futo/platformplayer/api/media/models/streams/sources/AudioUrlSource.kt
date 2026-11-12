@@ -14,7 +14,8 @@ class AudioUrlSource(
     override val language: String = Language.UNKNOWN,
     override val duration: Long? = null,
     override var priority: Boolean = false,
-    override var original: Boolean = false
+    override var original: Boolean = false,
+    var isLocal: Boolean = false
 ) : IAudioUrlSource, IStreamMetaDataSource{
     override var streamMetaData: StreamMetaData? = null;
 

@@ -49,7 +49,7 @@ class PolycentricProfileActivity : AppCompatActivity() {
     private lateinit var _buttonHelp: ImageButton;
     private lateinit var _editName: EditText;
     private lateinit var _buttonExport: BigButton;
-    private lateinit var _buttonOpenHarborProfile: BigButton;
+    private lateinit var _buttonModeration: BigButton;
     private lateinit var _buttonLogout: BigButton;
     private lateinit var _buttonDelete: BigButton;
     private lateinit var _username: String;
@@ -71,7 +71,7 @@ class PolycentricProfileActivity : AppCompatActivity() {
         _imagePolycentric = findViewById(R.id.image_polycentric);
         _editName = findViewById(R.id.edit_profile_name);
         _buttonExport = findViewById(R.id.button_export);
-        _buttonOpenHarborProfile = findViewById(R.id.button_open_harbor_profile);
+        _buttonModeration = findViewById(R.id.button_moderation);
         _buttonLogout = findViewById(R.id.button_logout);
         _buttonDelete = findViewById(R.id.button_delete);
         _loaderOverlay = findViewById(R.id.loader_overlay);
@@ -99,15 +99,9 @@ class PolycentricProfileActivity : AppCompatActivity() {
             startActivity(Intent(this, PolycentricBackupActivity::class.java));
         };
 
-        _buttonOpenHarborProfile.onClick.subscribe {
-            val processHandle = StatePolycentric.instance.processHandle!!;
-            processHandle?.let {
-                val systemState = SystemState.fromStorageTypeSystemState(Store.instance.getSystemState(it.system));
-                val url = it.system.systemToURLInfoSystemLinkUrl(systemState.servers.asIterable());
-                val navUrl = "https://harbor.social/" + url.substring("polycentric://".length)
-                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(navUrl)))
-            }
-        }
+        _buttonModeration.onClick.subscribe {
+            startActivity(Intent(this, PolycentricModerationActivity::class.java));
+        };
 
         _buttonLogout.onClick.subscribe {
             StatePolycentric.instance.setProcessHandle(null);

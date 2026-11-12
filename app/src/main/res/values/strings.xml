@@ -82,6 +82,8 @@
     <string name="allow_ipv6_description">If casting over IPV6 is allowed, can cause issues on some networks</string>
     <string name="allow_ipv4">Allow Link Local IPV4</string>
     <string name="allow_ipv4_description">If casting over IPV4 link local is allowed, can cause issues on some networks</string>
+    <string name="experimental_cast">Experimental</string>
+    <string name="experimental_cast_description">Use experimental casting backend (requires restart)</string>
     <string name="discover">Discover</string>
     <string name="find_new_video_sources_to_add">Find new video sources to add</string>
     <string name="these_sources_have_been_disabled">These sources have been disabled</string>
@@ -934,6 +936,7 @@
     <string name="cd_button_stop">Stop</string>
     <string name="cd_button_scan_qr">Scan QR code</string>
     <string name="cd_button_help">Help</string>
+    <string name="cd_button_sync">Sync</string>
     <string name="cd_image_polycentric">Change Polycentric profile picture</string>
     <string-array name="home_screen_array">
         <item>Recommendations</item>
@@ -1059,6 +1062,8 @@
         <item>Chinese (ZH)</item>
         <item>Russian (RU)</item>
         <item>Arabic (AR)</item>
+        <item>Italian (IT)</item>
+        <item>Turkish (TR)</item>
     </string-array>
     <string-array name="player_background_behavior">
         <item>None</item>
@@ -1102,6 +1107,10 @@
         <item>FCast</item>
         <item>ChromeCast</item>
         <item>AirPlay</item>
+    </string-array>
+    <string-array name="exp_casting_device_type_array" translatable="false">
+        <item>FCast</item>
+        <item>ChromeCast</item>
     </string-array>
     <string-array name="log_levels">
         <item>None</item>

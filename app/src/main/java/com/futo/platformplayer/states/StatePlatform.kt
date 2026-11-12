@@ -177,16 +177,11 @@ class StatePlatform {
         }
 
         withContext(Dispatchers.IO) {
+            var toDisables = mutableListOf<IPlatformClient>();
             var enabled: Array<String>;
             synchronized(_clientsLock) {
                 for(e in _enabledClients) {
-                    try {
-                        e.disable();
-                        onSourceDisabled.emit(e);
-                    }
-                    catch(ex: Throwable) {
-                        UIDialogs.appToast(ToastView.Toast("If this happens often, please inform the developers on Github", false, null, "Plugin [${e.name}] failed to disable"));
-                    }
+                    toDisables.add(e);
                 }
 
                 _enabledClients.clear();
@@ -236,6 +231,18 @@ class StatePlatform {
                 }
             }
             selectClients(*enabled);
+
+            for(toDisable in toDisables) {
+                launch(Dispatchers.IO) {
+                    try {
+                        toDisable.disable();
+                        onSourceDisabled.emit(toDisable);
+                    }
+                    catch(ex: Throwable) {
+                        Logger.e(TAG, "FAILED TO DISABLE CLIENT [${toDisable?.name}] AFTER UpdateAvailableClients", ex);
+                    }
+                }
+            }
         };
     }
 
@@ -348,11 +355,11 @@ class StatePlatform {
                 StateApp.instance.handleCaptchaException(c, ex);
             }
 
+            var toDisable: IPlatformClient? = null;
             synchronized(_clientsLock) {
                 if (_enabledClients.contains(client)) {
                     _enabledClients.remove(client);
-                    client.disable();
-                    onSourceDisabled.emit(client);
+                    toDisable = client;
                     newClient.initialize();
                     _enabledClients.add(newClient);
                 }
@@ -360,6 +367,18 @@ class StatePlatform {
                 _availableClients.removeIf { it.id == id };
                 _availableClients.add(newClient);
             }
+            if(toDisable != null) {
+                launch(Dispatchers.IO) {
+                    try {
+                        toDisable?.disable();
+                        onSourceDisabled.emit(client);
+                    }
+                    catch (ex: Throwable) {
+                        Logger.e(TAG, "FAILED TO DISABLE CLIENT [${toDisable?.name}] AFTER RELOAD", ex);
+                    }
+                }
+            }
+
             afterReload?.invoke();
             return@withContext newClient;
         };

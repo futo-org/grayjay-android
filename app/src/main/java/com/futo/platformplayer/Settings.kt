@@ -203,6 +203,8 @@ class Settings : FragmentedStorageFileJson() {
                 8 -> "zh";
                 9 -> "ru";
                 10 -> "ar";
+                11 -> "it";
+                12 -> "tr";
                 else -> null
             }
         }
@@ -717,6 +719,11 @@ class Settings : FragmentedStorageFileJson() {
         @Serializable(with = FlexibleBooleanSerializer::class)
         var allowLinkLocalIpv4: Boolean = false;
 
+        @AdvancedField
+        @FormField(R.string.experimental_cast, FieldForm.TOGGLE, R.string.experimental_cast_description, 6)
+        @Serializable(with = FlexibleBooleanSerializer::class)
+        var experimentalCasting: Boolean = false
+
         /*TODO: Should we have a different casting quality?
         @FormField("Preferred Casting Quality", FieldForm.DROPDOWN, "", 3)
         @DropdownFieldOptionsId(R.array.preferred_quality_array)
@@ -1106,6 +1113,7 @@ class Settings : FragmentedStorageFileJson() {
         @FormField(R.string.relay_server, FieldForm.READONLYTEXT, -1, 6)
         val syncServer: String get() = if(syncServerUrl?.isBlank() == true) StateSync.RELAY_SERVER else syncServerUrl ?: StateSync.RELAY_SERVER;
 
+        @AdvancedField
         @FormField(R.string.configure_sync_server, FieldForm.BUTTON, R.string.configure_sync_server_description, 7)
         fun configureSyncServer() {
             SettingsActivity.getActivity()?.let { context ->

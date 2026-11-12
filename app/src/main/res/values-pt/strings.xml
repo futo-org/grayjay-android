@@ -704,4 +704,19 @@
         <item>Newest</item>
         <item>Oldest</item>
     </string-array>
+    <string-array name="app_languages">
+        <item>Sistema</item>
+        <item>Inglês (EN)</item>
+        <item>Alemão (DE)</item>
+        <item>Espanhol (ES)</item>
+        <item>Português (PT)</item>
+        <item>Francês (FR)</item>
+        <item>Japonês (JA)</item>
+        <item>Coreano (KO)</item>
+        <item>Chinês (ZH)</item>
+        <item>Russo (RU)</item>
+        <item>Árabe (AR)</item>
+        <item>Italiano (IT)</item>
+        <item>Turco (TR)</item>
+    </string-array>
 </resources>

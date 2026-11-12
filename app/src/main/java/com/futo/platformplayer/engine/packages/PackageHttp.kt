@@ -254,7 +254,7 @@ class PackageHttp: V8Package {
 
     //TODO: This object is currently re-wrapped each modification, this is due to an issue passing the same object back and forth, should be fixed in future.
     @V8Convert(mode = V8ConversionMode.AllowOnly, proxyMode = V8ProxyMode.Class)
-    class BatchBuilder(private val _package: PackageHttp, existingRequests: MutableList<Pair<PackageHttpClient, RequestDescriptor>> = mutableListOf()): V8BindObject() {
+    class BatchBuilder(@Transient private val _package: PackageHttp, existingRequests: MutableList<Pair<PackageHttpClient, RequestDescriptor>> = mutableListOf()): V8BindObject() {
         @Transient
         private val _reqs = existingRequests;
 

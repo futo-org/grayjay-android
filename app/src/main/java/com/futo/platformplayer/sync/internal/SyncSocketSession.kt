@@ -56,6 +56,7 @@ class SyncSocketSession {
     private var _remotePublicKey: String? = null
     val remotePublicKey: String? get() = _remotePublicKey
     private var _started: Boolean = false
+    val started get() = _started
     private val _localKeyPair: DHState
     private var _thread: Thread? = null
     private var _localPublicKey: String

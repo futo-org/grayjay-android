@@ -16,7 +16,6 @@ import android.os.StrictMode.VmPolicy
 import android.util.Log
 import android.util.TypedValue
 import android.view.View
-import android.view.WindowManager
 import android.widget.FrameLayout
 import android.widget.ImageView
 import androidx.activity.result.ActivityResult
@@ -36,9 +35,11 @@ import androidx.lifecycle.withStateAtLeast
 import androidx.media3.common.util.UnstableApi
 import com.futo.platformplayer.BuildConfig
 import com.futo.platformplayer.R
+import com.futo.platformplayer.RootInsetsController
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.api.http.ManagedHttpClient
+import com.futo.platformplayer.api.media.models.video.LocalVideoDetails
 import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.constructs.Event1
 import com.futo.platformplayer.dp
@@ -198,6 +199,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     private var _privateModeEnabled = false
     private var _pictureInPictureEnabled = false
     private var _isFullscreen = false
+    private lateinit var _rootInsetsController: RootInsetsController
 
     private val _urlQrCodeResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val scanResult = IntentIntegrator.parseActivityResult(result.resultCode, result.data)
@@ -283,9 +285,6 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         }
         setContentView(R.layout.activity_main);
         setNavigationBarColorAndIcons();
-        if (Settings.instance.playback.allowVideoToGoUnderCutout)
-            window.attributes.layoutInDisplayCutoutMode =
-                WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
 
         runBlocking {
             try {
@@ -300,6 +299,9 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         FragmentedStorage.get<Settings>();
 
         rootView = findViewById(R.id.rootView);
+        _rootInsetsController = RootInsetsController.attach(this, rootView)
+        _rootInsetsController.setLightSystemBarAppearance(lightStatus = false, lightNav = false)
+
         _fragContainerTopBar = findViewById(R.id.fragment_top_bar);
         _fragContainerMain = findViewById(R.id.fragment_main);
         _fragContainerBotBar = findViewById(R.id.fragment_bottom_bar);
@@ -410,6 +412,11 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             Logger.i(TAG, "onFullscreenChanged ${it}");
             _isFullscreen = it
             updatePrivateModeVisibility()
+            if (it) {
+                _rootInsetsController.enterFullscreen(allowCutoutShortEdges = Settings.instance.playback.allowVideoToGoUnderCutout)
+            } else {
+                _rootInsetsController.exitFullscreen()
+            }
         }
 
         _fragVideoDetail.onMinimize.subscribe {
@@ -638,6 +645,11 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
     private var _qrCodeLoadingDialog: AlertDialog? = null
 
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        _rootInsetsController.onConfigurationChanged()
+    }
+
     fun showUrlQrCodeScanner() {
         try {
             _qrCodeLoadingDialog = UIDialogs.showDialog(this, R.drawable.ic_loader_animated, true,
@@ -768,7 +780,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             if (targetData != null) {
                 lifecycleScope.launch(Dispatchers.Main) {
                     try {
-                        handleUrlAll(targetData)
+                        handleUrlAll(targetData, intent)
                     } catch (e: Throwable) {
                         Logger.e(TAG, "Unhandled exception in handleUrlAll", e)
                     }
@@ -779,8 +791,9 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         }
     }
 
-    suspend fun handleUrlAll(url: String) {
+    suspend fun handleUrlAll(url: String, openIntent: Intent? = null) {
         val uri = Uri.parse(url)
+        val intent = openIntent ?: this.intent;
         when (uri.scheme) {
             "grayjay" -> {
                 if (url.startsWith("grayjay://license/")) {
@@ -807,11 +820,11 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             }
 
             "content" -> {
-                if (!handleContent(url, intent.type)) {
+                if (!handleContent(url, intent?.type)) {
                     UIDialogs.showSingleButtonDialog(
                         this,
                         R.drawable.ic_play,
-                        getString(R.string.unknown_content_format) + " [${url}]\n[${intent.type}]",
+                        getString(R.string.unknown_content_format) + " [${url}]\n[${intent?.type}]",
                         "Ok",
                         { });
                 }
@@ -932,6 +945,12 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         } else if (file.lowercase().endsWith(".txt") || mime == "text/plain") {
             return handleUnknownText(String(data));
         }
+        else if (mime?.let { it.startsWith("video/") || it.startsWith("audio/") } ?: false) {
+            val mediaItem = LocalVideoDetails.fromContent(file, mime);
+            navigateWhenReady(_fragVideoDetail, mediaItem);
+            return true;
+        }
+
         return false;
     }
 
@@ -1046,7 +1065,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         Logger.i(TAG, "handleFCast");
 
         try {
-            StateCasting.instance.handleUrl(this, url)
+            StateCasting.instance.handleUrl(url)
             return true;
         } catch (e: Throwable) {
             Log.e(TAG, "Failed to parse FCast URL '${url}'.", e)
