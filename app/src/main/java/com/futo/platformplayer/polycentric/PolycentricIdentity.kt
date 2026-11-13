@@ -1,9 +1,16 @@
 package com.futo.platformplayer.polycentric
 
+import android.content.Context
+import com.futo.platformplayer.R
 import com.futo.platformplayer.logging.Logger
 import kotlinx.coroutines.CancellationException
 import org.futo.polycentric.core.Collections
 import org.futo.polycentric.core.getProfile
+import org.futo.polycentric.ffi.common.ContentBodyValidationError
+import org.futo.polycentric.ffi.common.ContentValidationError
+import org.futo.polycentric.ffi.common.ProfileUpdateValidationError
+import org.futo.polycentric.ffi.common.StringError
+import org.futo.polycentric.ffi.validateContent
 import polycentric.v2.Content
 import polycentric.v2.Image
 import polycentric.v2.ImageSet
@@ -81,21 +88,10 @@ suspend fun PolycentricAdapter.deleteActiveIdentity() {
 }
 
 /**
- * Resolve the profile of an identity. Falls back to locally stored profile events when the
- * network fetch fails or yields nothing.
+ * Resolve the profile of an identity. See [resolveProfileUpdate] for which event is used.
  */
 suspend fun PolycentricAdapter.getIdentityProfile(identity: String): PolycentricChannelProfile {
-    val remote = try {
-        client.getProfile(identity)?.event_bundles
-    } catch (e: CancellationException) {
-        throw e
-    } catch (e: Throwable) {
-        Logger.w(TAG, "Failed to fetch profile, falling back to local events.", e)
-        null
-    }
-    val bundles = remote?.takeIf { it.isNotEmpty() }
-        ?: client.listValidEvents(identity, Collections.PROFILE)
-    val update = latestProfileUpdate(bundles)
+    val update = resolveProfileUpdate(identity)
     return PolycentricChannelProfile(
         identity = identity,
         name = update?.name,
@@ -104,6 +100,46 @@ suspend fun PolycentricAdapter.getIdentityProfile(identity: String): Polycentric
         description = update?.description,
     )
 }
+
+/**
+ * The newest profile update of [identity] that has content. Uses the server's latest profile
+ * event; if the server dropped its content (it was invalid), the newest event on the server that
+ * has content; and if the servers can't be reached, local events. Local events are always
+ * included, so a profile update this device hasn't pushed yet is still considered.
+ */
+private suspend fun PolycentricAdapter.resolveProfileUpdate(identity: String): ProfileUpdate? {
+    val remote = try {
+        val latest = client.getProfile(identity)?.event_bundles.orEmpty()
+        if (latest.isEmpty() || latestProfileUpdate(latest) != null) {
+            latest
+        } else {
+            client.listEvents(identity, Collections.PROFILE)
+        }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Throwable) {
+        Logger.w(TAG, "Failed to fetch profile, falling back to local events.", e)
+        emptyList()
+    }
+    return latestProfileUpdate(remote + client.listValidEvents(identity, Collections.PROFILE))
+}
+
+/**
+ * The SDK's validation error for [name] as a profile name, or null when it is valid. Lets the
+ * profile screens re-prompt for the name before anything is published.
+ */
+fun profileNameError(name: String): StringError? =
+    validateContent(Content.ADAPTER.encode(Content(profile_update = ProfileUpdate(name = name))))
+        .firstNotNullOfOrNull { error ->
+            val body = (error as? ContentValidationError.ContentBody)?.v1
+            val update = (body as? ContentBodyValidationError.ProfileUpdate)?.v1
+            (update as? ProfileUpdateValidationError.Name)?.v1
+        }
+
+/** Message to show the user for a [profileNameError]. */
+fun profileNameErrorMessage(context: Context, error: StringError): String = context.getString(
+    if (error is StringError.TooLong) R.string.name_is_too_long else R.string.name_is_invalid
+)
 
 /**
  * Update the active identity's profile. Note that updates happen by full replacement (if an
@@ -115,7 +151,7 @@ suspend fun PolycentricAdapter.updateProfile(
     mimeType: String = "image/png",
 ) {
     val identity = requireActiveIdentity()
-    val current = latestProfileUpdate(client.listValidEvents(identity, Collections.PROFILE))
+    val current = resolveProfileUpdate(identity)
 
     val avatarSet = avatar?.takeIf { it.isNotEmpty() }?.let { variants ->
         ImageSet(variants.map { variant ->
@@ -129,17 +165,24 @@ suspend fun PolycentricAdapter.updateProfile(
         })
     }
 
+    // Fields carried over from the current profile can be invalid (e.g. a migrated v1 description
+    // over the server's limit), which would fail the whole update. Grayjay can't edit them, so
+    // leave those out; the name is checked by the profile screens instead.
     publish(
         Content(profile_update = ProfileUpdate(
             name = name,
-            avatar = avatarSet ?: current?.avatar,
-            banner = current?.banner,
-            description = current?.description,
-            alias = current?.alias,
+            avatar = avatarSet ?: current?.avatar?.takeIf { isValidProfileUpdate(ProfileUpdate(avatar = it)) },
+            banner = current?.banner?.takeIf { isValidProfileUpdate(ProfileUpdate(banner = it)) },
+            description = current?.description?.takeIf { isValidProfileUpdate(ProfileUpdate(description = it)) },
+            alias = current?.alias?.takeIf { isValidProfileUpdate(ProfileUpdate(alias = it)) },
         )),
         Collections.PROFILE,
     )
 }
+
+/** Whether [update] passes the SDK's content validation. */
+private fun isValidProfileUpdate(update: ProfileUpdate): Boolean =
+    validateContent(Content.ADAPTER.encode(Content(profile_update = update))).isEmpty()
 
 /**
  * Returns either the servers the identity declares, or the client's current servers if the identity

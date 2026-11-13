@@ -697,6 +697,8 @@
     <string name="are_you_sure_you_want_to_remove_this_profile">Are you sure you want to remove this profile?</string>
     <string name="no_process_handle_set">No process handle set</string>
     <string name="name_must_be_at_least_3_characters_long">Name must be at least 3 characters long</string>
+    <string name="name_is_too_long">Name is too long</string>
+    <string name="name_is_invalid">Name is invalid</string>
     <string name="process_handle_unset">Process handle unset</string>
     <string name="failed_to_read_image">Failed to read image</string>
     <string name="changes_have_been_saved">Changes have been saved</string>
