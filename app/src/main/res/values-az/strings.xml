@@ -568,7 +568,7 @@
     <string name="subscription_concurrency">Abunəlik eyniliyi</string>
     <string name="track_playtime_locally">Oynatma vaxtını yerli olaraq izlə</string>
     <string name="track_playtime_locally_description">Abunəliklərin sıralanması və yerli yaradıcı tövsiyələri üçün istifadə olunan abunəliklərin oynatma vaxtını yerli olaraq izləyin.</string>
-    <string name="show_watch_metrics">İzləmə metrikalarını göstər</string>
+    <string name="show_watch_metrics">İzləmə göstəricilərini göstər</string>
     <string name="show_watch_metrics_description">Yaradıcılar vərəqində hər bir yaradıcının izləmə vaxtını və baxışlarını göstərir</string>
     <string name="this_prevents_the_device_from_rotating_within_the_given_amount_of_degrees">Bu, cihazın verilən dərəcə miqdarında fırlanmasının qarşısını alır</string>
     <string name="use_the_live_chat_web_window_when_available_over_native_implementation">Mövcud olduqda yerli tətbiq əvəzinə canlı söhbət veb pəncərəsindən istifadə edin</string>
