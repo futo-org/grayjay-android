@@ -52,6 +52,10 @@ private fun Thumbnails.urlsBestFirst(): List<String> = sources.reversed().mapNot
 internal fun attributionLink(url: String, title: String?): AttributedTo =
     AttributedTo(link = Link(title = linkTitle(url, title), url = url))
 
+/** Build an [AttributedTo] for [url] whose link carries the full [linkPreview] of [content]. */
+internal fun attributionPreview(url: String, content: AttributedContent?): AttributedTo =
+    AttributedTo(link = linkPreview(url, content))
+
 /**
  * Build a link preview for [url], filled out with as much of [content] as fits the server's limits.
  * The description is converted from HTML to plain text and shortened with an ellipsis if needed.
