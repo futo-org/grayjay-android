@@ -81,6 +81,12 @@ class PolycentricAttributionLinkTests {
     }
 
     @Test
+    fun attributionPreviewCarriesFullLinkPreview() {
+        val content = AttributedContent("A video", "A description", listOf("https://i.ytimg.com/vi/x/hq.jpg"))
+        assertEquals(linkPreview(url, content), attributionPreview(url, content).link)
+    }
+
+    @Test
     fun linkPreviewWithoutContentFallsBackToHost() {
         val link = linkPreview(url, null)
         assertEquals("www.youtube.com", link.title)

@@ -9,6 +9,7 @@ import org.futo.polycentric.core.PolycentricClient
 import org.futo.polycentric.core.SqliteStorageDriver
 import org.futo.polycentric.core.SyncStrategy
 import org.futo.polycentric.ffi.PolycentricCore
+import org.futo.polycentric.ffi.validateContent
 import polycentric.v2.Application
 import polycentric.v2.Content
 import polycentric.v2.Event
@@ -45,12 +46,14 @@ class PolycentricAdapter(internal val client: PolycentricClient) {
 
     /**
      * Build, sign, commit locally, and push one event. The event stays in local storage whether
-     * the push succeeds or not.
+     * the push succeeds or not. Throws if content fails the Polycentric SDK's validation.
      *
      * TODO: when polycentric-core throws publish errors for us to catch, we should catch them and
      * display the error.
      */
     internal suspend fun publish(content: Content, collection: Int): EventKey {
+        val errors = validateContent(Content.ADAPTER.encode(content))
+        require(errors.isEmpty()) { "Invalid content: ${errors.joinToString()}" }
         val event = client.buildEvent(content, collection)
         val signed = client.signEvent(event)
         client.commitEvent(signed, content)

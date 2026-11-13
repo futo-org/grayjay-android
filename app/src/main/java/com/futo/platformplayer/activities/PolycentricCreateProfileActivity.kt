@@ -12,6 +12,8 @@ import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
 import com.futo.platformplayer.logging.Logger
+import com.futo.platformplayer.polycentric.profileNameError
+import com.futo.platformplayer.polycentric.profileNameErrorMessage
 import com.futo.platformplayer.setNavigationBarColorAndIcons
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePolycentric
@@ -60,6 +62,11 @@ class PolycentricCreateProfileActivity : AppCompatActivity() {
                 UIDialogs.toast(this@PolycentricCreateProfileActivity, getString(R.string.must_be_at_least_3_characters_long));
                 return@setOnClickListener;
             }
+            val nameError = profileNameError(username);
+            if (nameError != null) {
+                UIDialogs.toast(this@PolycentricCreateProfileActivity, profileNameErrorMessage(this@PolycentricCreateProfileActivity, nameError));
+                return@setOnClickListener;
+            }
 
             _creating = true;
 
@@ -80,7 +87,7 @@ class PolycentricCreateProfileActivity : AppCompatActivity() {
                             finish();
                         }
                     } catch (e: Throwable) {
-                        Logger.e(TAG, getString(R.string.failed_to_create_profile), e);
+                        Logger.e(TAG, "Failed to create profile.", e);
                         withContext(Dispatchers.Main) {
                             UIDialogs.toast(this@PolycentricCreateProfileActivity, getString(R.string.failed_to_create_profile));
                             _profileName.isEnabled = true;

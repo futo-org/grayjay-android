@@ -16,7 +16,6 @@ import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
@@ -26,6 +25,8 @@ import com.futo.platformplayer.images.GlideHelper.Companion.crossfade
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.polycentric.AvatarVariant
 import com.futo.platformplayer.polycentric.PolycentricAdapter
+import com.futo.platformplayer.polycentric.profileNameError
+import com.futo.platformplayer.polycentric.profileNameErrorMessage
 import com.futo.platformplayer.setNavigationBarColorAndIcons
 import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePolycentric
@@ -80,8 +81,9 @@ class PolycentricProfileActivity : AppCompatActivity() {
             }
         }
         findViewById<ImageButton>(R.id.button_back).setOnClickListener {
-            saveIfRequired();
-            finish();
+            if (saveIfRequired()) {
+                finish();
+            }
         };
 
         _imagePolycentric.setOnClickListener {
@@ -98,8 +100,9 @@ class PolycentricProfileActivity : AppCompatActivity() {
         // Enabled once updateUI knows whether this device can approve others.
         _buttonPairDevice.setButtonEnabled(false);
         _buttonPairDevice.onClick.subscribe {
-            saveIfRequired();
-            startActivity(Intent(this, PolycentricPairIssuerActivity::class.java));
+            if (saveIfRequired()) {
+                startActivity(Intent(this, PolycentricPairIssuerActivity::class.java));
+            }
         };
 
         // TODO: reuse this button for Harbor's backup key concept
@@ -114,12 +117,22 @@ class PolycentricProfileActivity : AppCompatActivity() {
         };
 
         _buttonLogout.onClick.subscribe {
-            runIdentityChangeThenGoHome("Failed to log out.", R.string.failed_to_log_out) { StatePolycentric.instance.logout() };
+            runIdentityChangeThenGoHome(
+                change = { StatePolycentric.instance.logout() },
+                onError = { e ->
+                    Logger.e(TAG, "Failed to log out.", e);
+                    UIDialogs.toast(applicationContext, getString(R.string.failed_to_log_out));
+                });
         }
 
         _buttonDelete.onClick.subscribe {
             UIDialogs.showConfirmationDialog(this, getString(R.string.are_you_sure_you_want_to_remove_this_profile), {
-                runIdentityChangeThenGoHome("Failed to delete identity.", R.string.failed_to_delete_profile) { StatePolycentric.instance.deleteIdentity() };
+                runIdentityChangeThenGoHome(
+                    change = { StatePolycentric.instance.deleteIdentity() },
+                    onError = { e ->
+                        Logger.e(TAG, "Failed to delete identity.", e);
+                        UIDialogs.toast(applicationContext, getString(R.string.failed_to_delete_profile));
+                    });
             });
         }
 
@@ -178,52 +191,59 @@ class PolycentricProfileActivity : AppCompatActivity() {
     }
 
     /**
-     * Ensures an identity change completes before navigating to the home page, such that the home
-     * page does not display stale information.
+     * Runs [change] in the background, then navigates home. On failure, restores the UI and calls
+     * [onError] on the main thread.
      */
-    private fun runIdentityChangeThenGoHome(logMessage: String, @StringRes errorMessage: Int, change: suspend () -> Unit) {
+    private fun runIdentityChangeThenGoHome(change: suspend () -> Unit, onError: (Throwable) -> Unit) {
         _buttonLogout.setButtonEnabled(false);
         _buttonDelete.setButtonEnabled(false);
         _loaderOverlay.show();
 
         StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-            val success = try {
+            val error = try {
                 change();
-                true
+                null
             } catch (e: Throwable) {
-                Logger.e(TAG, logMessage, e);
-                false
+                e
             }
 
             withContext(Dispatchers.Main) {
-                if (isFinishing || isDestroyed) {
+                val isAlive = !isFinishing && !isDestroyed;
+                if (error == null) {
+                    if (isAlive) {
+                        startActivity(Intent(this@PolycentricProfileActivity, PolycentricHomeActivity::class.java));
+                        finish();
+                    }
                     return@withContext;
                 }
 
-                if (success) {
-                    startActivity(Intent(this@PolycentricProfileActivity, PolycentricHomeActivity::class.java));
-                    finish();
-                } else {
-                    UIDialogs.toast(this@PolycentricProfileActivity, getString(errorMessage));
+                if (isAlive) {
                     _buttonLogout.setButtonEnabled(true);
                     _buttonDelete.setButtonEnabled(true);
                     _loaderOverlay.hide();
                 }
+                onError(error);
             }
         }
     }
 
-    private fun saveIfRequired() {
+    /** Save pending profile changes in the background. Returns false when the name is invalid. */
+    private fun saveIfRequired(): Boolean {
         val username = _editName.text.toString();
         val avatarUri = _avatarUri;
         val nameChanged = _username != username;
         if (!nameChanged && avatarUri == null) {
-            return;
+            return true;
         }
 
         if (username.length < 3) {
             UIDialogs.toast(this, getString(R.string.name_must_be_at_least_3_characters_long));
-            return;
+            return false;
+        }
+        val nameError = profileNameError(username);
+        if (nameError != null) {
+            UIDialogs.toast(this, profileNameErrorMessage(this, nameError));
+            return false;
         }
 
         // Consume the pending identity changes so a repeated call can't save them twice.
@@ -254,6 +274,7 @@ class PolycentricProfileActivity : AppCompatActivity() {
                 }
             }
         }
+        return true;
     }
 
     private fun buildAvatarVariants(uri: Uri): Pair<List<AvatarVariant>, String>? {
@@ -273,8 +294,9 @@ class PolycentricProfileActivity : AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-        saveIfRequired();
-        super.onBackPressed();
+        if (saveIfRequired()) {
+            super.onBackPressed();
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
