@@ -57,6 +57,7 @@ import com.futo.platformplayer.fragment.mainactivity.main.CreatorSearchResultsFr
 import com.futo.platformplayer.fragment.mainactivity.main.CreatorsFragment
 import com.futo.platformplayer.fragment.mainactivity.main.DeveloperFragment
 import com.futo.platformplayer.fragment.mainactivity.main.DownloadsFragment
+import com.futo.platformplayer.fragment.mainactivity.main.DownloadsSyncFragment
 import com.futo.platformplayer.fragment.mainactivity.main.HistoryFragment
 import com.futo.platformplayer.fragment.mainactivity.main.HomeFragment
 import com.futo.platformplayer.fragment.mainactivity.main.ImportPlaylistsFragment
@@ -103,6 +104,7 @@ import com.futo.platformplayer.polycentric.isPairingLink
 import com.futo.platformplayer.polycentric.parsePairingInfo
 import com.futo.platformplayer.setNavigationBarColorAndIcons
 import com.futo.platformplayer.states.StateApp
+import com.futo.platformplayer.states.StateDownloads
 import com.futo.platformplayer.states.StateBackup
 import com.futo.platformplayer.states.StateDeveloper
 import com.futo.platformplayer.states.StatePayment
@@ -194,6 +196,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     lateinit var _fragShorts: ShortsFragment;
     lateinit var _fragSourceDetail: SourceDetailFragment;
     lateinit var _fragDownloads: DownloadsFragment;
+    lateinit var _fragDownloadsSync: DownloadsSyncFragment;
     lateinit var _fragImportSubscriptions: ImportSubscriptionsFragment;
     lateinit var _fragImportPlaylists: ImportPlaylistsFragment;
     lateinit var _fragBuy: BuyFragment;
@@ -311,6 +314,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         StateApp.instance.mainAppStarting(this);
 
         super.onCreate(savedInstanceState);
+        registerStorageMountReceiver();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val uiMode = getSystemService(UiModeManager::class.java)
             uiMode.setApplicationNightMode(UiModeManager.MODE_NIGHT_YES)
@@ -382,6 +386,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragShorts = ShortsFragment.newInstance();
         _fragSourceDetail = SourceDetailFragment.newInstance();
         _fragDownloads = DownloadsFragment();
+        _fragDownloadsSync = DownloadsSyncFragment();
         _fragImportSubscriptions = ImportSubscriptionsFragment.newInstance();
         _fragImportPlaylists = ImportPlaylistsFragment.newInstance();
         _fragBuy = BuyFragment.newInstance();
@@ -532,6 +537,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         _fragHistory.topBar = _fragTopBarNavigation;
         _fragSourceDetail.topBar = _fragTopBarNavigation;
         _fragDownloads.topBar = _fragTopBarGeneral;
+        _fragDownloadsSync.topBar = _fragTopBarNavigation;
         _fragImportSubscriptions.topBar = _fragTopBarImport;
         _fragImportPlaylists.topBar = _fragTopBarImport;
         _fragSubGroupList.topBar = _fragTopBarAdd;
@@ -1215,7 +1221,27 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         updatePrivateModeVisibility()
     }
 
+    //Refresh downloads when an SD card is put in or taken out, so missing items show at once.
+    private val _storageMountReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            Logger.i(TAG, "Storage changed: ${intent?.action} ${intent?.data}");
+            StateDownloads.instance.onDownloadedChanged.emit();
+        }
+    };
+    private fun registerStorageMountReceiver() {
+        val filter = android.content.IntentFilter().apply {
+            addAction(Intent.ACTION_MEDIA_MOUNTED);
+            addAction(Intent.ACTION_MEDIA_UNMOUNTED);
+            addAction(Intent.ACTION_MEDIA_EJECT);
+            addAction(Intent.ACTION_MEDIA_REMOVED);
+            addAction(Intent.ACTION_MEDIA_BAD_REMOVAL);
+            addDataScheme("file");
+        };
+        androidx.core.content.ContextCompat.registerReceiver(this, _storageMountReceiver, filter, androidx.core.content.ContextCompat.RECEIVER_EXPORTED);
+    }
+
     override fun onDestroy() {
+        try { unregisterReceiver(_storageMountReceiver); } catch (ex: Throwable) { }
         super.onDestroy();
         Logger.w(TAG, "onDestroy [$mainId]")
         StateApp.instance.mainAppDestroyed(this, mainId);
@@ -1413,6 +1439,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             ShortsFragment::class -> _fragShorts as T;
             SourceDetailFragment::class -> _fragSourceDetail as T;
             DownloadsFragment::class -> _fragDownloads as T;
+            DownloadsSyncFragment::class -> _fragDownloadsSync as T;
             ImportSubscriptionsFragment::class -> _fragImportSubscriptions as T;
             ImportPlaylistsFragment::class -> _fragImportPlaylists as T;
             BrowserFragment::class -> _fragBrowser as T;

@@ -2092,6 +2092,8 @@ class VideoDetailView : ConstraintLayout {
                         _player.seekTo(resumePositionMs);
                     } catch (e: Throwable) {
                         Logger.e(TAG, "loadCurrentVideo failed", e)
+                        if (videoSource is LocalVideoSource || audioSource is LocalAudioSource)
+                            UIDialogs.showDialogOk(context, R.drawable.ic_warning_yellow, e.message ?: "File not found");
                     }
                 }
             }

@@ -65,7 +65,7 @@ class VideoExport {
             Logger.i(TAG, "Combining video and audio through FFMPEG.");
             val tempFile = File(context.cacheDir, "${UUID.randomUUID()}.mp4");
             try {
-                combine(a?.filePath, v?.filePath, s?.filePath, tempFile.absolutePath, videoLocal.duration.toDouble()) { progress -> onProgress?.invoke(progress) };
+                combine(a?.absoluteFilePath, v?.absoluteFilePath, s?.absoluteFilePath, tempFile.absolutePath, videoLocal.duration.toDouble()) { progress -> onProgress?.invoke(progress) };
                 val outputStream = context.contentResolver.openOutputStream(f.uri)
                     ?: throw IOException("Failed to open output stream for ${f.uri}")
                 outputStream.use { outputStream ->
@@ -85,7 +85,7 @@ class VideoExport {
             val outputStream = context.contentResolver.openOutputStream(f.uri)
                 ?: throw IOException("Failed to open output stream for ${f.uri}")
             outputStream.use { outputStream ->
-                copy(v.filePath, outputStream) { progress -> onProgress?.invoke(progress) };
+                copy(v.absoluteFilePath, outputStream) { progress -> onProgress?.invoke(progress) };
             }
 
             outputFile = f;
@@ -99,7 +99,7 @@ class VideoExport {
             val outputStream = context.contentResolver.openOutputStream(f.uri)
                 ?: throw IOException("Failed to open output stream for ${f.uri}")
             outputStream.use { outputStream ->
-                copy(a.filePath, outputStream) { progress -> onProgress?.invoke(progress) };
+                copy(a.absoluteFilePath, outputStream) { progress -> onProgress?.invoke(progress) };
             }
 
             outputFile = f;

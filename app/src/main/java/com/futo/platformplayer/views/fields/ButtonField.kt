@@ -19,6 +19,11 @@ import java.lang.reflect.Method
 @Retention(AnnotationRetention.RUNTIME)
 annotation class FormFieldButton(val drawable: Int = 0)
 
+/** Subtitle of a button from a no-argument String method on the same object, read when the form is built. */
+@Target(AnnotationTarget.FUNCTION)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class FormFieldDynamicSubtitle(val method: String)
+
 class ButtonField : BigButton, IField {
     override var descriptor: FormField? = null;
     private var _obj : Any? = null;
@@ -88,6 +93,11 @@ class ButtonField : BigButton, IField {
             super.withPrimaryText(method.name);
         if(attrButtonField != null)
             super.withIcon(attrButtonField.drawable, false);
+        method.getAnnotation(FormFieldDynamicSubtitle::class.java)?.let { dyn ->
+            val text = try { obj.javaClass.getMethod(dyn.method).invoke(obj) as String? } catch (ex: Throwable) { null };
+            if (!text.isNullOrEmpty())
+                super.withSecondaryText(text).withSecondaryTextMaxLines(6);
+        }
 
         return this;
     }

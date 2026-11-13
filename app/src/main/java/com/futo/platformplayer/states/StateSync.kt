@@ -56,6 +56,7 @@ class StateSync {
             Logger.i(TAG, "Already started.")
             return
         }
+        StateDownloadSync.instance.start();
 
         var relayServerUrl = Settings.instance.synchronization.syncServer;
         Logger.i(TAG, "Relay used: ${relayServerUrl}");
@@ -252,6 +253,8 @@ class StateSync {
 
     private fun handleData(session: SyncSession, opcode: UByte, subOpcode: UByte, data: ByteBuffer) {
         val remotePublicKey = session.remotePublicKey
+        if (StateDownloadSync.instance.handleData(session, subOpcode, data))
+            return;
         when (subOpcode) {
             GJSyncOpcodes.sendToDevices -> {
                 StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
@@ -303,6 +306,8 @@ class StateSync {
                     session.sendJsonData(GJSyncOpcodes.syncHistory, recentHistory);
 
                 Logger.i(TAG, "syncStateExchange syncHistory (size: ${recentHistory.size})")
+
+                StateDownloadSync.instance.sendIndex(session);
             }
 
             GJSyncOpcodes.syncExport -> {

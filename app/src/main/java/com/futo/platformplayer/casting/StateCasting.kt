@@ -828,7 +828,7 @@ class StateCasting {
         val videoUrl = url + videoPath;
 
         _castServer.addHandlerWithAllowAllOptions(
-            HttpFileHandler("GET", videoPath, videoSource.container, videoSource.filePath)
+            HttpFileHandler("GET", videoPath, videoSource.container, videoSource.absoluteFilePath)
                 .withHeader("Access-Control-Allow-Origin", "*"), true
         ).withTag("cast");
 
@@ -847,7 +847,7 @@ class StateCasting {
         val audioUrl = url + audioPath;
 
         _castServer.addHandlerWithAllowAllOptions(
-            HttpFileHandler("GET", audioPath, audioSource.container, audioSource.filePath)
+            HttpFileHandler("GET", audioPath, audioSource.container, audioSource.absoluteFilePath)
                 .withHeader("Access-Control-Allow-Origin", "*"), true
         ).withTag("cast");
 
@@ -883,19 +883,19 @@ class StateCasting {
         ).withTag("cast");
         if (videoSource != null) {
             _castServer.addHandlerWithAllowAllOptions(
-                HttpFileHandler("GET", videoPath, videoSource.container, videoSource.filePath)
+                HttpFileHandler("GET", videoPath, videoSource.container, videoSource.absoluteFilePath)
                     .withHeader("Access-Control-Allow-Origin", "*"), true
             ).withTag("cast");
         }
         if (audioSource != null) {
             _castServer.addHandlerWithAllowAllOptions(
-                HttpFileHandler("GET", audioPath, audioSource.container, audioSource.filePath)
+                HttpFileHandler("GET", audioPath, audioSource.container, audioSource.absoluteFilePath)
                     .withHeader("Access-Control-Allow-Origin", "*"), true
             ).withTag("cast");
         }
         if (subtitleSource != null) {
             _castServer.addHandlerWithAllowAllOptions(
-                HttpConstantHandler("GET", subtitlePath, VttHelper.clean(subtitleSource.format, File(subtitleSource.filePath).readText()), subtitleSource.format ?: "text/vtt")
+                HttpConstantHandler("GET", subtitlePath, VttHelper.clean(subtitleSource.format, File(subtitleSource.absoluteFilePath).readText()), subtitleSource.format ?: "text/vtt")
                     .withHeader("Access-Control-Allow-Origin", "*"), true
             ).withTag("cast");
         }
