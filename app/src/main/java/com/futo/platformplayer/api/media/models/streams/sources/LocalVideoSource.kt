@@ -22,6 +22,8 @@ class LocalVideoSource : IVideoSource, IStreamMetaDataSource {
 
     val filePath : String;
     val fileSize : Long;
+    /** [filePath] resolved against the current download folder. */
+    val absoluteFilePath: String get() = com.futo.platformplayer.states.StateDownloads.instance.resolveFile(filePath).absolutePath;
 
     //Only for particular videos
     override var streamMetaData: StreamMetaData? = null;
@@ -36,6 +38,13 @@ class LocalVideoSource : IVideoSource, IStreamMetaDataSource {
         this.filePath = filePath;
         this.fileSize = fileSize;
         this.bitrate = bitrate;
+    }
+
+    fun withFilePath(path: String): LocalVideoSource {
+        return LocalVideoSource(name, path, fileSize, width, height, duration, container, codec, bitrate).also {
+            it.priority = priority;
+            it.streamMetaData = streamMetaData;
+        };
     }
 
     companion object {

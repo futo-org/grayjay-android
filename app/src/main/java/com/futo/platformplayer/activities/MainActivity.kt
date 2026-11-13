@@ -103,6 +103,7 @@ import com.futo.platformplayer.polycentric.isPairingLink
 import com.futo.platformplayer.polycentric.parsePairingInfo
 import com.futo.platformplayer.setNavigationBarColorAndIcons
 import com.futo.platformplayer.states.StateApp
+import com.futo.platformplayer.states.StateDownloads
 import com.futo.platformplayer.states.StateBackup
 import com.futo.platformplayer.states.StateDeveloper
 import com.futo.platformplayer.states.StatePayment
@@ -311,6 +312,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         StateApp.instance.mainAppStarting(this);
 
         super.onCreate(savedInstanceState);
+        registerStorageMountReceiver();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val uiMode = getSystemService(UiModeManager::class.java)
             uiMode.setApplicationNightMode(UiModeManager.MODE_NIGHT_YES)
@@ -1215,7 +1217,27 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         updatePrivateModeVisibility()
     }
 
+    //Refresh downloads when an SD card is put in or taken out, so missing items show at once.
+    private val _storageMountReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            Logger.i(TAG, "Storage changed: ${intent?.action} ${intent?.data}");
+            StateDownloads.instance.onDownloadedChanged.emit();
+        }
+    };
+    private fun registerStorageMountReceiver() {
+        val filter = android.content.IntentFilter().apply {
+            addAction(Intent.ACTION_MEDIA_MOUNTED);
+            addAction(Intent.ACTION_MEDIA_UNMOUNTED);
+            addAction(Intent.ACTION_MEDIA_EJECT);
+            addAction(Intent.ACTION_MEDIA_REMOVED);
+            addAction(Intent.ACTION_MEDIA_BAD_REMOVAL);
+            addDataScheme("file");
+        };
+        androidx.core.content.ContextCompat.registerReceiver(this, _storageMountReceiver, filter, androidx.core.content.ContextCompat.RECEIVER_EXPORTED);
+    }
+
     override fun onDestroy() {
+        try { unregisterReceiver(_storageMountReceiver); } catch (ex: Throwable) { }
         super.onDestroy();
         Logger.w(TAG, "onDestroy [$mainId]")
         StateApp.instance.mainAppDestroyed(this, mainId);

@@ -323,15 +323,15 @@
     <string name="byte_range_download">ByteRange Download</string>
     <string name="casting">Casting</string>
     <string name="change_behavior_of_the_player">Change behavior of the player</string>
-    <string name="change_external_downloads_directory">Change external Downloads directory</string>
-    <string name="clear_external_downloads_directory">Clear external Downloads directory</string>
+    <string name="change_external_downloads_directory">Change export folder</string>
+    <string name="clear_external_downloads_directory">Clear export folder</string>
     <string name="change_external_general_directory">Change external General directory</string>
     <string name="change_tabs_visible_on_the_home_screen">Change tabs visible on the home screen</string>
     <string name="link_handling">Link Handling</string>
     <string name="allow_grayjay_to_handle_links">Allow Grayjay to handle links</string>
     <string name="change_the_external_directory_for_general_files">Change the external directory for general files</string>
-    <string name="clear_the_external_storage_for_download_files">Clear the external storage for download files</string>
-    <string name="change_the_external_storage_for_download_files">Change the external storage for download files</string>
+    <string name="clear_the_external_storage_for_download_files">Clear the folder that Export saves copies to</string>
+    <string name="change_the_external_storage_for_download_files">Folder that Export saves copies to. Downloads do not go here; see Downloads > Download folder.</string>
     <string name="clear_cookies">Clear Cookies</string>
     <string name="clear_cookies_after_login">Clear Cookies after Login</string>
     <string name="clear_cookies_after_login_desc">Deletes all cookies on the webview after login, this may be required for certain plugins to function properly.</string>
@@ -1289,4 +1289,11 @@
     <string name="import_from_file">Import from File</string>
     <string name="save_profile_to_file_for_sharing">Save profile to file for sharing</string>
     <string name="profile_saved_successfully">Profile saved successfully</string>
+    <string name="download_folder">Download folder</string>
+    <string name="download_folder_description">Folder for new downloads (phone or SD card). Needs \"All files access\".</string>
+    <string name="download_folder_app_storage">Use app storage</string>
+    <string name="download_folder_app_storage_description">Put new downloads in private app storage again (default)</string>
+    <string name="move_existing_downloads">Move existing downloads</string>
+    <string name="move_existing_downloads_description">Move downloaded videos into the download folder</string>
+    <string name="missing">Missing</string>
 </resources>

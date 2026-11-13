@@ -571,9 +571,9 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     @OptIn(UnstableApi::class)
     private fun swapVideoSourceLocal(videoSource: LocalVideoSource) {
         Logger.i(TAG, "Loading VideoSource [Local]");
-        val file = File(videoSource.filePath);
+        val file = File(videoSource.absoluteFilePath);
         if(!file.exists())
-            throw IllegalArgumentException("File for this video does not exist");
+            throw IllegalArgumentException("File not found at ${file.parent}. If it is on an SD card, put the card in, or open Downloads to find the folder.");
         _lastVideoMediaSource = ProgressiveMediaSource.Factory(DefaultDataSource.Factory(context))
             .createMediaSource(MediaItem.fromUri(Uri.fromFile(file)));
     }
@@ -872,9 +872,9 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     @OptIn(UnstableApi::class)
     private fun swapAudioSourceLocal(audioSource: LocalAudioSource) {
         Logger.i(TAG, "Loading AudioSource [Local]");
-        val file = File(audioSource.filePath);
+        val file = File(audioSource.absoluteFilePath);
         if(!file.exists())
-            throw IllegalArgumentException("File for this audio does not exist");
+            throw IllegalArgumentException("File not found at ${file.parent}. If it is on an SD card, put the card in, or open Downloads to find the folder.");
         _lastAudioMediaSource = ProgressiveMediaSource.Factory(DefaultDataSource.Factory(context))
             .createMediaSource(MediaItem.fromUri(Uri.fromFile(file)));
     }
