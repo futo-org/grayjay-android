@@ -697,6 +697,8 @@
     <string name="are_you_sure_you_want_to_remove_this_profile">Bu profili silmək istədiyinizə əminsinizmi?</string>
     <string name="no_process_handle_set">Heç bir proses dəstəyi təyin edilməyib</string>
     <string name="name_must_be_at_least_3_characters_long">Ad ən azı 3 simvol uzunluğunda olmalıdır</string>
+    <string name="name_is_too_long">Ad çox uzundur</string>
+    <string name="name_is_invalid">Ad yanlışdır</string>
     <string name="process_handle_unset">Proses dəstəyi təyin edilməyib</string>
     <string name="failed_to_read_image">Şəkil oxunmadı</string>
     <string name="changes_have_been_saved">Dəyişikliklər saxlanıldı</string>
