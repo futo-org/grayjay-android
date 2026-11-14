@@ -1154,7 +1154,17 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         exoPlayer?.player?.pause();
     }
     open fun play(){
-        exoPlayer?.player?.play();
+        val player = exoPlayer?.player ?: return;
+
+        // In STATE_ENDED, ExoPlayer.play() is a no-op (playWhenReady is usually still true),
+        // so playback would never restart. Seek back to the start first so that every play
+        // path (media notification, lock screen, headset button, minimized player) behaves
+        // like the in-player replay button.
+        if (player.playbackState == Player.STATE_ENDED) {
+            player.seekTo(0);
+        }
+
+        player.play();
     }
 
     fun setVolume(volume: Float) {
