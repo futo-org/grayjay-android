@@ -53,11 +53,12 @@ internal class TvSourceAdapter(
     }
 
     override fun onViewRecycled(holder: Card) {
-        Glide.with(holder.icon).clear(holder.icon)
+        holder.requests.clear(holder.icon)
     }
 
     class Card(val root: LinearLayout) : RecyclerView.ViewHolder(root) {
         val icon = ImageView(root.context).apply { scaleType = ImageView.ScaleType.FIT_CENTER }
+        val requests = Glide.with(icon)
         val name = TvUi.text(root.context, "", 20f).apply {
             lines(1)
             gravity = Gravity.CENTER

@@ -24,7 +24,8 @@ internal data class TvSourceInfo(
     val home: Boolean = true,
     val search: Boolean = true,
     val loggedIn: Boolean = false,
-    val values: Map<String, String?> = emptyMap()
+    val values: Map<String, String?> = emptyMap(),
+    val bundled: Boolean = false
 )
 
 internal data class TvSourceUpdate(
@@ -40,6 +41,8 @@ internal interface TvSourcesStore {
     suspend fun enable(id: String, enabled: Boolean)
 
     suspend fun install(id: String)
+
+    suspend fun remove(id: String)
 
     suspend fun affectedSubscriptions(id: String): Int
 
@@ -64,6 +67,7 @@ internal interface TvSourcesStore {
                     get() = StatePlugins.instance
 
                 override suspend fun list(): List<TvSourceInfo> {
+                    val embedded = plugins.getEmbeddedSources(app)
                     val enabled = platform.getSortedEnabledClient()
                     val available = platform.getAvailableClients()
                     val installed = (enabled + available.filter { it.id !in enabled.map { c -> c.id } }.sortedBy { it.name }).map {
@@ -78,9 +82,10 @@ internal interface TvSourcesStore {
                             home = js?.enableInHome ?: true,
                             search = js?.enableInSearch ?: true,
                             loggedIn = js?.isLoggedIn ?: false,
-                            values = js?.descriptor?.getSettingsWithDefaults().orEmpty())
+                            values = js?.descriptor?.getSettingsWithDefaults().orEmpty(),
+                            bundled = client.id in embedded)
                     }
-                    val bundled = plugins.getEmbeddedSources(app)
+                    val bundled = embedded
                         .filterKeys { id -> installed.none { it.id == id } }
                         .mapNotNull { (id, path) ->
                             plugins.getEmbeddedPluginConfig(app, path)?.let { config ->
@@ -90,7 +95,7 @@ internal interface TvSourcesStore {
                                         else
                                             "file:///android_asset/${path.substringBeforeLast('/')}/${it.removePrefix("./")}")
                                 }
-                                TvSourceInfo(id, config.name, false, icon, config, installed = false)
+                                TvSourceInfo(id, config.name, false, icon, config, installed = false, bundled = true)
                             }
                         }
                     return installed + bundled.sortedBy { it.name }
@@ -114,6 +119,12 @@ internal interface TvSourcesStore {
                     check(plugins.installEmbeddedPlugin(app, path, id))
                     platform.updateAvailableClients(app)
                     enable(id, true)
+                }
+
+                override suspend fun remove(id: String) {
+                    check(id !in plugins.getEmbeddedSources(app)) { "Bundled sources can be disabled, not uninstalled" }
+                    plugins.deletePlugin(id)
+                    platform.updateAvailableClients(app)
                 }
 
                 override suspend fun affectedSubscriptions(id: String): Int {

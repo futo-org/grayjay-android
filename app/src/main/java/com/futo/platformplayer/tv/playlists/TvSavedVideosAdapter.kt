@@ -13,7 +13,7 @@ import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.tv.views.TvUi
 import com.futo.platformplayer.tv.views.TvUi.dp
 import com.futo.platformplayer.tv.views.TvUi.setHistoryProgress
-import com.futo.platformplayer.tv.views.TvUi.setPublishedDate
+import com.futo.platformplayer.tv.views.TvUi.setVideoMetadata
 import com.futo.platformplayer.tv.views.TvUi.lines
 
 internal class TvSavedVideosAdapter(
@@ -35,7 +35,7 @@ internal class TvSavedVideosAdapter(
         holder.number.text = (position + 1).toString()
         holder.title.text = video.name
         holder.author.text = video.author.name
-        holder.published.setPublishedDate(video)
+        holder.metadata.setVideoMetadata(video)
         holder.progress.setHistoryProgress(video)
         holder.duration.visibility = if (video.isLive || video.duration > 0) View.VISIBLE else View.GONE
         holder.duration.text = if (video.isLive) holder.root.context.getString(R.string.tv_live) else TvUi.duration(video.duration)
@@ -43,7 +43,7 @@ internal class TvSavedVideosAdapter(
         else holder.duration.setBackgroundColor(0xCC000000.toInt())
         holder.duration.setPadding(holder.root.context.dp(4), holder.root.context.dp(2), holder.root.context.dp(4), holder.root.context.dp(2))
         TvUi.load(holder.image, video.thumbnails.getHQThumbnail())
-        holder.content.contentDescription = listOf(video.name, video.author.name, holder.published.text).filter { it.isNotBlank() }.joinToString(", ")
+        holder.content.contentDescription = listOf(video.name, video.author.name, holder.metadata.text).filter { it.isNotBlank() }.joinToString(", ")
         holder.more.contentDescription = holder.root.context.getString(R.string.tv_watch_later_video_options, video.name)
         holder.content.nextFocusRightId = holder.more.id
         holder.more.nextFocusLeftId = holder.content.id
@@ -83,7 +83,7 @@ internal class TvSavedVideosAdapter(
         val progress = TvUi.watchProgress(root.context)
         val title = TvUi.text(root.context, "", 15f).apply { lines(2) }
         val author = TvUi.text(root.context, "", 12f, true).apply { lines(1) }
-        val published = TvUi.text(root.context, "", 12f, true).apply {
+        val metadata = TvUi.text(root.context, "", 12f, true).apply {
             id = R.id.tv_video_published
             lines(1)
             visibility = View.GONE
@@ -116,7 +116,7 @@ internal class TvSavedVideosAdapter(
             val text = TvUi.column(c)
             text.addView(title)
             text.addView(author, LinearLayout.LayoutParams(-1, -2).apply { topMargin = c.dp(8) })
-            text.addView(published, LinearLayout.LayoutParams(-1, -2).apply { topMargin = c.dp(2) })
+            text.addView(metadata, LinearLayout.LayoutParams(-1, -2).apply { topMargin = c.dp(2) })
             content.addView(text, LinearLayout.LayoutParams(0, -2, 1f).apply { marginStart = c.dp(14) })
             root.addView(content, LinearLayout.LayoutParams(0, -2, 1f))
             root.addView(more, LinearLayout.LayoutParams(c.dp(32), c.dp(36)).apply { marginStart = c.dp(6) })

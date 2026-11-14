@@ -117,7 +117,7 @@ class TvVideoDetailsFragment : Fragment() {
         val metadata = listOfNotNull(
             if (video.isLive) getString(R.string.tv_live) else TvUi.duration(video.duration),
             if (video.viewCount >= 0) getString(R.string.tv_view_count, TvUi.count(video.viewCount)) else null,
-            video.datetime?.toLocalDate()?.toString())
+            TvUi.publishedDate(context, video.datetime))
             .joinToString("   ·   ")
         column.addView(
             TvUi.text(context, metadata, 14f, true).apply { setPadding(0, context.dp(12), 0, context.dp(14)) })

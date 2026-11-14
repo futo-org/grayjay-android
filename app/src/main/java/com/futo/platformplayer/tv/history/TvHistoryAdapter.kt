@@ -10,7 +10,7 @@ import com.futo.platformplayer.models.HistoryVideo
 import com.futo.platformplayer.tv.views.TvUi
 import com.futo.platformplayer.tv.views.TvUi.dp
 import com.futo.platformplayer.tv.views.TvUi.setHistoryProgress
-import com.futo.platformplayer.tv.views.TvUi.setPublishedDate
+import com.futo.platformplayer.tv.views.TvUi.setVideoMetadata
 import com.futo.platformplayer.tv.views.TvVideoAdapter
 import java.time.LocalDate
 import java.time.ZoneId
@@ -58,7 +58,7 @@ internal class TvHistoryAdapter(
         val card = holder.card
         card.title.text = video.name
         card.author.text = video.author.name
-        card.published.setPublishedDate(video)
+        card.metadata.setVideoMetadata(video)
         card.duration.visibility = if (video.isLive || video.duration > 0) View.VISIBLE else View.GONE
         card.duration.text = if (video.isLive) c.getString(R.string.tv_live) else TvUi.duration(video.duration)
         if (video.isLive) card.duration.setBackgroundResource(R.drawable.background_thumbnail_live)
@@ -75,7 +75,7 @@ internal class TvHistoryAdapter(
                 item.position > 0 -> "  ·  ${c.getString(R.string.tv_history_resume, TvUi.duration(item.position))}"
                 else -> ""
             }
-        card.root.contentDescription = listOf(video.name, video.author.name, card.published.text, holder.watched.text).filter { it.isNotBlank() }.joinToString(", ")
+        card.root.contentDescription = listOf(video.name, video.author.name, card.metadata.text, holder.watched.text).filter { it.isNotBlank() }.joinToString(", ")
         card.root.setOnClickListener { play(item) }
         card.root.setOnLongClickListener {
             options(item)

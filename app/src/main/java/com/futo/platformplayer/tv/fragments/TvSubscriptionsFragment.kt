@@ -75,7 +75,7 @@ class TvSubscriptionsFragment : Fragment() {
         super.onCreate(state)
         selectedVideo = state?.getString("video")
         selectedCreator = state?.getString("creator")
-        returnTo = state?.getString("focus")
+        returnTo = state?.getString("focus") ?: "video"
         collapsed = state?.getBoolean("collapsed") ?: false
     }
 
@@ -504,7 +504,7 @@ class TvSubscriptionsFragment : Fragment() {
     }
 
     private fun restoreFocus() {
-        if (dialog?.isShowing == true) return
+        if (dialog?.isShowing == true || host.currentFocusInRail()) return
         when (returnTo) {
             "creator" -> {
                 setCollapsed(false)

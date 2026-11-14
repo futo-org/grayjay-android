@@ -15,7 +15,7 @@ import com.futo.platformplayer.api.media.models.video.IPlatformVideo
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.tv.views.TvUi.dp
 import com.futo.platformplayer.tv.views.TvUi.setHistoryProgress
-import com.futo.platformplayer.tv.views.TvUi.setPublishedDate
+import com.futo.platformplayer.tv.views.TvUi.setVideoMetadata
 import com.futo.platformplayer.tv.views.TvUi.lines
 
 internal class TvVideoAdapter(
@@ -35,7 +35,7 @@ internal class TvVideoAdapter(
         val video = videos[position]
         holder.title.text = video.name
         holder.author.text = video.author.name
-        holder.published.setPublishedDate(video)
+        holder.metadata.setVideoMetadata(video)
         holder.progress.setHistoryProgress(video)
         holder.author.visibility = if (showAuthor) View.VISIBLE else View.GONE
         holder.duration.text = if (video.isLive) holder.root.context.getString(R.string.tv_live) else TvUi.duration(video.duration)
@@ -48,7 +48,7 @@ internal class TvVideoAdapter(
         val sourceIcon = StatePlatform.instance.getPlatformIcon(video.id.pluginId)
         holder.sourceIcon.visibility = if (sourceIcon == null) View.GONE else View.VISIBLE
         sourceIcon?.setImageView(holder.sourceIcon)
-        holder.root.contentDescription = listOf(video.name, video.author.name, holder.published.text).filter { it.isNotBlank() }.joinToString(", ")
+        holder.root.contentDescription = listOf(video.name, video.author.name, holder.metadata.text).filter { it.isNotBlank() }.joinToString(", ")
         holder.root.setOnClickListener { open(video) }
         holder.root.setOnLongClickListener {
             options(video)
@@ -95,7 +95,7 @@ internal class TvVideoAdapter(
             minLines = 2
         }
         val author = TvUi.text(root.context, "", 13f, true).apply { lines(1) }
-        val published = TvUi.text(root.context, "", 13f, true).apply {
+        val metadata = TvUi.text(root.context, "", 13f, true).apply {
             id = R.id.tv_video_published
             lines(1)
             visibility = View.GONE
@@ -137,7 +137,7 @@ internal class TvVideoAdapter(
             root.addView(
                 author,
                 LinearLayout.LayoutParams(-1, -2).apply { setMargins(context.dp(4), context.dp(3), context.dp(4), 0) })
-            root.addView(published,
+            root.addView(metadata,
                 LinearLayout.LayoutParams(-1, -2).apply { setMargins(context.dp(4), context.dp(2), context.dp(4), 0) })
             root.descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS
             TvUi.focusable(root)

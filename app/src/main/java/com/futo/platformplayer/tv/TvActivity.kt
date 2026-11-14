@@ -67,7 +67,7 @@ class TvActivity : AppCompatActivity() {
                     val fragment = supportFragmentManager.findFragmentById(R.id.tv_content)
                     if (fragment is TvPlayerFragment && fragment.hideControls()) return
                     if (supportFragmentManager.backStackEntryCount > 0) supportFragmentManager.popBackStackImmediate()
-                    else if (selectedTab != 0) selectTab(0) else finish()
+                    else if (!currentFocusInRail()) focusNavigation() else finish()
                 }
             })
         if (savedInstanceState == null) selectTab(0)

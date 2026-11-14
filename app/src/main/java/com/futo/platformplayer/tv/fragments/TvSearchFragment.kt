@@ -122,7 +122,7 @@ open class TvSearchFragment : Fragment() {
             host::focusNavigation,
             { if (!suggestions.focusFirst()) input.requestFocus() },
             { input.requestFocus() },
-            { input.dispatchKeyEvent(it) })
+            physicalKey = { input.dispatchKeyEvent(it) })
         workspace.addView(keyboard, LinearLayout.LayoutParams(context.dp(292), -2).apply { marginEnd = context.dp(32) })
         val search = TvUi.column(context)
         workspace.addView(search, LinearLayout.LayoutParams(0, -1, 1f))
@@ -239,6 +239,13 @@ open class TvSearchFragment : Fragment() {
                 if (direction == View.FOCUS_UP &&
                     findContainingViewHolder(focused)?.bindingAdapterPosition in 0..2)
                     return tabs.findViewById<View>(kind.viewId)
+                val position = findContainingViewHolder(focused)?.bindingAdapterPosition ?: -1
+                if (direction == View.FOCUS_DOWN && position >= 0 &&
+                    position / 3 == ((adapter?.itemCount ?: 0) - 1) / 3) {
+                    val page = pages[kind]
+                    if (page?.error != true && page?.pager?.hasMorePages() == true) load(next = true)
+                    return footer.findViewById<View>(R.id.tv_search_retry)?.takeIf { it.isShown } ?: focused
+                }
                 return super.focusSearch(focused, direction)
             }
         }.apply {

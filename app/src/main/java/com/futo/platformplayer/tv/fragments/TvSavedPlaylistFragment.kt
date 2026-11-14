@@ -243,6 +243,7 @@ open class TvSavedPlaylistFragment : Fragment() {
         adapter.videos.clear()
         adapter.videos.addAll(videos)
         adapter.notifyDataSetChanged()
+        list.isFocusable = videos.isNotEmpty()
         message.visibility = if (adapter.itemCount == 0) View.VISIBLE else View.GONE
         if (adapter.itemCount == 0)
             showMessage(
@@ -250,7 +251,10 @@ open class TvSavedPlaylistFragment : Fragment() {
                 getString(
                     if (store.playlistId == null) R.string.tv_watch_later_empty_hint
                     else R.string.tv_saved_playlist_empty_hint))
-        if (focus && !host.currentFocusInRail()) focusVideo()
+        if (!host.currentFocusInRail()) {
+            if (videos.isEmpty()) view?.findViewById<View>(R.id.tv_playlist_manage)?.requestFocus()
+            else if (focus) focusVideo()
+        }
     }
 
     private fun focusActions() {
@@ -259,7 +263,7 @@ open class TvSavedPlaylistFragment : Fragment() {
 
     private fun focusVideo() {
         if (adapter.itemCount == 0) {
-            host.focusNavigation()
+            if (view?.findViewById<View>(R.id.tv_playlist_manage)?.requestFocus() != true) host.focusNavigation()
             return
         }
         val index = selectedPosition.takeIf { adapter.videos.getOrNull(it)?.url == selectedUrl }

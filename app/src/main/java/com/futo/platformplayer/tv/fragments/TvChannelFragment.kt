@@ -273,11 +273,13 @@ class TvChannelFragment : Fragment() {
         val focusedId = tabs.findFocus()?.id
         tabs.removeAllViews()
         val available = availableTabs()
+        header.subscription.nextFocusDownId = active.viewId
         if (capabilities != null && active !in available) active = Tab.VIDEOS
         available.forEach { tab ->
             tabs.addView(
                 TvUi.button(requireContext(), getString(tab.label)) { select(tab) }.apply {
                     id = tab.viewId
+                    nextFocusUpId = R.id.tv_channel_subscribe
                     textSize = 14f
                     setPadding(context.dp(14), context.dp(8), context.dp(14), context.dp(8))
                     setBackgroundResource(R.drawable.tv_channel_tab)
@@ -300,6 +302,7 @@ class TvChannelFragment : Fragment() {
         if (active == tab) return
         saveScroll()
         active = tab
+        header.subscription.nextFocusDownId = tab.viewId
         restoreCard = false
         for (i in 0 until tabs.childCount) tabs.getChildAt(i).isSelected = tabs.getChildAt(i).id == tab.viewId
         showPage()

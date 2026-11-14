@@ -3,7 +3,6 @@ package com.futo.platformplayer.tv.views
 import android.content.Context
 import android.graphics.Color
 import android.graphics.Typeface
-import android.text.format.DateUtils
 import android.text.TextUtils
 import android.view.Gravity
 import android.view.View
@@ -17,9 +16,13 @@ import androidx.core.content.res.ResourcesCompat
 import com.bumptech.glide.Glide
 import com.futo.platformplayer.R
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
+import com.futo.platformplayer.toHumanNumber
+import com.futo.platformplayer.getNowDiffSeconds
+import com.futo.platformplayer.toHumanNowDiffString
 import com.futo.platformplayer.states.StateHistory
 import com.futo.platformplayer.views.others.ProgressBar
 import java.text.NumberFormat
+import java.time.OffsetDateTime
 
 internal object TvUi {
     val background = Color.rgb(15, 15, 15)
@@ -104,11 +107,18 @@ internal object TvUi {
         Glide.with(image).load(url).centerCrop().into(image)
     }
 
-    fun TextView.setPublishedDate(video: IPlatformVideo) {
-        text = video.datetime?.let {
-            DateUtils.getRelativeTimeSpanString(it.toInstant().toEpochMilli(), System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS)
-        } ?: ""
+    fun TextView.setVideoMetadata(video: IPlatformVideo) {
+        val views = if (video.viewCount > 0)
+            "${video.viewCount.toHumanNumber()} ${context.getString(if (video.isLive) R.string.watching else R.string.views)}"
+        else null
+        text = listOfNotNull(views, publishedDate(context, video.datetime)).joinToString(" · ")
         visibility = if (text.isNotEmpty()) View.VISIBLE else View.GONE
+    }
+
+    fun publishedDate(context: Context, date: OffsetDateTime?): String? = date?.let {
+        if (it.getNowDiffSeconds() < 0)
+            "${context.getString(R.string.available_in)} ${it.toHumanNowDiffString(true)}"
+        else "${it.toHumanNowDiffString()} ago"
     }
 
     fun watchProgress(context: Context) = ProgressBar(context).apply {

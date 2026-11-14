@@ -29,6 +29,7 @@ import kotlinx.coroutines.withContext
 
 class TvPlaylistsFragment : Fragment() {
     private var selected: String? = null
+    private var initialFocus = true
     private var job: Job? = null
     private lateinit var grid: RecyclerView
     private lateinit var adapter: TvSavedPlaylistsAdapter
@@ -132,7 +133,8 @@ class TvPlaylistsFragment : Fragment() {
 
     private fun load(restoreFocus: Boolean = false) {
         job?.cancel()
-        val restore = restoreFocus || grid.hasFocus() || selected != null
+        val restore = initialFocus || restoreFocus || grid.hasFocus() || selected != null
+        initialFocus = false
         job = viewLifecycleOwner.lifecycleScope.launch {
             try {
                 host.awaitReady()

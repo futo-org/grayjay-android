@@ -16,10 +16,14 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.C
 import androidx.media3.ui.PlayerControlView
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
+import com.futo.platformplayer.api.media.models.streams.sources.IDashManifestSource
+import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestSource
+import com.futo.platformplayer.api.media.platforms.js.models.sources.JSUMPSource
 import com.futo.platformplayer.helpers.VideoHelper
 import com.futo.platformplayer.playback.PlaybackTracking
 import com.futo.platformplayer.logging.Logger
@@ -118,7 +122,11 @@ class TvPlayerFragment : Fragment() {
         player.loaderGameVisibilityChanged.subscribe(this) { loading ->
             activity?.runOnUiThread {
                 generatingSource = loading
-                player.findViewById<View>(R.id.loader_overlay).visibility = View.GONE
+                if (loading) {
+                    controls?.hideImmediately()
+                    firstLoadHint?.visibility = View.GONE
+                    player.requestFocus()
+                }
                 updateLoading()
             }
         }
@@ -349,6 +357,8 @@ class TvPlayerFragment : Fragment() {
             return true
         }
         if (sidePanel != null) return false
+        if (generatingSource && code in setOf(KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER,
+                KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT)) return true
         val timeline = controls?.findViewById<View>(androidx.media3.ui.R.id.exo_progress)
         if ((code == KeyEvent.KEYCODE_DPAD_LEFT || code == KeyEvent.KEYCODE_DPAD_RIGHT) &&
             (controls?.isFullyVisible != true || player.hasFocus() || timeline?.hasFocus() == true)) {
@@ -415,10 +425,11 @@ class TvPlayerFragment : Fragment() {
                     position = if (!video.isLive && history > 5 && history < video.duration - 5) history * 1000 else 0
                     positionLoaded = true
                 }
-                player.switchToVideoMode()
+                player.setArtwork(null)
                 val settings = Settings.instance.playback
                 val source = qualitySources(video).getOrNull(quality)
                     ?: player.getPreferredVideoSource(video, settings.getCurrentPreferredQualityPixelCount())
+                if (source == null) player.switchToAudioMode(video) else player.switchToVideoMode()
                 player.setSource(
                     source,
                     player.getPreferredAudioSource(video, settings.getPrimaryLanguage(requireContext())),
@@ -448,7 +459,7 @@ class TvPlayerFragment : Fragment() {
     private fun updateLoading() {
         val state = playerView?.exoPlayer?.player?.playbackState
         val loading = !sourceLoaded || generatingSource || state == Player.STATE_IDLE || state == Player.STATE_BUFFERING
-        loadingIndicator?.visibility = if (loading && errorDialog?.isShowing != true) View.VISIBLE else View.GONE
+        loadingIndicator?.visibility = if (loading && !generatingSource && errorDialog?.isShowing != true) View.VISIBLE else View.GONE
     }
 
     private fun loadPlaybackTracker(video: IPlatformVideoDetails) {
@@ -476,7 +487,7 @@ class TvPlayerFragment : Fragment() {
     }
 
     private fun showControls() {
-        if (sidePanel != null) return
+        if (sidePanel != null || generatingSource) return
         controls?.show()
         controls?.findViewById<View>(androidx.media3.ui.R.id.exo_play_pause)?.requestFocus()
     }
@@ -533,8 +544,11 @@ class TvPlayerFragment : Fragment() {
         panelContainer.visibility = View.GONE
         panelContainer.removeAllViews()
         resizeStage(compact = false)
-        controls?.show()
-        controls?.findViewById<View>(panelAction)?.requestFocus()
+        if (generatingSource) playerView?.requestFocus()
+        else {
+            controls?.show()
+            controls?.findViewById<View>(panelAction)?.requestFocus()
+        }
     }
 
     private fun resizeStage(compact: Boolean) {
@@ -605,7 +619,8 @@ class TvPlayerFragment : Fragment() {
         menu.addView(
             panel.option(
                 getString(R.string.tv_quality),
-                source?.let { qualityLabel(it.height) } ?: getString(R.string.tv_auto)) {
+                if (usesAdaptiveQuality()) playerView?.targetTrackVideoHeight?.takeIf { it > 0 }?.let(::qualityLabel) ?: getString(R.string.tv_auto)
+                else source?.let { qualityLabel(it.height) } ?: getString(R.string.tv_auto)) {
                 chooseQuality(panel)
             }.apply { id = R.id.tv_quality_option })
         menu.addView(
@@ -627,6 +642,19 @@ class TvPlayerFragment : Fragment() {
                 VideoHelper.selectBestVideoSource(it, -1, FutoVideoPlayerBase.PREFERED_VIDEO_CONTAINERS)
             }
 
+    private fun usesAdaptiveQuality(): Boolean {
+        val source = playerView?.lastVideoSource
+        return source is IDashManifestSource || source is IHLSManifestSource || source is JSUMPSource
+    }
+
+    private fun adaptiveQualityHeights(): List<Int> {
+        val player = playerView ?: return emptyList()
+        val heights = player.exoPlayer?.player?.currentTracks?.groups.orEmpty()
+            .filter { it.type == C.TRACK_TYPE_VIDEO }
+            .flatMap { group -> (0 until group.length).map { group.getTrackFormat(it).height } }
+        return heights.filter { it > 0 }.distinct().sortedDescending()
+    }
+
     private fun qualityLabel(height: Int) =
         when {
             height >= 2160 -> "${height}p · 4K"
@@ -636,8 +664,11 @@ class TvPlayerFragment : Fragment() {
 
     private fun chooseQuality(panel: TvPlayerPanel) {
         val video = details ?: return
+        val adaptive = usesAdaptiveQuality()
         val sources = qualitySources(video)
-        val labels = listOf(getString(R.string.tv_auto)) + sources.map { qualityLabel(it.height) }
+        val heights = if (adaptive) adaptiveQualityHeights() else sources.map { it.height }
+        val selected = if (adaptive) heights.indexOf(playerView?.targetTrackVideoHeight) else quality
+        val labels = listOf(getString(R.string.tv_auto)) + heights.map(::qualityLabel)
         panel.title(getString(R.string.tv_quality), true)
         panel.onBack = {
             settingsMenu(panel)
@@ -646,7 +677,12 @@ class TvPlayerFragment : Fragment() {
         val menu = panel.menu()
         labels.forEachIndexed { index, label ->
             menu.addView(
-                panel.option(label, checked = quality == index - 1) {
+                panel.option(label, checked = selected == index - 1) {
+                    if (adaptive) {
+                        playerView?.selectVideoTrack(heights.getOrNull(index - 1) ?: -1)
+                        settingsMenu(panel)
+                        return@option
+                    }
                     sourceJob?.cancel()
                     sourceJob = viewLifecycleOwner.lifecycleScope.launch {
                         try {
@@ -672,7 +708,7 @@ class TvPlayerFragment : Fragment() {
                     }
                 })
         }
-        menu.getChildAt(quality + 1)?.requestFocus()
+        menu.getChildAt(selected + 1)?.requestFocus()
     }
 
     private fun chooseSubtitle(panel: TvPlayerPanel) {

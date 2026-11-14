@@ -123,4 +123,6 @@
     <item name="tv_video_add_playlist" type="id" />
     <item name="tv_video_open_channel" type="id" />
     <item name="tv_player_loading" type="id" />
+    <item name="tv_sources_add" type="id" />
+    <item name="tv_source_uninstall" type="id" />
 </resources>

@@ -62,7 +62,7 @@ class TvHistoryFragment : Fragment() {
         super.onCreate(state)
         query = state?.getString("query").orEmpty()
         selectedUrl = state?.getString("selected")
-        restore = selectedUrl != null
+        restore = true
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, state: Bundle?): View {
@@ -201,7 +201,7 @@ class TvHistoryFragment : Fragment() {
                         getString(
                             if (query.isBlank()) R.string.tv_history_empty_hint
                             else R.string.tv_history_no_results_hint))
-                if (keepFocus) restoreFocus()
+                if (keepFocus && !host.currentFocusInRail()) restoreFocus()
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {

@@ -23,6 +23,10 @@ internal class TvPlaylistNameDialog(
     title: String,
     name: String,
     action: String,
+    label: String = context.getString(R.string.tv_playlist_name),
+    hint: String = label,
+    emptyError: String = context.getString(R.string.tv_playlist_name_required),
+    allowUppercase: Boolean = false,
     submit: (String) -> Unit
 ) : Dialog(context) {
     private val input = EditText(context).apply {
@@ -30,8 +34,8 @@ internal class TvPlaylistNameDialog(
         setTextColor(Color.WHITE)
         setHintTextColor(TvUi.muted)
         textSize = 23f
-        hint = context.getString(R.string.tv_playlist_name)
-        contentDescription = hint
+        this.hint = hint
+        contentDescription = label
         setSingleLine(true)
         showSoftInputOnFocus = false
         imeOptions = EditorInfo.IME_ACTION_DONE
@@ -50,7 +54,7 @@ internal class TvPlaylistNameDialog(
         fun save() {
             if (busy) return
             val value = input.text.toString().trim()
-            if (value.isEmpty()) showError(context.getString(R.string.tv_playlist_name_required)) else submit(value)
+            if (value.isEmpty()) showError(emptyError) else submit(value)
         }
         fun insert(value: String) {
             if (busy) return
@@ -82,7 +86,7 @@ internal class TvPlaylistNameDialog(
         val close = TvUi.iconButton(context, R.drawable.ic_close_thin, context.getString(R.string.tv_close), ::dismiss)
         heading.addView(close)
         root.addView(heading)
-        keyboard = TvSearchKeyboard(context, ::insert, ::delete, ::save, { close.requestFocus() }, { input.requestFocus() }) {
+        keyboard = TvSearchKeyboard(context, ::insert, ::delete, ::save, { close.requestFocus() }, { input.requestFocus() }, allowUppercase = allowUppercase) {
             event ->
             when {
                 busy -> true
@@ -100,7 +104,7 @@ internal class TvPlaylistNameDialog(
         }
         row.addView(keyboard, LinearLayout.LayoutParams(context.dp(292), -2).apply { marginEnd = context.dp(32) })
         val editor = TvUi.column(context)
-        editor.addView(TvUi.text(context, context.getString(R.string.tv_playlist_name), 14f, true))
+        editor.addView(TvUi.text(context, label, 14f, true))
         editor.addView(input, LinearLayout.LayoutParams(-1, context.dp(64)))
         editor.addView(error, LinearLayout.LayoutParams(-1, -2).apply { topMargin = context.dp(12) })
         editor.addView(

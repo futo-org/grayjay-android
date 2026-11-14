@@ -37,6 +37,8 @@
     <string name="tv_auto">Automatic</string>
     <string name="tv_live">LIVE</string>
     <string name="tv_subscriber_count">%1$s subscribers</string>
+    <string name="tv_likes">Likes</string>
+    <string name="tv_dislikes">Dislikes</string>
     <string name="tv_view_count">%1$s views</string>
     <string name="tv_enabled">Enabled</string>
     <string name="tv_disabled">Disabled</string>
@@ -278,4 +280,9 @@
     <string name="tv_playlist_name">Playlist name</string>
     <string name="tv_playlist_name_required">Enter a name for your playlist.</string>
     <string name="tv_video_action_error">Could not complete this action. Please try again.</string>
+    <string name="tv_source_url">Source URL</string>
+    <string name="tv_source_url_required">Enter a valid http:// or https:// plugin configuration URL.</string>
+    <string name="tv_source_uninstall_warning">Uninstall %1$s? Its settings and saved credentials will be removed from this TV. Your subscriptions will be kept, but cannot refresh without a compatible source.</string>
+    <string name="tv_keyboard_uppercase">Toggle uppercase letters</string>
+    <string name="tv_source_bundled_hint">Included with Grayjay. You can disable this source; uninstalling is available for custom sources.</string>
 </resources>

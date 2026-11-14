@@ -1,5 +1,7 @@
 package com.futo.platformplayer.tv.fragments
 
+import android.app.Dialog
+import android.net.Uri
 import android.os.Bundle
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -14,6 +16,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.futo.platformplayer.R
+import com.futo.platformplayer.states.StatePlugins
+import com.futo.platformplayer.tv.playlists.TvPlaylistNameDialog
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.tv.TvActivity
 import com.futo.platformplayer.tv.sources.TvSourceAdapter
@@ -37,6 +41,7 @@ class TvSourcesFragment : Fragment() {
     private lateinit var summary: TextView
     private lateinit var message: LinearLayout
     private var loading = false
+    private var installDialog: Dialog? = null
 
     internal var store: TvSourcesStore? = null
 
@@ -47,7 +52,7 @@ class TvSourcesFragment : Fragment() {
         super.onCreate(state)
         tab = state?.getInt("tab") ?: 0
         selectedId = state?.getString("selected")
-        restore = selectedId != null
+        restore = true
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, state: Bundle?): View {
@@ -60,6 +65,7 @@ class TvSourcesFragment : Fragment() {
         title.addView(
             TvUi.text(c, getString(R.string.tv_sources_intro), 15f, true).apply { setPadding(0, c.dp(8), 0, 0) })
         header.addView(title, LinearLayout.LayoutParams(0, -2, 1f))
+        header.addView(TvUi.button(c, getString(R.string.add_source), ::addSource).apply { id = R.id.tv_sources_add })
         header.addView(
             TvUi.iconButton(c, R.drawable.ic_refresh, getString(R.string.tv_refresh)) { load() }
                 .apply { id = R.id.tv_sources_refresh })
@@ -131,8 +137,30 @@ class TvSourcesFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        installDialog?.dismiss()
+        installDialog = null
         grid.adapter = null
         super.onDestroyView()
+    }
+
+    private fun addSource() {
+        val c = requireContext()
+        lateinit var editor: TvPlaylistNameDialog
+        editor = TvPlaylistNameDialog(c, getString(R.string.install_by_url), "", getString(R.string.install),
+            label = getString(R.string.tv_source_url), hint = "https://example.com/plugin/config.json",
+            emptyError = getString(R.string.tv_source_url_required), allowUppercase = true) { url ->
+            val uri = Uri.parse(url)
+            if (uri.scheme !in listOf("https", "http") || uri.host.isNullOrBlank()) {
+                editor.showError(getString(R.string.tv_source_url_required))
+            } else {
+                editor.dismiss()
+                StatePlugins.instance.installPlugin(c, viewLifecycleOwner.lifecycleScope, url) {
+                    if (view != null) load()
+                }
+            }
+        }
+        installDialog = editor
+        editor.show()
     }
 
     private fun render() {
@@ -152,7 +180,7 @@ class TvSourcesFragment : Fragment() {
         message.visibility = if (adapter.itemCount == 0) View.VISIBLE else View.GONE
         if (adapter.itemCount == 0)
             message.addView(TvUi.text(requireContext(), getString(R.string.tv_sources_empty), 18f))
-        if (restore && adapter.itemCount > 0) {
+        if (restore && !host.currentFocusInRail() && adapter.itemCount > 0) {
             val index = adapter.sources.indexOfFirst { it.id == selectedId }.coerceAtLeast(0)
             grid.scrollToPosition(index)
             grid.doOnNextLayout { grid.findViewHolderForAdapterPosition(index)?.itemView?.requestFocus() }

@@ -335,11 +335,41 @@ class TvSourceDetailsFragment : Fragment() {
                         page = "about"
                         render()
                     }
+                if (source.installed && source.config != null) {
+                    if (source.bundled)
+                        menu.addView(TvUi.text(requireContext(), getString(R.string.tv_source_bundled_hint), 13f, true).apply {
+                            setPadding(context.dp(16), context.dp(12), context.dp(16), context.dp(12))
+                        })
+                    else option(R.string.uninstall, tag = "uninstall", action = ::uninstall).id = R.id.tv_source_uninstall
+                }
             }
         }
         val target = focus?.let { menu.findViewWithTag<View>(it) }?.takeIf { it.isEnabled }
         (target ?: (0 until menu.childCount).map { menu.getChildAt(it) }.firstOrNull { it.isFocusable && it.isEnabled })
             ?.requestFocus()
+    }
+
+    private fun uninstall() {
+        val source = item ?: return
+        confirm(getString(R.string.uninstall), getString(R.string.tv_source_uninstall_warning, source.name),
+            getString(R.string.uninstall)) {
+            if (busy) return@confirm
+            busy = true
+            panel.message(getString(R.string.tv_source_saving))
+            viewLifecycleOwner.lifecycleScope.launch {
+                try {
+                    withContext(NonCancellable + Dispatchers.IO) { checkNotNull(store).remove(sourceId) }
+                    if (isAdded) parentFragmentManager.popBackStack()
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Exception) {
+                    Logger.w("TvSources", "Failed to uninstall source", error)
+                    if (view != null) panel.message(getString(R.string.tv_source_operation_error), retry = { load() })
+                } finally {
+                    busy = false
+                }
+            }
+        }
     }
 
     private fun toggle() {

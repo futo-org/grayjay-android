@@ -17,6 +17,7 @@ internal class TvSearchKeyboard(
     private val navigation: () -> Unit,
     private val suggestions: () -> Unit,
     private val query: () -> Unit = suggestions,
+    allowUppercase: Boolean = false,
     private val physicalKey: (KeyEvent) -> Boolean
 ) : LinearLayout(context) {
     private val letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".map { it.toString() }
@@ -30,6 +31,7 @@ internal class TvSearchKeyboard(
     )
     private val keys = TvUi.column(context)
     private var showingSymbols = false
+    private var uppercase = false
     private var lastFocused: View? = null
 
     init {
@@ -72,6 +74,19 @@ internal class TvSearchKeyboard(
                 edge(this, first = true, bottom = true)
             },
             keyLayout(2f))
+        if (allowUppercase) {
+            val shift = TvUi.button(context, "⇧") {}.apply {
+                contentDescription = context.getString(R.string.tv_keyboard_uppercase)
+                textSize = 18f
+                edge(this, bottom = true)
+                setOnClickListener {
+                    uppercase = !uppercase
+                    isSelected = uppercase
+                    showKeys()
+                }
+            }
+            actions.addView(shift, keyLayout(1.5f))
+        }
         actions.addView(
             TvUi.button(context, context.getString(R.string.tv_search), search).apply {
                 id = R.id.tv_search_keyboard_submit
@@ -107,7 +122,7 @@ internal class TvSearchKeyboard(
             val row = TvUi.row(context)
             values.forEachIndexed { column, value ->
                 row.addView(
-                    TvUi.button(context, value) { insert(if (showingSymbols) value else value.lowercase()) }.apply {
+                    TvUi.button(context, value) { insert(if (showingSymbols || uppercase) value else value.lowercase()) }.apply {
                         tag = "key:$value"
                         textSize = 20f
                         setPadding(0, 0, 0, 0)

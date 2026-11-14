@@ -43,6 +43,7 @@ class TvSyncFragment : Fragment() {
     private var selectedKey: String? = null
     private var foreground = false
     private var changing = false
+    private var initialFocus = true
     private var startup: Job? = null
     private var load: Job? = null
     private var polling: Job? = null
@@ -286,7 +287,12 @@ class TvSyncFragment : Fragment() {
                 qrBitmap != null -> R.string.tv_sync_enlarge
                 else -> R.string.tv_retry
             })
-        pairButton.isEnabled = !changing
+        pairButton.isEnabled = true
+        pairButton.isClickable = !changing
+        if (initialFocus && !host.currentFocusInRail()) {
+            initialFocus = false
+            pairButton.requestFocus()
+        }
         if (qrBitmap != null) {
             qr.clearColorFilter()
             qr.setImageBitmap(qrBitmap)
@@ -314,7 +320,7 @@ class TvSyncFragment : Fragment() {
     private fun enable() {
         if (changing) return
         changing = true
-        pairButton.isEnabled = false
+        pairButton.isClickable = false
         try {
             store.enable(requireActivity())
             observe()
@@ -325,7 +331,7 @@ class TvSyncFragment : Fragment() {
             showError(failure)
         } finally {
             changing = false
-            pairButton.isEnabled = true
+            pairButton.isClickable = true
         }
     }
 
