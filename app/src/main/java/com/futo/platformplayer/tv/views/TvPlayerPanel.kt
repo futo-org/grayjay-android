@@ -10,6 +10,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
+import android.widget.TextView
 import com.futo.platformplayer.R
 import com.futo.platformplayer.tv.views.TvUi.dp
 
@@ -84,20 +85,30 @@ internal open class TvPlayerPanel(context: Context, private val close: () -> Uni
         return column
     }
 
-    fun option(label: String, value: String? = null, checked: Boolean = false, action: () -> Unit): View {
+    fun option(label: String, value: CharSequence? = null, checked: Boolean = false, action: () -> Unit): View =
+        option(label, value, checked, View.NO_ID, action = action)
+
+    fun option(label: String, value: CharSequence? = null, checked: Boolean = false, valueId: Int, compact: Boolean = false, action: () -> Unit): View {
         val row = TvUi.row(context).apply {
             id = View.generateViewId()
             isFocusable = true
             isClickable = true
-            setPadding(context.dp(16), context.dp(14), context.dp(16), context.dp(14))
+            val verticalPadding = context.dp(if (compact) 10 else 14)
+            setPadding(context.dp(16), verticalPadding, context.dp(16), verticalPadding)
+            if (compact) minimumHeight = context.dp(48)
             setBackgroundResource(R.drawable.tv_panel_item)
             setOnClickListener { action() }
-            layoutParams = LayoutParams(-1, -2).apply { bottomMargin = context.dp(8) }
+            layoutParams = LayoutParams(-1, -2).apply { bottomMargin = context.dp(if (compact) 6 else 8) }
         }
         val texts = TvUi.column(context)
-        texts.addView(TvUi.text(context, label, 15f))
-        if (!value.isNullOrBlank())
-            texts.addView(TvUi.text(context, value, 12f, true).apply { setPadding(0, context.dp(6), 0, 0) })
+        texts.addView(TvUi.text(context, label, 15f).apply { includeFontPadding = !compact })
+        if (!value.isNullOrBlank() || valueId != View.NO_ID)
+            texts.addView(TvUi.text(context, value ?: "", 12f, true).apply {
+                id = valueId
+                visibility = if (value.isNullOrBlank()) View.GONE else View.VISIBLE
+                includeFontPadding = !compact
+                setPadding(0, context.dp(if (compact) 3 else 6), 0, 0)
+            })
         row.addView(texts, LayoutParams(0, -2, 1f))
         if (checked)
             row.addView(
@@ -108,6 +119,16 @@ internal open class TvPlayerPanel(context: Context, private val close: () -> Uni
                 LayoutParams(context.dp(20), context.dp(20)).apply { marginStart = context.dp(12) })
         row.contentDescription = listOfNotNull(label, value).joinToString(", ")
         return row
+    }
+
+    fun updateOptionValue(valueId: Int, value: CharSequence) {
+        val text = findViewById<TextView>(valueId) ?: return
+        if (text.text.toString() == value.toString()) return
+        text.text = value
+        text.visibility = if (value.isBlank()) View.GONE else View.VISIBLE
+        val texts = text.parent as LinearLayout
+        val label = (texts.getChildAt(0) as TextView).text
+        (texts.parent as View).contentDescription = listOf(label, value).filter { it.isNotBlank() }.joinToString(", ")
     }
 
     fun message(title: String, description: String = "", retry: (() -> Unit)? = null) {

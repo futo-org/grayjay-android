@@ -32,6 +32,10 @@
     <string name="tv_save">Watch later</string>
     <string name="tv_saved">Remove from watch later</string>
     <string name="tv_quality">Quality</string>
+    <string name="tv_auto_quality">Automatic: %1$s</string>
+    <string name="tv_selected_quality">Selected: %1$s</string>
+    <string name="tv_maximum_quality">Maximum: %1$s</string>
+    <string name="tv_playing_quality">Playing at %1$s</string>
     <string name="tv_subtitles">Subtitles</string>
     <string name="tv_off">Off</string>
     <string name="tv_auto">Automatic</string>

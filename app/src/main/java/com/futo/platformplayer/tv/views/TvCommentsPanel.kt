@@ -28,11 +28,16 @@ import kotlinx.coroutines.withContext
 internal class TvCommentsPanel(
     context: Context,
     private val scope: CoroutineScope,
-    loader: suspend () -> IPager<IPlatformComment>,
+    private val loader: suspend () -> IPager<IPlatformComment>,
     private val replies: suspend (IPlatformComment) -> IPager<IPlatformComment>,
-    close: () -> Unit
+    close: () -> Unit,
+    private val polycentricLoader: (suspend () -> IPager<IPlatformComment>)? = null,
+    initialPolycentric: Boolean = false,
+    private val onSectionChanged: (Boolean) -> Unit = {}
 ) : TvPlayerPanel(context, close) {
-    private val pages = mutableListOf(Page(loader))
+    private var polycentric = initialPolycentric && polycentricLoader != null
+    private val pages = mutableListOf(Page(if (polycentric) checkNotNull(polycentricLoader) else loader))
+    private val tabs = TvUi.row(context)
     private var grid: RecyclerView? = null
     private var expanded = false
     private var disposed = false
@@ -44,6 +49,23 @@ internal class TvCommentsPanel(
     init {
         id = R.id.tv_comments_panel
         title(context.getString(R.string.tv_comments))
+        if (polycentricLoader != null) {
+            tabs.setPadding(context.dp(16), 0, context.dp(16), context.dp(12))
+            listOf(false, true).forEach { section ->
+                tabs.addView(TvUi.button(context, context.getString(if (section) R.string.polycentric else R.string.platform)) {
+                    selectSection(section)
+                }.apply {
+                    id = if (section) R.id.tv_comments_polycentric else R.id.tv_comments_platform
+                    textSize = 14f
+                    setPadding(context.dp(12), context.dp(8), context.dp(12), context.dp(8))
+                    setBackgroundResource(R.drawable.tv_channel_tab)
+                    isSelected = polycentric == section
+                }, LinearLayout.LayoutParams(0, context.dp(40), 1f).apply {
+                    if (section) marginStart = context.dp(8)
+                })
+            }
+            addView(tabs, 1)
+        }
         load()
     }
 
@@ -63,6 +85,20 @@ internal class TvCommentsPanel(
     fun dispose() {
         disposed = true
         pages.forEach { it.job?.cancel() }
+    }
+
+    private fun selectSection(section: Boolean) {
+        if (polycentric == section) return
+        polycentric = section
+        pages.forEach { it.job?.cancel() }
+        pages.clear()
+        pages.add(Page(if (section) checkNotNull(polycentricLoader) else loader))
+        grid = null
+        footer = null
+        expanded = false
+        for (i in 0 until tabs.childCount) tabs.getChildAt(i).isSelected = (i == 1) == section
+        onSectionChanged(section)
+        load()
     }
 
     private fun load(next: Boolean = false) {
@@ -117,12 +153,14 @@ internal class TvCommentsPanel(
 
     private fun showList() {
         expanded = false
+        tabs.visibility = if (pages.size == 1) View.VISIBLE else View.GONE
         title(context.getString(if (pages.size > 1) R.string.tv_replies else R.string.tv_comments), pages.size > 1)
         if (page.comments.isEmpty()) {
             message(
                 context.getString(if (pages.size > 1) R.string.tv_no_replies else R.string.tv_no_comments),
                 if (pages.size > 1) "" else context.getString(R.string.tv_no_comments_hint))
-            findViewById<View>(R.id.tv_panel_close).requestFocus()
+            if (tabs.childCount > 0 && tabs.isShown) tabs.getChildAt(if (polycentric) 1 else 0).requestFocus()
+            else findViewById<View>(R.id.tv_panel_close).requestFocus()
             return
         }
         body.removeAllViews()
@@ -172,7 +210,10 @@ internal class TvCommentsPanel(
         updateFooter()
         current.scroll?.let { list.layoutManager?.onRestoreInstanceState(it) }
         if (current.scroll == null) list.scrollToPosition(current.selected)
-        list.post { if (!disposed) list.findViewHolderForAdapterPosition(current.selected)?.itemView?.requestFocus() }
+        list.post {
+            if (!disposed && current === page && !expanded && !tabs.hasFocus())
+                list.findViewHolderForAdapterPosition(current.selected)?.itemView?.requestFocus()
+        }
     }
 
     private fun updateFooter() {
@@ -186,6 +227,7 @@ internal class TvCommentsPanel(
     private fun showComment(comment: IPlatformComment) {
         page.scroll = grid?.layoutManager?.onSaveInstanceState()
         expanded = true
+        tabs.visibility = View.GONE
         title(context.getString(R.string.tv_comments), true)
         val column = menu()
         val replyAction = if ((comment.replyCount ?: 0) > 0)

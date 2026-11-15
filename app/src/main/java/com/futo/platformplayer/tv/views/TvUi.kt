@@ -115,11 +115,13 @@ internal object TvUi {
         visibility = if (text.isNotEmpty()) View.VISIBLE else View.GONE
     }
 
-    fun publishedDate(context: Context, date: OffsetDateTime?): String? = date?.let {
-        if (it.getNowDiffSeconds() < 0)
-            "${context.getString(R.string.available_in)} ${it.toHumanNowDiffString(true)}"
-        else "${it.toHumanNowDiffString()} ago"
-    }
+    fun publishedDate(context: Context, date: OffsetDateTime?): String? = date
+        ?.takeUnless { it == OffsetDateTime.MIN || it == OffsetDateTime.MAX }
+        ?.let {
+            if (it.getNowDiffSeconds() < 0)
+                "${context.getString(R.string.available_in)} ${it.toHumanNowDiffString(true)}"
+            else "${it.toHumanNowDiffString()} ago"
+        }
 
     fun watchProgress(context: Context) = ProgressBar(context).apply {
         id = R.id.time_bar

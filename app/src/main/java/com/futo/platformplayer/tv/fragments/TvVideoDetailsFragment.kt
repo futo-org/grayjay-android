@@ -9,10 +9,10 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
-import androidx.core.text.HtmlCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.R
+import com.futo.platformplayer.fixHtmlLinks
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
 import com.futo.platformplayer.api.media.models.video.SerializedPlatformVideo
 import com.futo.platformplayer.states.StateHistory
@@ -150,7 +150,7 @@ class TvVideoDetailsFragment : Fragment() {
         actions.addView(saved)
         column.addView(actions)
         if (video.description.isNotBlank()) {
-            val description = HtmlCompat.fromHtml(video.description, HtmlCompat.FROM_HTML_MODE_COMPACT)
+            val description = video.description.fixHtmlLinks()
             column.addView(
                 TvUi.text(context, description, 15f, true).apply {
                     lines(3)

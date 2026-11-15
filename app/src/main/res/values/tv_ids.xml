@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <item name="tv_quality_summary" type="id" />
+    <item name="tv_quality_auto_summary" type="id" />
     <item name="tv_video_published" type="id" />
     <item name="tv_info_panel" type="id" />
     <item name="tv_info_description" type="id" />
@@ -125,4 +127,6 @@
     <item name="tv_player_loading" type="id" />
     <item name="tv_sources_add" type="id" />
     <item name="tv_source_uninstall" type="id" />
+    <item name="tv_comments_platform" type="id" />
+    <item name="tv_comments_polycentric" type="id" />
 </resources>

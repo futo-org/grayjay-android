@@ -9,11 +9,11 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
-import androidx.core.text.HtmlCompat
 import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
+import com.futo.platformplayer.fixHtmlLinks
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StateSubscriptions
@@ -108,7 +108,7 @@ internal class TvVideoInfoPanel(
             }
             addView(TvUi.text(context,
                 if (video.description.isBlank()) context.getString(R.string.tv_no_description)
-                else HtmlCompat.fromHtml(video.description, HtmlCompat.FROM_HTML_MODE_COMPACT), 15f).apply {
+                else video.description.fixHtmlLinks(), 15f).apply {
                 setPadding(0, 0, context.dp(12), context.dp(20))
                 setLineSpacing(context.dp(4).toFloat(), 1f)
             })

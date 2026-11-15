@@ -10,6 +10,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.TextView
+import androidx.core.content.ContextCompat
+import androidx.core.text.buildSpannedString
+import androidx.core.text.color
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -21,6 +24,7 @@ import androidx.media3.ui.PlayerControlView
 import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.api.media.models.video.IPlatformVideoDetails
+import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComment
 import com.futo.platformplayer.api.media.models.streams.sources.IDashManifestSource
 import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSUMPSource
@@ -28,7 +32,9 @@ import com.futo.platformplayer.helpers.VideoHelper
 import com.futo.platformplayer.playback.PlaybackTracking
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.states.StateHistory
+import com.futo.platformplayer.states.StateMeta
 import com.futo.platformplayer.states.StatePlatform
+import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.tv.TvActivity
 import com.futo.platformplayer.tv.playlists.TvPlaylistQueue
 import com.futo.platformplayer.tv.views.TvCommentsPanel
@@ -252,6 +258,7 @@ class TvPlayerFragment : Fragment() {
                     playerView?.takeIf { sourceLoaded }?.let { player ->
                         playbackTracking.updatePlaybackTracking(details, player.position, player.playing)
                         playbackTracking.updateTracker(player.position, player.playing)
+                        updateQualitySummary()
                     }
                     delay(500)
                 }
@@ -598,8 +605,19 @@ class TvPlayerFragment : Fragment() {
             requireContext(),
             viewLifecycleOwner.lifecycleScope,
             { StatePlatform.instance.getComments(video) },
-            { StatePlatform.instance.getSubComments(it) },
-            ::closePanel)
+            {
+                if (it is PolycentricPlatformComment) StatePolycentric.instance.getReplies(it)
+                else StatePlatform.instance.getSubComments(it)
+            },
+            ::closePanel,
+            polycentricLoader = if (StatePolycentric.instance.enabled)
+                ({ StatePolycentric.instance.getCommentPager(video.url) }) else null,
+            initialPolycentric = when (Settings.instance.comments.defaultCommentSection) {
+                0 -> true
+                1 -> false
+                else -> StateMeta.instance.getLastCommentSection() == 0
+            },
+            onSectionChanged = { StateMeta.instance.setLastCommentSection(if (it) 0 else 1) })
         openPanel(panel, R.id.tv_player_comments)
     }
 
@@ -615,12 +633,10 @@ class TvPlayerFragment : Fragment() {
         panel.title(getString(R.string.tv_playback_settings))
         panel.onBack = null
         val menu = panel.menu()
-        val source = qualitySources(video).getOrNull(quality)
         menu.addView(
             panel.option(
                 getString(R.string.tv_quality),
-                if (usesAdaptiveQuality()) playerView?.targetTrackVideoHeight?.takeIf { it > 0 }?.let(::qualityLabel) ?: getString(R.string.tv_auto)
-                else source?.let { qualityLabel(it.height) } ?: getString(R.string.tv_auto)) {
+                qualitySummary(), valueId = R.id.tv_quality_summary, compact = true) {
                 chooseQuality(panel)
             }.apply { id = R.id.tv_quality_option })
         menu.addView(
@@ -662,6 +678,39 @@ class TvPlayerFragment : Fragment() {
             else -> "${height}p"
         }
 
+    private fun currentQuality(): String? =
+        playerView?.exoPlayer?.player?.videoFormat?.height?.takeIf { it > 0 }?.let { "${it}p" }
+
+    private fun qualitySummary(): CharSequence {
+        val video = details ?: return ""
+        val adaptive = usesAdaptiveQuality()
+        val sources = qualitySources(video)
+        val selected = if (adaptive) playerView?.targetTrackVideoHeight?.takeIf { it > 0 }
+            else sources.getOrNull(quality)?.height
+        val mode = selected?.let { getString(R.string.tv_selected_quality, "${it}p") }
+            ?: currentQuality()?.let { getString(R.string.tv_auto_quality, it) }
+            ?: getString(R.string.tv_auto)
+        val maximum = (if (adaptive) adaptiveQualityHeights() else sources.map { it.height }).maxOrNull()
+        return buildSpannedString {
+            color(ContextCompat.getColor(requireContext(), R.color.tv_quality_text)) { append(mode) }
+            maximum?.let { append(" · ").append(getString(R.string.tv_maximum_quality, "${it}p")) }
+            playerView?.lastVideoSource?.name?.takeIf { it.isNotBlank() }?.let {
+                append("\n").append(it)
+            }
+        }
+    }
+
+    private fun automaticQualitySummary(): String =
+        currentQuality()?.let { getString(R.string.tv_playing_quality, it) }.orEmpty()
+
+    private fun updateQualitySummary() {
+        val panel = sidePanel?.takeIf { it.id == R.id.tv_settings_panel } ?: return
+        if (panel.findViewById<View>(R.id.tv_quality_summary) != null)
+            panel.updateOptionValue(R.id.tv_quality_summary, qualitySummary())
+        if (panel.findViewById<View>(R.id.tv_quality_auto_summary) != null)
+            panel.updateOptionValue(R.id.tv_quality_auto_summary, automaticQualitySummary())
+    }
+
     private fun chooseQuality(panel: TvPlayerPanel) {
         val video = details ?: return
         val adaptive = usesAdaptiveQuality()
@@ -675,9 +724,21 @@ class TvPlayerFragment : Fragment() {
             true
         }
         val menu = panel.menu()
+        if (adaptive) playerView?.lastVideoSource?.name?.takeIf { it.isNotBlank() }?.let {
+            menu.addView(TvUi.text(requireContext(), it, 12f, true).apply {
+                setPadding(context.dp(16), 0, context.dp(16), context.dp(10))
+            })
+        }
+        val optionOffset = menu.childCount
         labels.forEachIndexed { index, label ->
             menu.addView(
-                panel.option(label, checked = selected == index - 1) {
+                panel.option(
+                    label,
+                    if (index == 0) automaticQualitySummary()
+                    else if (adaptive) null else sources[index - 1].name,
+                    checked = selected == index - 1,
+                    valueId = if (index == 0) R.id.tv_quality_auto_summary else View.NO_ID,
+                    compact = true) {
                     if (adaptive) {
                         playerView?.selectVideoTrack(heights.getOrNull(index - 1) ?: -1)
                         settingsMenu(panel)
@@ -708,7 +769,7 @@ class TvPlayerFragment : Fragment() {
                     }
                 })
         }
-        menu.getChildAt(selected + 1)?.requestFocus()
+        menu.getChildAt(optionOffset + selected + 1)?.requestFocus()
     }
 
     private fun chooseSubtitle(panel: TvPlayerPanel) {

@@ -73,9 +73,32 @@ abstract class TvFeedFragment : Fragment() {
         retry = TvUi.button(context, getString(R.string.tv_retry)) { load(next = retryNext) }
         retry.visibility = View.GONE
         root.addView(retry)
-        grid = RecyclerView(context).apply {
+        grid = object : RecyclerView(context) {
+            override fun focusSearch(focused: View, direction: Int): View? {
+                val position = findContainingViewHolder(focused)?.bindingAdapterPosition ?: -1
+                if (direction == View.FOCUS_DOWN && position >= 0) {
+                    if (position / 3 == ((adapter?.itemCount ?: 0) - 1) / 3) {
+                        if (!retry.isShown && pager?.hasMorePages() == true) load(next = true)
+                        return focused
+                    }
+                    val next = super.focusSearch(focused, direction)
+                    return next?.takeIf { findContainingViewHolder(it) != null } ?: focused
+                }
+                return super.focusSearch(focused, direction)
+            }
+        }.apply {
             id = R.id.tv_grid
-            layoutManager = GridLayoutManager(context, 3)
+            layoutManager = object : GridLayoutManager(context, 3) {
+                override fun calculateExtraLayoutSpace(state: RecyclerView.State, extraLayoutSpace: IntArray) {
+                    super.calculateExtraLayoutSpace(state, extraLayoutSpace)
+                    val focused = focusedChild ?: return
+                    // A page arriving during focus scrolling must not recycle the focused row.
+                    val bounds = android.graphics.Rect()
+                    getDecoratedBoundsWithMargins(focused, bounds)
+                    extraLayoutSpace[0] = maxOf(extraLayoutSpace[0], paddingTop - bounds.top)
+                    extraLayoutSpace[1] = maxOf(extraLayoutSpace[1], bounds.bottom - height + paddingBottom)
+                }
+            }
             clipToPadding = false
             setPadding(0, context.dp(10), 0, context.dp(6))
             itemAnimator = null
@@ -141,6 +164,7 @@ abstract class TvFeedFragment : Fragment() {
     protected fun load(next: Boolean = false) {
         if (next && loadJob?.isActive == true) return
         loadJob?.cancel()
+        val retryFocused = retry.hasFocus()
         if (!next) {
             status.text = getString(R.string.tv_loading)
             status.visibility = View.VISIBLE
@@ -180,7 +204,8 @@ abstract class TvFeedFragment : Fragment() {
                 status.visibility = if (videos.isEmpty()) View.VISIBLE else View.GONE
                 onLoaded()
                 more.visibility = if (videos.isEmpty() && pager?.hasMorePages() == true) View.VISIBLE else View.GONE
-                if (!next && videos.isNotEmpty() && !host.currentFocusInRail()) {
+                if ((!next || retryFocused) && videos.isNotEmpty() && !host.currentFocusInRail()) {
+                    if (retryFocused) grid.scrollToPosition(selected)
                     grid.post { grid.findViewHolderForAdapterPosition(selected)?.itemView?.requestFocus() }
                 }
             } catch (cancelled: CancellationException) {
@@ -192,7 +217,7 @@ abstract class TvFeedFragment : Fragment() {
                 status.visibility = View.VISIBLE
                 status.text = getString(R.string.tv_error)
                 retry.visibility = View.VISIBLE
-                if (!host.currentFocusInRail()) retry.requestFocus()
+                if ((!next || retryFocused) && !host.currentFocusInRail()) retry.requestFocus()
             } finally {
                 more.isEnabled = true
             }
