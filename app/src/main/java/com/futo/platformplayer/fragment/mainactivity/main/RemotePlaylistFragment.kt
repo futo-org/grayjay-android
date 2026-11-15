@@ -34,6 +34,7 @@ import com.futo.platformplayer.states.StateApp
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.states.StatePlaylists
+import com.futo.platformplayer.views.PlaylistImportPrompt
 import com.futo.platformplayer.views.adapters.InsertedViewAdapterWithLoader
 import com.futo.platformplayer.views.adapters.VideoListEditorViewHolder
 import kotlinx.coroutines.Dispatchers
@@ -284,15 +285,14 @@ class RemotePlaylistFragment : MainFragment() {
 
                     _fragment.lifecycleScope.launch(Dispatchers.IO) {
                         try {
-                            val playlist = remotePlaylist.toPlaylist { progress ->
+                            val converted = remotePlaylist.toPlaylist { progress ->
                                 _fragment.lifecycleScope.launch(Dispatchers.Main) {
                                     it.setProgress(progress.toDouble() / remotePlaylist.videoCount)
                                 }
                             }
 
-                            if (savePlaylist) {
-                                StatePlaylists.instance.playlistStore.save(playlist)
-                            }
+                            //Saving updates the linked local playlist (with a preview) instead of making a copy.
+                            val playlist = if (savePlaylist) (PlaylistImportPrompt.import(context, converted) ?: converted) else converted;
 
                             _fragment.lifecycleScope.launch(Dispatchers.Main) {
                                 UIDialogs.toast("Playlist converted")
