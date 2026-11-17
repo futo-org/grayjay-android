@@ -66,7 +66,7 @@ import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComm
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
 import com.futo.platformplayer.api.media.models.live.ILiveChatWindowDescriptor
 import com.futo.platformplayer.api.media.models.live.IPlatformLiveEvent
-import com.futo.platformplayer.api.media.models.playback.IPlaybackTracker
+import com.futo.platformplayer.playback.PlaybackTracking
 import com.futo.platformplayer.api.media.models.ratings.RatingLikeDislikes
 import com.futo.platformplayer.api.media.models.ratings.RatingLikes
 import com.futo.platformplayer.api.media.models.streams.VideoUnMuxedSourceDescriptor
@@ -205,7 +205,7 @@ class VideoDetailView : ConstraintLayout {
     var video: IPlatformVideoDetails? = null
         private set;
     private var videoLocal: VideoLocal? = null;
-    private var _playbackTracker: IPlaybackTracker? = null;
+    private val _playbackTracking = PlaybackTracking();
     private var _historyIndex: DBHistory.Index? = null;
 
     val currentUrl get() = video?.url ?: _searchVideo?.url ?: _url;
@@ -932,59 +932,8 @@ class VideoDetailView : ConstraintLayout {
         }
     }
 
-    val _trackingUpdateTimeLock = Object();
-    val _trackingUpdateInterval = 2500;
-    var _trackingLastUpdateTime = System.currentTimeMillis();
-    var _trackingLastPosition: Long = 0;
-    var _trackingLastVideo: IPlatformVideoDetails? = null;
-    var _trackingTotalWatched: Long = 0;
-    var _trackingDidCountView: Boolean = false;
-    var _trackingLastVideoSubscription: Subscription? = null;
     fun updatePlaybackTracking(position: Long) {
-        if(!Settings.instance.subscriptions.allowPlaytimeTracking)
-            return;
-        val now = System.currentTimeMillis();
-        val shouldUpdate = synchronized(_trackingUpdateTimeLock) {
-            val doUpdate = (now - _trackingLastUpdateTime) > _trackingUpdateInterval;
-            if(doUpdate)
-                _trackingLastUpdateTime = now;
-            return@synchronized doUpdate;
-        }
-        if(shouldUpdate) {
-            val currentVideo = video;
-            val delta = position - _trackingLastPosition;
-            _trackingLastPosition = position;
-
-            if(currentVideo != null && currentVideo == _trackingLastVideo) {
-                if(delta > 500 && delta < _trackingUpdateInterval * 1.5) {
-                    _trackingLastVideoSubscription?.let {
-                        Logger.i(TAG, "Subscription [${it.channel.name}] watch time delta [${delta}]" +
-                                "(${"%.2f".format((_trackingTotalWatched / 1000) / currentVideo.duration.toDouble().coerceAtLeast(1.0))})");
-                        it.updatePlayback((delta / 1000).toInt());
-                        _trackingTotalWatched += delta;
-                        if(!_trackingDidCountView && currentVideo.duration > 0) {
-                            val percentage = (_trackingTotalWatched / 1000) / currentVideo.duration.toDouble();
-                            if(percentage > 0.4) {
-                                Logger.i(TAG, "Subscription [${it.channel.name}] new view");
-                                _trackingDidCountView = true;
-                                it.addPlaybackView();
-                            }
-                        }
-                        it.saveAsync();
-                    };
-                }
-            }
-            else {
-                if(_trackingLastVideo == null && currentVideo == null)
-                    return;
-                _trackingLastVideo = currentVideo;
-                _trackingTotalWatched = 0;
-                if(currentVideo?.author?.url != null)
-                    _trackingLastVideoSubscription = StateSubscriptions.instance.getSubscription(currentVideo.author.url);
-                else
-                    _trackingLastVideoSubscription = null;
-            }
-        }
+        _playbackTracking.updatePlaybackTracking(video, position, isPlaying);
     }
 
     fun stopAllGestures() {
@@ -1591,23 +1540,12 @@ class VideoDetailView : ConstraintLayout {
                 }
                 try {
                     if (!StateApp.instance.privateMode) {
-                        val stopwatch = com.futo.platformplayer.debug.Stopwatch()
-                        var tracker = video.getPlaybackTracker()
-                        Logger.i(TAG, "video.getPlaybackTracker took ${stopwatch.elapsedMs}ms")
-
-                        if (tracker == null) {
-                            stopwatch.reset()
-                            tracker = StatePlatform.instance.getPlaybackTracker(video.url);
-                            Logger.i(
-                                TAG,
-                                "StatePlatform.instance.getPlaybackTracker took ${stopwatch.elapsedMs}ms"
-                            )
-                        }
+                        val tracker = PlaybackTracking.getTracker(video);
 
                         if (me.video == video)
-                            me._playbackTracker = tracker;
+                            me._playbackTracking.setTracker(tracker);
                     } else if (me.video == video)
-                        me._playbackTracker = null;
+                        me._playbackTracking.setTracker(null);
                 } catch (ex: Throwable) {
                     Logger.e(TAG, "Playback tracker failed", ex);
 
@@ -1632,23 +1570,12 @@ class VideoDetailView : ConstraintLayout {
             fragment.lifecycleScope.launch(Dispatchers.IO) {
                 try {
                     if (!StateApp.instance.privateMode) {
-                        val stopwatch = com.futo.platformplayer.debug.Stopwatch()
-                        var tracker = video.getPlaybackTracker()
-                        Logger.i(TAG, "video.getPlaybackTracker took ${stopwatch.elapsedMs}ms")
-
-                        if (tracker == null) {
-                            stopwatch.reset()
-                            tracker = StatePlatform.instance.getPlaybackTracker(video.url);
-                            Logger.i(
-                                TAG,
-                                "StatePlatform.instance.getPlaybackTracker took ${stopwatch.elapsedMs}ms"
-                            )
-                        }
+                        val tracker = PlaybackTracking.getTracker(video);
 
                         if (me.video?.url == video.url && !video.url.isNullOrBlank())
-                            me._playbackTracker = tracker;
+                            me._playbackTracking.setTracker(tracker);
                     } else if (me.video == video)
-                        me._playbackTracker = null;
+                        me._playbackTracking.setTracker(null);
                 } catch (ex: Throwable) {
                     Logger.e(TAG, "Playback tracker failed", ex);
                 }
@@ -2009,19 +1936,7 @@ class VideoDetailView : ConstraintLayout {
     }
 
     fun cleanupPlaybackTracker(){
-        val tracker = _playbackTracker;
-        if(tracker != null) {
-            _playbackTracker = null;
-            fragment.lifecycleScope.launch(Dispatchers.IO) {
-                Logger.i(TAG, "Cleaning up old playback tracker");
-                try {
-                    tracker.onConcluded();
-                }
-                catch(ex: Throwable) {
-                    Logger.e(TAG, "Failed to cleanup playback tracker", ex);
-                }
-            }
-        }
+        _playbackTracking.cleanupTracker();
     }
 
     //Source Loads
@@ -3448,19 +3363,7 @@ class VideoDetailView : ConstraintLayout {
     }
 
     private fun updateTracker(positionMs: Long, isPlaying: Boolean, forceUpdate: Boolean = false) {
-        val playbackTracker = _playbackTracker ?: return;
-        val shouldUpdate = playbackTracker.shouldUpdate() || forceUpdate;
-        if (!shouldUpdate) {
-            return;
-        }
-
-        fragment.lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                playbackTracker.onProgress(positionMs.toDouble() / 1000, isPlaying);
-            } catch (e: Throwable) {
-                Logger.e(TAG, "Failed to notify progress.", e);
-            }
-        }
+        _playbackTracking.updateTracker(positionMs, isPlaying, forceUpdate);
     }
 
     //Animation related setters

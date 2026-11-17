@@ -14,5 +14,6 @@ class GJSyncOpcodes {
         val syncSubscriptionGroups: UByte = 204.toUByte();
         val syncPlaylists: UByte = 205.toUByte();
         val syncWatchLater: UByte = 206.toUByte();
+        val syncPluginCredentials: UByte = 207.toUByte();
     }
 }

@@ -192,10 +192,10 @@ class StateUpdate {
         } else {
             "https://rel.grayjay.app/version.txt"
         }
-        fun getApkUrl(version: Int): String = if (BuildConfig.IS_UNSTABLE_BUILD) {
-            "https://rel.grayjay.app/$version/app-$DESIRED_ABI-release-unstable.apk"
+        fun getApkUrl(version: Int, abi: String = DESIRED_ABI): String = if (BuildConfig.IS_UNSTABLE_BUILD) {
+            "https://rel.grayjay.app/$version/app-$abi-release-unstable.apk"
         } else {
-            "https://rel.grayjay.app/$version/app-$DESIRED_ABI-release.apk"
+            "https://rel.grayjay.app/$version/app-$abi-release.apk"
         }
         val CHANGELOG_BASE_URL = "https://rel.grayjay.app/changelogs";
 

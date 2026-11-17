@@ -36,7 +36,7 @@ echo "Signing all sources..."
 /usr/bin/bash ./sign-all-sources.sh
 
 echo "Building content..."
-./gradlew --stacktrace assembleStableRelease
+./gradlew --no-daemon --max-workers=1 --stacktrace assembleStableRelease
 
 VERSION="$(git describe --tags)"
 

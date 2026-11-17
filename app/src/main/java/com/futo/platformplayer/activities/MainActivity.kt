@@ -16,6 +16,7 @@ import android.os.StrictMode
 import android.os.StrictMode.VmPolicy
 import android.util.Log
 import android.util.TypedValue
+import android.view.KeyEvent
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageView
@@ -114,6 +115,7 @@ import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringStorage
 import com.futo.platformplayer.stores.SubscriptionStorage
 import com.futo.platformplayer.stores.v2.ManagedStore
+import com.futo.platformplayer.tv.TvPlayback
 import com.futo.platformplayer.views.ToastView
 import com.futo.platformplayer.views.notification.NotificationOverlayView
 import com.google.gson.JsonParser
@@ -1170,6 +1172,12 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             throw IllegalArgumentException("Opened file does not exist or not permitted");
         val data = dataFile.readBytes();
         return data;
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (::_fragVideoDetail.isInitialized && TvPlayback.dispatchKeyEvent(_fragVideoDetail, event))
+            return true
+        return super.dispatchKeyEvent(event)
     }
 
     override fun onBackPressed() {
