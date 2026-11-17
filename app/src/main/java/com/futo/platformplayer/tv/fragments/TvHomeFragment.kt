@@ -1,14 +1,18 @@
 package com.futo.platformplayer.tv.fragments
 
+import android.view.View
 import com.futo.platformplayer.R
 import com.futo.platformplayer.states.StatePlatform
 import com.futo.platformplayer.tv.views.TvUi
+import com.futo.platformplayer.tv.views.TvHomeSkeletonView
 
 class TvHomeFragment : TvFeedFragment() {
     override val heading = R.string.tv_home
     override val hint = R.string.tv_home_hint
 
     override suspend fun fetch() = StatePlatform.instance.getHome()
+
+    override fun createLoadingPlaceholder(): View = TvHomeSkeletonView(requireContext())
 
     override fun configureHeader() {
         super.configureHeader()

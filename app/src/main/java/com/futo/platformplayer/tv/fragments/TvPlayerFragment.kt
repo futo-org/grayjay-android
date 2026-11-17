@@ -28,6 +28,7 @@ import com.futo.platformplayer.api.media.models.comments.PolycentricPlatformComm
 import com.futo.platformplayer.api.media.models.streams.sources.IDashManifestSource
 import com.futo.platformplayer.api.media.models.streams.sources.IHLSManifestSource
 import com.futo.platformplayer.api.media.platforms.js.models.sources.JSUMPSource
+import com.futo.platformplayer.api.media.platforms.js.models.JSVideoDetails
 import com.futo.platformplayer.helpers.VideoHelper
 import com.futo.platformplayer.playback.PlaybackTracking
 import com.futo.platformplayer.logging.Logger
@@ -38,6 +39,7 @@ import com.futo.platformplayer.states.StatePolycentric
 import com.futo.platformplayer.tv.TvActivity
 import com.futo.platformplayer.tv.playlists.TvPlaylistQueue
 import com.futo.platformplayer.tv.views.TvCommentsPanel
+import com.futo.platformplayer.tv.views.TvLiveChatPanel
 import com.futo.platformplayer.tv.views.TvMenuDialog
 import com.futo.platformplayer.tv.views.TvPlayerPanel
 import com.futo.platformplayer.tv.views.TvVideoInfoPanel
@@ -161,6 +163,7 @@ class TvPlayerFragment : Fragment() {
             androidx.media3.ui.R.id.exo_ffwd,
             R.id.tv_player_channel,
             R.id.tv_player_comments,
+            R.id.tv_player_live_chat,
             R.id.tv_player_settings,
             R.id.tv_video_info)
         actions.forEach { id ->
@@ -197,6 +200,9 @@ class TvPlayerFragment : Fragment() {
             details?.author?.takeIf { it.url.isNotBlank() }?.let { host.openChannel(it.url, it.name, it.thumbnail) }
         }
         controller.findViewById<View>(R.id.tv_player_comments).setOnClickListener { showComments() }
+        controller.findViewById<View>(R.id.tv_player_live_chat).setOnClickListener {
+            if (sidePanel is TvLiveChatPanel) closePanel() else showLiveChat()
+        }
         controller.findViewById<View>(R.id.tv_player_settings).setOnClickListener { showSettings() }
         controller.findViewById<View>(R.id.tv_video_info).setOnClickListener { showInfo() }
         controller.addVisibilityListener {
@@ -259,6 +265,7 @@ class TvPlayerFragment : Fragment() {
                         playbackTracking.updatePlaybackTracking(details, player.position, player.playing)
                         playbackTracking.updateTracker(player.position, player.playing)
                         updateQualitySummary()
+                        (sidePanel as? TvLiveChatPanel)?.setVideoPosition(player.position)
                     }
                     delay(500)
                 }
@@ -271,12 +278,14 @@ class TvPlayerFragment : Fragment() {
         if (sourceLoaded) resumePlaying = playerView?.exoPlayer?.player?.playWhenReady == true
         savePosition()
         playerView?.pause()
+        (sidePanel as? TvLiveChatPanel)?.pause()
         super.onPause()
     }
 
     override fun onResume() {
         super.onResume()
         if (sourceLoaded && resumePlaying) playerView?.play()
+        (sidePanel as? TvLiveChatPanel)?.resume()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -298,6 +307,7 @@ class TvPlayerFragment : Fragment() {
         resizeAnimation?.cancel()
         resizeAnimation = null
         (sidePanel as? TvCommentsPanel)?.dispose()
+        (sidePanel as? TvLiveChatPanel)?.dispose()
         sidePanel = null
         playerView?.let { player ->
             listener?.let { player.exoPlayer?.player?.removeListener(it) }
@@ -422,6 +432,10 @@ class TvPlayerFragment : Fragment() {
                 val video = details!!
                 videoTitle.text = video.name
                 videoAuthor.text = video.author.name
+                controls?.findViewById<View>(R.id.tv_player_live_chat)?.apply {
+                    visibility = if (video.isLive || (video as? JSVideoDetails)?.hasVODEvents() == true) View.VISIBLE else View.GONE
+                    contentDescription = getString(if (video.isLive) R.string.live_chat else R.string.vod_chat)
+                }
                 controls?.findViewById<View>(R.id.tv_player_channel)?.apply {
                     isEnabled = video.author.url.isNotBlank()
                     alpha = if (isEnabled) 1f else 0.35f
@@ -531,6 +545,8 @@ class TvPlayerFragment : Fragment() {
 
     private fun openPanel(panel: TvPlayerPanel, action: Int) {
         (sidePanel as? TvCommentsPanel)?.dispose()
+        (sidePanel as? TvLiveChatPanel)?.dispose()
+        controls?.findViewById<View>(R.id.tv_player_live_chat)?.isSelected = panel is TvLiveChatPanel
         sidePanel = panel
         panelAction = action
         panelContainer.removeAllViews()
@@ -546,6 +562,8 @@ class TvPlayerFragment : Fragment() {
 
     private fun closePanel() {
         (sidePanel as? TvCommentsPanel)?.dispose()
+        (sidePanel as? TvLiveChatPanel)?.dispose()
+        controls?.findViewById<View>(R.id.tv_player_live_chat)?.isSelected = false
         sidePanel = null
         panelContainer.animate().cancel()
         panelContainer.visibility = View.GONE
@@ -597,6 +615,14 @@ class TvPlayerFragment : Fragment() {
         }, ::closePanel)
         openPanel(panel, R.id.tv_video_info)
         panel.findViewById<View>(R.id.tv_info_description).requestFocus()
+    }
+
+    private fun showLiveChat() {
+        val video = details ?: return
+        openPanel(TvLiveChatPanel(requireContext(), viewLifecycleOwner.lifecycleScope, video, {
+            closePanel()
+            host.openVideo(it)
+        }, ::closePanel), R.id.tv_player_live_chat)
     }
 
     private fun showComments() {

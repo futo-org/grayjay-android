@@ -43,7 +43,11 @@ internal class TvVideoInfoPanel(
     init {
         id = R.id.tv_info_panel
         title(context.getString(R.string.tv_video_info))
-        val column = TvUi.column(context).apply { setPadding(context.dp(16), 0, context.dp(16), context.dp(16)) }
+        val column = TvUi.column(context).apply {
+            setPadding(context.dp(16), 0, context.dp(16), context.dp(16))
+            clipChildren = false
+            clipToPadding = false
+        }
         body.addView(column, FrameLayout.LayoutParams(-1, -1))
         column.addView(TvUi.heading(context, video.name).apply {
             textSize = 20f
@@ -64,7 +68,10 @@ internal class TvVideoInfoPanel(
                 addRating(ratings, R.drawable.ic_thumb_down, R.string.tv_dislikes, rating.dislikes)
             }
         }
-        val actions = TvUi.row(context)
+        val actions = TvUi.row(context).apply {
+            clipChildren = false
+            clipToPadding = false
+        }
         actions.addView(ratings, LinearLayout.LayoutParams(0, -2, 1f))
         val saved = TvUi.iconButton(context, R.drawable.ic_schedule, context.getString(R.string.tv_save)) {}.apply {
             id = R.id.tv_save
@@ -123,7 +130,10 @@ internal class TvVideoInfoPanel(
 
     private fun channelRow(video: IPlatformVideoDetails, openChannel: () -> Unit): LinearLayout {
         val author = video.author
-        val row = TvUi.row(context)
+        val row = TvUi.row(context).apply {
+            clipChildren = false
+            clipToPadding = false
+        }
         val identity = TvUi.row(context).apply {
             id = R.id.tv_video_open_channel
             setPadding(context.dp(6), context.dp(6), context.dp(6), context.dp(6))

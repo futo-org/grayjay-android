@@ -18,6 +18,8 @@ import com.futo.platformplayer.api.media.structures.IAsyncPager
 import com.futo.platformplayer.api.media.structures.IPager
 import com.futo.platformplayer.tv.views.TvUi.dp
 import com.futo.platformplayer.views.adapters.CommentViewHolder
+import com.futo.platformplayer.views.ModerationWarnView
+import com.futo.platformplayer.views.pills.PillButton
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -37,7 +39,10 @@ internal class TvCommentsPanel(
 ) : TvPlayerPanel(context, close) {
     private var polycentric = initialPolycentric && polycentricLoader != null
     private val pages = mutableListOf(Page(if (polycentric) checkNotNull(polycentricLoader) else loader))
-    private val tabs = TvUi.row(context)
+    private val tabs = TvUi.row(context).apply {
+        clipChildren = false
+        clipToPadding = false
+    }
     private var grid: RecyclerView? = null
     private var expanded = false
     private var disposed = false
@@ -254,15 +259,20 @@ internal class TvCommentsPanel(
             isClickable = false
             descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS
         }
-        holder.itemView.findViewById<View>(R.id.button_show)?.apply {
+        val show = holder.itemView.findViewById<PillButton>(R.id.button_show)?.root?.apply {
             isFocusable = true
             setBackgroundResource(R.drawable.tv_panel_item)
+            layoutParams = layoutParams.apply { height = context.dp(40) }
+            setPadding(context.dp(12), context.dp(8), context.dp(12), context.dp(8))
         }
         column.addView(holder.itemView)
         val scroll = (column.parent as ScrollView).apply {
             isFocusable = true
         }
-        (replyAction ?: scroll).requestFocus()
+        holder.itemView.findViewById<ModerationWarnView>(R.id.moderation_warn).onShow.subscribe {
+            scroll.requestFocus()
+        }
+        (replyAction ?: show?.takeIf { it.isShown } ?: scroll).requestFocus()
     }
 
     private fun styleComment(view: View, compact: Boolean) {

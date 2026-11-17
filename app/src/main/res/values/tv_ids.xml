@@ -129,4 +129,6 @@
     <item name="tv_source_uninstall" type="id" />
     <item name="tv_comments_platform" type="id" />
     <item name="tv_comments_polycentric" type="id" />
+    <item name="tv_feed_loading" type="id" />
+    <item name="tv_live_chat_panel" type="id" />
 </resources>

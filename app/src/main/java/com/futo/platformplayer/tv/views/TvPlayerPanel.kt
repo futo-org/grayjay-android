@@ -21,7 +21,10 @@ internal open class TvPlayerPanel(context: Context, private val close: () -> Uni
     }
     private var pageScroll: ScrollView? = null
 
-    val body = FrameLayout(context)
+    val body = FrameLayout(context).apply {
+        clipChildren = false
+        clipToPadding = false
+    }
     var onBack: (() -> Boolean)? = null
 
     init {
@@ -31,6 +34,8 @@ internal open class TvPlayerPanel(context: Context, private val close: () -> Uni
             cornerRadius = context.dp(18).toFloat()
         }
         clipToOutline = true
+        clipChildren = false
+        clipToPadding = false
         val header = TvUi.row(context).apply { setPadding(context.dp(16), context.dp(18), context.dp(16), context.dp(16)) }
         header.addView(back, LayoutParams(context.dp(32), context.dp(32)).apply { marginEnd = context.dp(8) })
         header.addView(title, LayoutParams(0, -2, 1f))
