@@ -57,8 +57,13 @@ class StatePlugins {
             return iconsDir.getIconBinary(id);
         return null;
     }
-
+    suspend fun getDynamicIcon(id: String): String? = withContext(Dispatchers.IO) {
+        val client = StatePlatform.instance.getClientOrNull(id) as? JSClient ?: return@withContext null;
+        return@withContext client.getUnderlyingPlugin().executeString("source.getIcon()")
+    }
     fun reloadPluginFile(){
+
+
         _plugins = FragmentedStorage.storeJson<SourcePluginDescriptor>("plugins")
             .load();
     }
