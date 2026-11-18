@@ -106,6 +106,7 @@ class UpdateDownloadService : Service() {
     }
 
     private suspend fun downloadApk(version: Int) {
+        StateUpdate.instance.cleanupOldApks(this, version)
         val apkFile = StateUpdate.getApkFile(this, version)
         val partialFile = StateUpdate.getPartialApkFile(this, version)
 

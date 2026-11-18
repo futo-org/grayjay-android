@@ -75,6 +75,23 @@ class StateUpdate {
         onUiChanged.emit()
     }
 
+    fun cleanupOldApks(context: Context, downloadVersion: Int = BuildConfig.VERSION_CODE) {
+        try {
+            val dir = File(context.filesDir, "updates")
+            val pattern = Regex("app-(?:${APP_SUPPORTED_ABIS.joinToString("|")}|universal)-(\\d+)\\.apk(?:\\.part)?")
+            for (file in dir.listFiles().orEmpty()) {
+                if (!file.isFile) continue
+                val version = pattern.matchEntire(file.name)?.groupValues?.get(1)?.toLongOrNull() ?: continue
+                val obsolete = version <= BuildConfig.VERSION_CODE ||
+                    (file.name.endsWith(".apk.part") && version < downloadVersion)
+                if (obsolete && !file.delete())
+                    Logger.w(TAG, "Could not delete obsolete update ${file.name}")
+            }
+        } catch (e: Exception) {
+            Logger.w(TAG, "Failed to clean up obsolete updates", e)
+        }
+    }
+
     fun seedUiFromDisk(context: Context) {
         if (uiState != UpdateUiState.NONE) return
         try {

@@ -639,6 +639,10 @@ class StateApp {
                 DownloadService.getOrCreateService(context);
         }
 
+        scopeOrNull?.launch(Dispatchers.IO) {
+            StateUpdate.instance.cleanupOldApks(context)
+        }
+
         if (Settings.instance.autoUpdate.isAutoUpdateEnabled()) {
             if (Settings.instance.autoUpdate.shouldBackgroundDownload) {
                 Logger.i(TAG, "MainApp Started: Initialize [AutoUpdate Background]");
