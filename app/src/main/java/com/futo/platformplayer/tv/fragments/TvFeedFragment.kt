@@ -23,7 +23,7 @@ import com.futo.platformplayer.tv.views.TvUi
 import com.futo.platformplayer.tv.views.TvUi.dp
 import com.futo.platformplayer.tv.views.TvVideoActions
 import com.futo.platformplayer.tv.views.TvVideoAdapter
-import com.futo.platformplayer.views.LoaderView
+import com.futo.platformplayer.tv.views.TvLoadingView
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -35,8 +35,7 @@ abstract class TvFeedFragment : Fragment() {
     private lateinit var more: TextView
     private lateinit var retry: TextView
     private lateinit var adapter: TvVideoAdapter
-    private lateinit var loading: LinearLayout
-    private lateinit var loader: LoaderView
+    private lateinit var loading: TvLoadingView
     private var loadingPlaceholder: View? = null
     private var pager: IPager<IPlatformContent>? = null
     private var loadJob: Job? = null
@@ -123,14 +122,9 @@ abstract class TvFeedFragment : Fragment() {
         }
         adapter.videos.addAll(videos)
         grid.adapter = adapter
-        loader = LoaderView(context)
-        loading = TvUi.column(context).apply {
+        loading = TvLoadingView(context).apply {
             id = R.id.tv_feed_loading
-            gravity = Gravity.CENTER
             visibility = View.GONE
-            addView(loader, LinearLayout.LayoutParams(context.dp(48), context.dp(48)))
-            addView(TvUi.text(context, getString(R.string.tv_loading), 14f, true),
-                LinearLayout.LayoutParams(-2, -2).apply { topMargin = context.dp(16) })
         }
         val content = FrameLayout(context)
         content.addView(grid, FrameLayout.LayoutParams(-1, -1))
@@ -165,7 +159,6 @@ abstract class TvFeedFragment : Fragment() {
     override fun onDestroyView() {
         loadJob?.cancel()
         loadJob = null
-        loader.stop()
         loadingPlaceholder?.visibility = View.GONE
         loadingPlaceholder = null
         grid.adapter = null
@@ -198,7 +191,6 @@ abstract class TvFeedFragment : Fragment() {
             val placeholder = videos.isEmpty() && loadingPlaceholder != null
             loadingPlaceholder?.visibility = if (placeholder) View.VISIBLE else View.GONE
             loading.visibility = if (placeholder) View.GONE else View.VISIBLE
-            if (placeholder) loader.stop() else loader.start()
         }
         retry.visibility = View.GONE
         more.isEnabled = false
@@ -251,7 +243,6 @@ abstract class TvFeedFragment : Fragment() {
                 if ((!next || retryFocused) && !host.currentFocusInRail()) retry.requestFocus()
             } finally {
                 if (!next && isActive) {
-                    loader.stop()
                     loading.visibility = View.GONE
                     loadingPlaceholder?.visibility = View.GONE
                 }

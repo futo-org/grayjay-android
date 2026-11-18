@@ -289,4 +289,7 @@
     <string name="tv_source_uninstall_warning">Uninstall %1$s? Its settings and saved credentials will be removed from this TV. Your subscriptions will be kept, but cannot refresh without a compatible source.</string>
     <string name="tv_keyboard_uppercase">Toggle uppercase letters</string>
     <string name="tv_source_bundled_hint">Included with Grayjay. You can disable this source; uninstalling is available for custom sources.</string>
+    <string name="tv_sources_performance">TVs have limited processing power. We recommend enabling only the sources you use.</string>
+    <string name="tv_launch_ui">Launch TV UI</string>
+    <string name="tv_launch_ui_description">Open the TV interface for this session. Reopen the app to return to the phone interface.</string>
 </resources>

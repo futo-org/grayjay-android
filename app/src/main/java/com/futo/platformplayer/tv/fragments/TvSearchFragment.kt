@@ -37,6 +37,7 @@ import com.futo.platformplayer.tv.TvActivity
 import com.futo.platformplayer.tv.search.*
 import com.futo.platformplayer.tv.views.TvPlaylistAdapter
 import com.futo.platformplayer.tv.views.TvUi
+import com.futo.platformplayer.tv.views.TvLoadingView
 import com.futo.platformplayer.tv.views.TvUi.dp
 import com.futo.platformplayer.tv.views.TvVideoActions
 import com.futo.platformplayer.tv.views.TvVideoAdapter
@@ -516,7 +517,7 @@ open class TvSearchFragment : Fragment() {
         message.visibility = View.VISIBLE
         grid.visibility = View.GONE
         message.removeAllViews()
-        message.addView(TvUi.text(requireContext(), getString(R.string.tv_loading), 16f, true))
+        message.addView(TvLoadingView(requireContext()))
         urlJob = viewLifecycleOwner.lifecycleScope.launch {
             try {
                 host.awaitReady()
@@ -698,7 +699,8 @@ open class TvSearchFragment : Fragment() {
                 selected.isEmpty() -> R.string.tv_search_no_compatible_source
                 else -> R.string.tv_search_no_results
             }
-            message.addView(
+            if (label == R.string.tv_loading) message.addView(TvLoadingView(requireContext()))
+            else message.addView(
                 TvUi.text(requireContext(), getString(label), 18f).apply {
                     id = R.id.tv_search_status
                     gravity = Gravity.CENTER

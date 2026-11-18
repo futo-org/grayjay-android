@@ -169,11 +169,6 @@ class TvPlayerFragment : Fragment() {
                     hint.text = button.contentDescription
                     hint.gravity = if (id in actions.take(3)) Gravity.START else Gravity.END
                 }
-                button.animate()
-                    .scaleX(if (focused) 1.08f else 1f)
-                    .scaleY(if (focused) 1.08f else 1f)
-                    .setDuration(130)
-                    .start()
             }
         }
         controller.findViewById<View>(androidx.media3.ui.R.id.exo_progress).apply {

@@ -64,6 +64,7 @@ class TvSubscriptionsFragment : Fragment() {
     private lateinit var progress: ProgressBar
     private lateinit var status: TextView
     private lateinit var statusAction: TextView
+    private lateinit var footer: LinearLayout
     private lateinit var message: LinearLayout
 
     internal var subscriptions: TvSubscriptionsAdapter = TvSubscriptionsAdapter.platform()
@@ -88,11 +89,8 @@ class TvSubscriptionsFragment : Fragment() {
         subtitle = TvUi.text(c, getString(R.string.tv_subscriptions_hint), 14f, true).apply { setPadding(0, c.dp(7), 0, 0) }
         title.addView(subtitle)
         header.addView(title, LinearLayout.LayoutParams(0, -2, 1f))
-        filtersButton = TvUi.button(c, getString(R.string.filters), ::showFilters).apply {
+        filtersButton = TvUi.iconButton(c, R.drawable.ic_filter_settings_25dp, getString(R.string.filters), ::showFilters).apply {
             id = R.id.tv_subscriptions_filters
-            setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_filter_settings_25dp, 0, 0, 0)
-            compoundDrawablePadding = c.dp(8)
-            compoundDrawableTintList = textColors
         }
         header.addView(filtersButton)
         refreshButton = TvUi.iconButton(c, R.drawable.ic_refresh, getString(R.string.tv_refresh)) { refresh() }.apply {
@@ -153,11 +151,29 @@ class TvSubscriptionsFragment : Fragment() {
                     setCollapsed(false)
                     return focusCreator() ?: filtersButton
                 }
+                if (direction == View.FOCUS_DOWN && position >= 0) {
+                    if (position / 3 == (adapter!!.itemCount - 1) / 3) {
+                        if (statusAction.isShown) return statusAction
+                        loadMore()
+                        return focused
+                    }
+                    val next = super.focusSearch(focused, direction)
+                    return next?.takeIf { findContainingViewHolder(it) != null } ?: focused
+                }
                 return super.focusSearch(focused, direction)
             }
         }.apply {
             id = R.id.tv_grid
-            layoutManager = GridLayoutManager(c, 3)
+            layoutManager = object : GridLayoutManager(c, 3) {
+                override fun calculateExtraLayoutSpace(state: RecyclerView.State, extraLayoutSpace: IntArray) {
+                    super.calculateExtraLayoutSpace(state, extraLayoutSpace)
+                    val focused = focusedChild ?: return
+                    val bounds = android.graphics.Rect()
+                    getDecoratedBoundsWithMargins(focused, bounds)
+                    extraLayoutSpace[0] = maxOf(extraLayoutSpace[0], paddingTop - bounds.top)
+                    extraLayoutSpace[1] = maxOf(extraLayoutSpace[1], bounds.bottom - height + paddingBottom)
+                }
+            }
             adapter = this@TvSubscriptionsFragment.adapter
             itemAnimator = null
             clipToPadding = false
@@ -166,7 +182,7 @@ class TvSubscriptionsFragment : Fragment() {
         message = TvUi.column(c).apply { gravity = Gravity.CENTER }
         body.addView(message, FrameLayout.LayoutParams(-1, -1))
         root.addView(body, LinearLayout.LayoutParams(-1, 0, 1f))
-        val footer = TvUi.row(c)
+        footer = TvUi.row(c).apply { visibility = View.GONE }
         progress = ProgressBar(c).apply { visibility = View.GONE }
         footer.addView(progress, LinearLayout.LayoutParams(c.dp(16), c.dp(16)).apply { marginEnd = c.dp(10) })
         status = TvUi.text(c, "", 12f, true).apply { id = R.id.tv_subscriptions_status }
@@ -251,10 +267,6 @@ class TvSubscriptionsFragment : Fragment() {
                 replace(cached)
                 restoreFocus()
                 if (enabledSources && refreshNeeded) fetch(false, initial = true)
-                else
-                    status.text = getString(
-                        if (enabledSources) R.string.tv_subscriptions_cached
-                        else R.string.tv_subscriptions_sources_disabled)
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Throwable) {
@@ -288,7 +300,7 @@ class TvSubscriptionsFragment : Fragment() {
         val keepFocus = grid.hasFocus()
         replace(result.pager, keepOnEmpty = result.failures > 0)
         status.text = if (result.failures > 0) getString(R.string.tv_subscriptions_partial)
-        else getString(R.string.tv_subscriptions_updated)
+        else ""
         if (result.failures > 0) action(getString(R.string.tv_retry)) { refresh() }
         if (keepFocus) restoreFocus()
     }
@@ -401,6 +413,7 @@ class TvSubscriptionsFragment : Fragment() {
     private fun setLoading(value: Boolean) {
         loading = value
         progress.visibility = if (value) View.VISIBLE else View.GONE
+        footer.visibility = if (value || statusAction.visibility == View.VISIBLE) View.VISIBLE else View.GONE
         if (value) {
             status.text = getString(R.string.tv_loading)
             statusAction.visibility = View.GONE
@@ -409,11 +422,13 @@ class TvSubscriptionsFragment : Fragment() {
 
     private fun finishLoading() {
         setLoading(false)
-        if (statusAction.visibility != View.VISIBLE && pager?.hasMorePages() == true)
-            action(getString(R.string.tv_more), ::loadMore)
+        if (adapter.itemCount == 0 && (filters.videos || filters.live) &&
+            statusAction.visibility != View.VISIBLE && pager?.hasMorePages() == true)
+            view?.post { if (view != null && !loading) loadMore() }
     }
 
     private fun action(label: String, run: () -> Unit) {
+        footer.visibility = View.VISIBLE
         statusAction.text = label
         statusAction.visibility = View.VISIBLE
         statusAction.setOnClickListener { run() }

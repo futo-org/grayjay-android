@@ -70,6 +70,7 @@
             android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".tv.TvActivity"
+            android:icon="@drawable/tv_launcher_icon"
             android:exported="true"
             android:screenOrientation="landscape"
             android:theme="@style/Theme.FutoVideo.NoActionBar"

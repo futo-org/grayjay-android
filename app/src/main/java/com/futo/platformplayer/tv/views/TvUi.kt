@@ -78,7 +78,12 @@ internal object TvUi {
             setPadding(context.dp(10), context.dp(10), context.dp(10), context.dp(10))
             focusable(this)
             setOnClickListener { action() }
-            layoutParams = LinearLayout.LayoutParams(context.dp(36), context.dp(36)).apply { marginStart = context.dp(10) }
+            layoutParams = LinearLayout.LayoutParams(context.dp(36), context.dp(36)).apply {
+                marginStart = context.dp(10)
+                marginEnd = context.dp(2)
+                topMargin = context.dp(2)
+                bottomMargin = context.dp(2)
+            }
         }
 
     fun focusable(view: View) {
@@ -86,11 +91,6 @@ internal object TvUi {
         view.isClickable = true
         view.setBackgroundResource(R.drawable.tv_focusable)
         view.setOnFocusChangeListener { target, focused ->
-            target.animate()
-                .scaleX(if (focused) 1.025f else 1f)
-                .scaleY(if (focused) 1.025f else 1f)
-                .setDuration(120)
-                .start()
             target.elevation = if (focused) target.context.dp(4).toFloat() else 0f
         }
     }

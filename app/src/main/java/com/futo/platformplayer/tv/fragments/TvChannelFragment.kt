@@ -37,6 +37,7 @@ import com.futo.platformplayer.tv.views.TvChannelHeader
 import com.futo.platformplayer.tv.views.TvPlayerPanel
 import com.futo.platformplayer.tv.views.TvPlaylistAdapter
 import com.futo.platformplayer.tv.views.TvUi
+import com.futo.platformplayer.tv.views.TvLoadingView
 import com.futo.platformplayer.tv.views.TvUi.dp
 import com.futo.platformplayer.tv.views.TvVideoActions
 import com.futo.platformplayer.tv.views.TvVideoAdapter
@@ -418,7 +419,8 @@ class TvChannelFragment : Fragment() {
                 active == Tab.PLAYLISTS -> R.string.tv_no_playlists
                 else -> R.string.tv_empty
             }
-            message.addView(
+            if (loading) message.addView(TvLoadingView(requireContext()))
+            else message.addView(
                 TvUi.text(requireContext(), getString(label), 16f, true).apply { id = R.id.tv_channel_status })
         }
         if (!loading && (page.error || (page.items.isEmpty() && page.pager?.hasMorePages() == true))) {

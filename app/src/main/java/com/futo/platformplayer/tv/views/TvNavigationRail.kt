@@ -28,7 +28,7 @@ internal class TvNavigationRail(context: Context, private val select: (Int) -> U
         val brand = TvUi.row(context)
         brand.addView(
             ImageView(context).apply {
-                setImageResource(R.drawable.ic_launcher_monochrome)
+                setImageResource(R.drawable.tv_logo)
                 imageTintList = ColorStateList.valueOf(Color.WHITE)
             },
             LayoutParams(context.dp(48), context.dp(36)))

@@ -25,6 +25,7 @@ import com.futo.platformplayer.tv.history.TvHistorySearchDialog
 import com.futo.platformplayer.tv.history.TvHistoryStore
 import com.futo.platformplayer.tv.views.TvMenuDialog
 import com.futo.platformplayer.tv.views.TvUi
+import com.futo.platformplayer.tv.views.TvLoadingView
 import com.futo.platformplayer.tv.views.TvUi.dp
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -169,7 +170,9 @@ class TvHistoryFragment : Fragment() {
             pager = null
             items.clear()
             adapter.submit(emptyList())
-            showMessage(getString(R.string.tv_loading))
+            message.visibility = View.VISIBLE
+            message.removeAllViews()
+            message.addView(TvLoadingView(requireContext()))
         }
         job = viewLifecycleOwner.lifecycleScope.launch {
             try {

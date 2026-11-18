@@ -24,6 +24,7 @@ import com.futo.platformplayer.tv.sources.TvSourceAdapter
 import com.futo.platformplayer.tv.sources.TvSourceInfo
 import com.futo.platformplayer.tv.sources.TvSourcesStore
 import com.futo.platformplayer.tv.views.TvUi
+import com.futo.platformplayer.tv.views.TvLoadingView
 import com.futo.platformplayer.tv.views.TvUi.dp
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -70,6 +71,9 @@ class TvSourcesFragment : Fragment() {
             TvUi.iconButton(c, R.drawable.ic_refresh, getString(R.string.tv_refresh)) { load() }
                 .apply { id = R.id.tv_sources_refresh })
         root.addView(header)
+        root.addView(TvUi.text(c, getString(R.string.tv_sources_performance), 14f, true).apply {
+            setPadding(0, c.dp(12), 0, 0)
+        })
         tabs = TvUi.row(c)
         root.addView(tabs, LinearLayout.LayoutParams(-1, c.dp(62)))
         summary = TvUi.text(c, "", 13f, true).apply { setPadding(c.dp(8), 0, 0, c.dp(12)) }
@@ -191,11 +195,9 @@ class TvSourcesFragment : Fragment() {
     private fun load() {
         if (loading) return
         loading = true
-        if (items.isEmpty()) {
-            message.visibility = View.VISIBLE
-            message.removeAllViews()
-            message.addView(TvUi.text(requireContext(), getString(R.string.tv_loading), 18f))
-        }
+        message.visibility = View.VISIBLE
+        message.removeAllViews()
+        message.addView(TvLoadingView(requireContext()))
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 host.awaitReady()
