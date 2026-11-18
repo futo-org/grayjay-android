@@ -107,12 +107,6 @@
                 android:contentDescription="@string/tv_comments"
                 android:src="@drawable/ic_comment" />
             <ImageButton
-                android:id="@+id/tv_player_live_chat"
-                style="@style/TvPlayerIcon"
-                android:contentDescription="@string/live_chat"
-                android:src="@drawable/ic_chat"
-                android:visibility="gone" />
-            <ImageButton
                 android:id="@+id/tv_player_settings"
                 style="@style/TvPlayerIcon"
                 android:contentDescription="@string/tv_playback_settings"

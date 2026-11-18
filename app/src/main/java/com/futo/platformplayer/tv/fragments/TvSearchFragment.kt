@@ -246,11 +246,24 @@ open class TvSearchFragment : Fragment() {
                     if (page?.error != true && page?.pager?.hasMorePages() == true) load(next = true)
                     return footer.findViewById<View>(R.id.tv_search_retry)?.takeIf { it.isShown } ?: focused
                 }
-                return super.focusSearch(focused, direction)
+                val next = super.focusSearch(focused, direction)
+                if (direction == View.FOCUS_DOWN && position >= 0)
+                    return next?.takeIf { findContainingViewHolder(it) != null } ?: focused
+                return next
             }
         }.apply {
             id = R.id.tv_grid
-            layoutManager = GridLayoutManager(context, 3)
+            layoutManager = object : GridLayoutManager(context, 3) {
+                override fun calculateExtraLayoutSpace(state: RecyclerView.State, extraLayoutSpace: IntArray) {
+                    super.calculateExtraLayoutSpace(state, extraLayoutSpace)
+                    val focused = focusedChild ?: return
+                    // A page arriving during focus scrolling must not recycle the focused row.
+                    val bounds = android.graphics.Rect()
+                    getDecoratedBoundsWithMargins(focused, bounds)
+                    extraLayoutSpace[0] = maxOf(extraLayoutSpace[0], paddingTop - bounds.top)
+                    extraLayoutSpace[1] = maxOf(extraLayoutSpace[1], bounds.bottom - height + paddingBottom)
+                }
+            }
             itemAnimator = null
             clipToPadding = false
             setPadding(0, context.dp(8), 0, context.dp(8))
@@ -645,6 +658,8 @@ open class TvSearchFragment : Fragment() {
                     updateStatus()
             }
         }
+        if (next && footer.hasFocus())
+            grid.findViewHolderForAdapterPosition(page.selected)?.itemView?.requestFocus()
         updateStatus()
     }
 

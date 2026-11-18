@@ -120,7 +120,10 @@ internal class TvVideoInfoPanel(
                 setLineSpacing(context.dp(4).toFloat(), 1f)
             })
         }
-        column.addView(description, LinearLayout.LayoutParams(-1, 0, 1f))
+        column.addView(FrameLayout(context).apply {
+            clipChildren = true
+            addView(description, FrameLayout.LayoutParams(-1, -1))
+        }, LinearLayout.LayoutParams(-1, 0, 1f))
     }
 
     override fun onDetachedFromWindow() {
