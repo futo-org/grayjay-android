@@ -1,5 +1,6 @@
 package com.futo.platformplayer
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.webkit.CookieManager
@@ -8,6 +9,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.caoccao.javet.values.primitive.V8ValueInteger
 import com.caoccao.javet.values.primitive.V8ValueString
+import com.futo.platformplayer.tv.TvActivity
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.models.contents.IPlatformContent
@@ -212,6 +214,13 @@ class SettingsDev : FragmentedStorageFileJson() {
                 }
             }
         }
+    }
+
+    @FormField(R.string.tv_launch_ui, FieldForm.BUTTON,
+        R.string.tv_launch_ui_description, 3)
+    fun launchTvUi(context: Context) {
+        context.startActivity(Intent(context, TvActivity::class.java));
+        (context as? Activity)?.finish();
     }
 
     @FormField(R.string.crash_me, FieldForm.BUTTON,

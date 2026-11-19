@@ -401,11 +401,10 @@ class SabrSession(
                         if (!backoffNotified) {
                             backoffNotified = true
                             sabrLog("Waiting ${serverWaitMs}ms -- SERVER")
-
-                            if (starved()) {
-                                backoffShown = true
-                                listener?.onBackoff(serverWaitMs)
-                            }
+                        }
+                        if (!backoffShown && starved()) {
+                            backoffShown = true
+                            listener?.onBackoff(serverWaitMs)
                         }
                     } else if (now - lastWaitLogMs > 1_000) {
                         lastWaitLogMs = now

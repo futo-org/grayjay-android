@@ -93,10 +93,19 @@ class Subscription {
     }
 
     fun updatePlayback(seconds: Int) {
-        playbackSeconds += seconds;
+        synchronized(this) { playbackSeconds += seconds; }
     }
     fun addPlaybackView() {
-        playbackViews += 1;
+        synchronized(this) { playbackViews += 1; }
+    }
+
+    fun mergePlayback(seconds: Int, views: Int): Boolean = synchronized(this) {
+        val mergedSeconds = maxOf(playbackSeconds, seconds);
+        val mergedViews = maxOf(playbackViews, views);
+        val changed = mergedSeconds != playbackSeconds || mergedViews != playbackViews;
+        playbackSeconds = mergedSeconds;
+        playbackViews = mergedViews;
+        changed;
     }
 
     fun updateSubscriptionState(type: String, initialPage: List<IPlatformContent>) {

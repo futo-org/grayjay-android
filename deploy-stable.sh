@@ -36,7 +36,7 @@ echo "Signing all sources..."
 /usr/bin/bash ./sign-all-sources.sh
 
 echo "Building content..."
-./gradlew --stacktrace assembleStableRelease
+./gradlew --no-daemon --max-workers=1 --stacktrace assembleStableRelease
 
 VERSION="$(git describe --tags)"
 
@@ -64,18 +64,5 @@ r2_cp "$tmp_changelog" "changelogs/$VERSION" \
   "public, max-age=31536000, immutable" \
   "text/plain; charset=utf-8"
 rm -f "$tmp_changelog"
-
-DOCUMENT_ROOT=/var/www/html
-echo "Deploying content..."
-cp ./app/build/outputs/apk/stable/release/app-stable-x86_64-release.apk "$DOCUMENT_ROOT/app-x86_64-release.apk"
-cp ./app/build/outputs/apk/stable/release/app-stable-arm64-v8a-release.apk "$DOCUMENT_ROOT/app-arm64-v8a-release.apk"
-cp ./app/build/outputs/apk/stable/release/app-stable-armeabi-v7a-release.apk "$DOCUMENT_ROOT/app-armeabi-v7a-release.apk"
-cp ./app/build/outputs/apk/stable/release/app-stable-universal-release.apk "$DOCUMENT_ROOT/app-universal-release.apk"
-cp ./app/build/outputs/apk/stable/release/app-stable-x86-release.apk "$DOCUMENT_ROOT/app-x86-release.apk"
-cp ./app/build/outputs/apk/stable/release/app-stable-arm64-v8a-release.apk "$DOCUMENT_ROOT/app-release.apk"
-VERSION="$(git describe --tags)"
-echo "$VERSION" > "$DOCUMENT_ROOT/version.txt"
-mkdir -p "$DOCUMENT_ROOT/changelogs"
-git tag -l --format='%(contents)' "$VERSION" > "$DOCUMENT_ROOT/changelogs/$VERSION"
 
 echo "Done."

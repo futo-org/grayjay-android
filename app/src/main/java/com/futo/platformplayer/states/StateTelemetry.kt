@@ -7,6 +7,7 @@ import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.models.Telemetry
 import com.futo.platformplayer.stores.FragmentedStorage
 import com.futo.platformplayer.stores.StringStorage
+import com.futo.platformplayer.tv.TvMode
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -32,7 +33,7 @@ class StateTelemetry {
                     _id.value,
                     BuildConfig.APPLICATION_ID,
                     BuildConfig.VERSION_CODE.toString(),
-                    BuildConfig.VERSION_NAME,
+                    if (TvMode.isEnabled(StateApp.instance.context)) BuildConfig.VERSION_NAME + "_tv" else BuildConfig.VERSION_NAME,
                     BuildConfig.BUILD_TYPE,
                     BuildConfig.DEBUG,
                     BuildConfig.IS_UNSTABLE_BUILD,

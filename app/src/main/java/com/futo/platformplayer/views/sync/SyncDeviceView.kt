@@ -61,6 +61,14 @@ class SyncDeviceView : ConstraintLayout {
         return this
     }
 
+    fun setTelevision(television: Boolean): SyncDeviceView {
+        findViewById<ImageView>(R.id.image_device).apply {
+            setImageResource(if (television) R.drawable.ic_live_tv else R.drawable.ic_device)
+            contentDescription = if (television) context.getString(R.string.tv_install_menu) else null
+        }
+        return this
+    }
+
     fun setStatus(status: String): SyncDeviceView {
         _textStatus.text = status
         return this

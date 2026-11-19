@@ -36,7 +36,7 @@ echo "Signing all sources..."
 /usr/bin/bash ./sign-all-sources.sh
 
 echo "Building content..."
-./gradlew --stacktrace assembleUnstableRelease
+./gradlew --no-daemon --max-workers=1 --stacktrace assembleUnstableRelease
 
 VERSION="$(git describe --tags)"
 
@@ -57,16 +57,5 @@ r2_cp "$tmp_version" "version-unstable.txt" \
   "no-store" \
   "text/plain; charset=utf-8"
 rm -f "$tmp_version"
-
-DOCUMENT_ROOT=/var/www/html
-echo "Deploying content..."
-cp ./app/build/outputs/apk/unstable/release/app-unstable-x86_64-release.apk "$DOCUMENT_ROOT/app-x86_64-release-unstable.apk"
-cp ./app/build/outputs/apk/unstable/release/app-unstable-arm64-v8a-release.apk "$DOCUMENT_ROOT/app-arm64-v8a-release-unstable.apk"
-cp ./app/build/outputs/apk/unstable/release/app-unstable-armeabi-v7a-release.apk "$DOCUMENT_ROOT/app-armeabi-v7a-release-unstable.apk"
-cp ./app/build/outputs/apk/unstable/release/app-unstable-universal-release.apk "$DOCUMENT_ROOT/app-universal-release-unstable.apk"
-cp ./app/build/outputs/apk/unstable/release/app-unstable-x86-release.apk "$DOCUMENT_ROOT/app-x86-release-unstable.apk"
-cp ./app/build/outputs/apk/unstable/release/app-unstable-arm64-v8a-release.apk "$DOCUMENT_ROOT/app-release-unstable.apk"
-VERSION="$(git describe --tags)"
-echo "$VERSION" > "$DOCUMENT_ROOT/version-unstable.txt"
 
 echo "Done."

@@ -1,0 +1,33 @@
+--- a/adb/adb_mdns.h
++++ b/adb/adb_mdns.h
+@@ -48,7 +48,7 @@
+ extern const char* _Nonnull kADBDNSServiceTxtRecords[kNumADBDNSServices];
+ 
+ #if ADB_HOST
+-#include "client/openscreen/mdns_service_info.h"
++namespace mdns { struct ServiceInfo; }
+ // ADB Secure DNS service interface. Used to query what ADB Secure DNS services have been
+ // resolved, and to run some kind of callback for each one.
+ using adb_secure_foreach_service_callback = std::function<void(const mdns::ServiceInfo& si)>;
+--- a/adb/client/main.cpp
++++ b/adb/client/main.cpp
+@@ -40,7 +40,7 @@
+ #include "client/mdns_utils.h"
+ #include "client/transport_client.h"
+ #include "client/usb.h"
+-#include "client/usb_libusb_hotplug.h"
++namespace libusb { void usb_init(); }
+ #include "commandline.h"
+ #include "sysdeps/chrono.h"
+ #include "transport.h"
+--- a/adb/client/mdns_utils.cpp
++++ b/adb/client/mdns_utils.cpp
+@@ -75,7 +75,7 @@
+ }
+ 
+ bool is_enabled() {
+-    return !getenv("ADB_MDNS") || strcmp(getenv("ADB_MDNS"), "0") != 0;
++    return false;
+ }
+ 
+ }  // namespace mdns

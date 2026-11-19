@@ -120,6 +120,9 @@ class RemotePlaylistFragment : MainFragment() {
                     holder.onClick.subscribe {
                         convertPlaylist(false, Action.PLAY, holder.video)
                     }
+                    holder.onOptions.subscribe {
+                        UISlideOverlays.showVideoOptionsOverlay(it, _overlayContainer);
+                    }
                     return@InsertedViewAdapterWithLoader holder
                 })
 

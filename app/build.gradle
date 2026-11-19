@@ -144,6 +144,9 @@ android {
     buildFeatures {
         buildConfig true
     }
+    packagingOptions {
+        jniLibs.useLegacyPackaging = true
+    }
     sourceSets {
         main {
             jniLibs.srcDirs = ['src/main/jniLibs']

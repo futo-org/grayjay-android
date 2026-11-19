@@ -20,6 +20,7 @@ import com.futo.platformplayer.stores.StringArrayStorage
 import com.futo.platformplayer.stores.StringStorage
 import com.futo.platformplayer.stores.StringStringMapStorage
 import com.futo.platformplayer.stores.StringTMapStorage
+import com.futo.platformplayer.tv.sync.TvPluginCredentials
 import com.futo.platformplayer.sync.SyncSessionData
 import com.futo.platformplayer.sync.internal.GJSyncOpcodes
 import com.futo.platformplayer.sync.internal.ISyncDatabaseProvider
@@ -225,6 +226,10 @@ class StateSync {
                     added.add(newSub);
                 }
             }
+            StateSubscriptions.instance.getSubscription(sub.channel.url)?.let { local ->
+                if (local.mergePlayback(sub.playbackSeconds, sub.playbackViews))
+                    local.save();
+            }
         }
         if(added.size > 3)
             UIDialogs.appToast("${added.size} Subscriptions from ${origin.remotePublicKey.substring(0, Math.min(8, origin.remotePublicKey.length))}");
@@ -250,7 +255,7 @@ class StateSync {
     private val _lockPlaylists = Any();
     private val _lockWatchlater = Any();
 
-    private fun handleData(session: SyncSession, opcode: UByte, subOpcode: UByte, data: ByteBuffer) {
+    private suspend fun handleData(session: SyncSession, opcode: UByte, subOpcode: UByte, data: ByteBuffer) {
         val remotePublicKey = session.remotePublicKey
         when (subOpcode) {
             GJSyncOpcodes.sendToDevices -> {
@@ -304,6 +309,8 @@ class StateSync {
 
                 Logger.i(TAG, "syncStateExchange syncHistory (size: ${recentHistory.size})")
             }
+
+            GJSyncOpcodes.syncPluginCredentials -> TvPluginCredentials.handle(session, data)
 
             GJSyncOpcodes.syncExport -> {
                 val dataBody = ByteArray(data.remaining());

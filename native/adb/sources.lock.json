@@ -1,0 +1,47 @@
+{
+  "adb": {
+    "repository": "https://android.googlesource.com/platform/packages/modules/adb",
+    "commit": "ce023afef190b0cea7f8939e9dd5ee3ee79b137b",
+    "sha256": "85b97d408ca3ca233a0e2f1126b72dac2500046b8679dc981da88b79ab624a97"
+  },
+  "libbase": {
+    "repository": "https://android.googlesource.com/platform/system/libbase",
+    "commit": "0ac7ea4a65d981166d6e5617e1e4ef0572f774e5",
+    "sha256": "eb95ac6414e065a01d05fe8b8e08f68346233c1b8cc755452dd7960652c7314b"
+  },
+  "core": {
+    "repository": "https://android.googlesource.com/platform/system/core",
+    "commit": "68be0c2c0006a0740d0b1809abe4717308f90d15",
+    "sha256": "72d64c326e5fb117f9c69257b7c4106e26ff1a92671c109c528c0a62dc77577b"
+  },
+  "boringssl": {
+    "repository": "https://android.googlesource.com/platform/external/boringssl",
+    "commit": "ecc1358826150d6a1851c517c325b0e6c0e1b8be",
+    "sha256": "2fe7728e4e18d541907ea9dedf0b18993b968d2c82c6c95269b238fea77bcecd"
+  },
+  "protobuf": {
+    "repository": "https://android.googlesource.com/platform/external/protobuf",
+    "commit": "da98e5a6593907dd162bb6c206570c0afa5326ac",
+    "sha256": "1c260be8b229b96590e0a50812728c0d58347c61d1b76d784e9fa6b2be1ca8b0"
+  },
+  "brotli": {
+    "repository": "https://android.googlesource.com/platform/external/brotli",
+    "commit": "ff5a0078401af7fe243d2d39e65c6c145dff0d16",
+    "sha256": "4ef68295bcf8e159e70c71bcc6ca8855a160dc7f5d38dd99adcc06687e66c7a3"
+  },
+  "lz4": {
+    "repository": "https://android.googlesource.com/platform/external/lz4",
+    "commit": "f072532f6846b40417438d29daa8183a8e53b63c",
+    "sha256": "19a5338e002835c2dfbb0381887709bf42b53c45e0566a822c69e844eed4b0f1"
+  },
+  "zstd": {
+    "repository": "https://android.googlesource.com/platform/external/zstd",
+    "commit": "d127fae3539665f55751ef320265c22e4c81b583",
+    "sha256": "45457f9043bd3ff8cfd3e3c24605421d8b5798028f40085d309551f82f6997e3"
+  },
+  "fmtlib": {
+    "repository": "https://android.googlesource.com/platform/external/fmtlib",
+    "commit": "b94c6ae0bc963c4f38bce355fe74bec30eaf0be2",
+    "sha256": "878e556ab75b1f6bee66f90d563ba1769685bdb2323200bc8ed871f5f98c89e4"
+  }
+}

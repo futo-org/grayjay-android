@@ -75,6 +75,23 @@ class StateUpdate {
         onUiChanged.emit()
     }
 
+    fun cleanupOldApks(context: Context, downloadVersion: Int = BuildConfig.VERSION_CODE) {
+        try {
+            val dir = File(context.filesDir, "updates")
+            val pattern = Regex("app-(?:${APP_SUPPORTED_ABIS.joinToString("|")}|universal)-(\\d+)\\.apk(?:\\.part)?")
+            for (file in dir.listFiles().orEmpty()) {
+                if (!file.isFile) continue
+                val version = pattern.matchEntire(file.name)?.groupValues?.get(1)?.toLongOrNull() ?: continue
+                val obsolete = version <= BuildConfig.VERSION_CODE ||
+                    (file.name.endsWith(".apk.part") && version < downloadVersion)
+                if (obsolete && !file.delete())
+                    Logger.w(TAG, "Could not delete obsolete update ${file.name}")
+            }
+        } catch (e: Exception) {
+            Logger.w(TAG, "Failed to clean up obsolete updates", e)
+        }
+    }
+
     fun seedUiFromDisk(context: Context) {
         if (uiState != UpdateUiState.NONE) return
         try {
@@ -192,10 +209,10 @@ class StateUpdate {
         } else {
             "https://rel.grayjay.app/version.txt"
         }
-        fun getApkUrl(version: Int): String = if (BuildConfig.IS_UNSTABLE_BUILD) {
-            "https://rel.grayjay.app/$version/app-$DESIRED_ABI-release-unstable.apk"
+        fun getApkUrl(version: Int, abi: String = DESIRED_ABI): String = if (BuildConfig.IS_UNSTABLE_BUILD) {
+            "https://rel.grayjay.app/$version/app-$abi-release-unstable.apk"
         } else {
-            "https://rel.grayjay.app/$version/app-$DESIRED_ABI-release.apk"
+            "https://rel.grayjay.app/$version/app-$abi-release.apk"
         }
         val CHANGELOG_BASE_URL = "https://rel.grayjay.app/changelogs";
 
