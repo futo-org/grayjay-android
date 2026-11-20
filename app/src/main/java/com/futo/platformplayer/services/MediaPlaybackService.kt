@@ -25,6 +25,7 @@ import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
 import android.view.KeyEvent
 import androidx.core.app.NotificationCompat
+import androidx.media.VolumeProviderCompat
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy
 import com.bumptech.glide.request.target.CustomTarget
@@ -33,6 +34,8 @@ import com.futo.platformplayer.R
 import com.futo.platformplayer.Settings
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.models.video.IPlatformVideo
+import com.futo.platformplayer.casting.CastConnectionState
+import com.futo.platformplayer.casting.StateCasting
 import com.futo.platformplayer.logging.Logger
 import com.futo.platformplayer.receivers.MediaButtonReceiver
 import com.futo.platformplayer.receivers.MediaControlReceiver
@@ -48,6 +51,8 @@ class MediaPlaybackService : Service() {
     private val MEDIA_NOTIF_TAG = "media";
     private val MEDIA_NOTIF_CHANNEL_ID = "mediaChannel";
     private val MEDIA_NOTIF_CHANNEL_NAME = "Player";
+    //Matches the 0-100 range of most TVs so one key press is one TV volume step.
+    private val REMOTE_VOLUME_MAX = 100;
 
     //Notifs
     private var _notif_last_video: IPlatformVideo? = null;
@@ -58,6 +63,7 @@ class MediaPlaybackService : Service() {
     private var _notificationManager: NotificationManager? = null;
     private var _notificationChannel: NotificationChannel? = null;
     private var _mediaSession: MediaSessionCompat? = null;
+    private var _remoteVolumeProvider: VolumeProviderCompat? = null;
     private var _hasFocus: Boolean = false;
     private var _isTransientLoss: Boolean = false;
     private var _focusRequest: AudioFocusRequest? = null;
@@ -155,6 +161,50 @@ class MediaPlaybackService : Service() {
             Intent(Intent.ACTION_MEDIA_BUTTON).setClass(this@MediaPlaybackService, MediaButtonReceiver::class.java),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         ))
+
+        StateCasting.instance.onActiveDeviceConnectionStateChanged.subscribe(this) { _, _ -> updateVolumeRouting() }
+        StateCasting.instance.onActiveDeviceVolumeChanged.subscribe(this) { volume ->
+            _remoteVolumeProvider?.currentVolume = (volume * REMOTE_VOLUME_MAX).toInt().coerceIn(0, REMOTE_VOLUME_MAX)
+        }
+        updateVolumeRouting()
+    }
+
+    /**
+     * Routes the hardware volume keys to the cast device while casting, and back to the local stream otherwise.
+     */
+    private fun updateVolumeRouting() {
+        val session = _mediaSession ?: return
+        val device = StateCasting.instance.activeDevice
+        val canControl = device != null && device.connectionState == CastConnectionState.CONNECTED && device.canSetVolume()
+        if (!canControl) {
+            if (_remoteVolumeProvider != null) {
+                Logger.i(TAG, "Volume keys control local playback")
+                _remoteVolumeProvider = null
+                session.setPlaybackToLocal(AudioManager.STREAM_MUSIC)
+            }
+            return
+        }
+        if (_remoteVolumeProvider != null) return
+
+        Logger.i(TAG, "Volume keys control cast device [${device!!.name}]")
+        val provider = object : VolumeProviderCompat(VOLUME_CONTROL_ABSOLUTE, REMOTE_VOLUME_MAX,
+            (device.volume * REMOTE_VOLUME_MAX).toInt().coerceIn(0, REMOTE_VOLUME_MAX)) {
+            override fun onSetVolumeTo(volume: Int) {
+                setRemoteVolume(volume)
+            }
+
+            override fun onAdjustVolume(direction: Int) {
+                setRemoteVolume(currentVolume + direction)
+            }
+
+            private fun setRemoteVolume(volume: Int) {
+                val clamped = volume.coerceIn(0, REMOTE_VOLUME_MAX)
+                currentVolume = clamped
+                StateCasting.instance.changeVolume(clamped.toDouble() / REMOTE_VOLUME_MAX)
+            }
+        }
+        _remoteVolumeProvider = provider
+        session.setPlaybackToRemote(provider)
     }
 
     override fun onCreate() {
@@ -185,6 +235,10 @@ class MediaPlaybackService : Service() {
 
         _notif_last_video = null
         _notif_last_bitmap = null
+
+        StateCasting.instance.onActiveDeviceConnectionStateChanged.remove(this)
+        StateCasting.instance.onActiveDeviceVolumeChanged.remove(this)
+        _remoteVolumeProvider = null
 
         _mediaSession?.isActive = false
         _mediaSession?.release()
