@@ -45,7 +45,7 @@
     <string name="tv_dislikes">Bəyənməmələr</string>
     <string name="tv_view_count">%1$s baxış</string>
     <string name="tv_enabled">Aktivdir</string>
-    <string name="tv_disabled">Deaktivdir</string>
+    <string name="tv_disabled">Bağlıdır</string>
     <string name="tv_source_error">Bu mənbə aktivləşdirilə bilmədi.</string>
     <string name="tv_channels">Kanallarınız</string>
     <string name="tv_player_error">Oynatma uğursuz oldu. Yenidən cəhd edin və ya başqa keyfiyyət seçin.</string>
@@ -146,7 +146,7 @@
     <string name="tv_source_home">Əsas səhifədə göstər</string>
     <string name="tv_source_search">Axtarışa daxil et</string>
     <string name="tv_source_priority_position">Mövqe %1$d</string>
-    <string name="tv_source_disable">Mənbəni deaktivləşdir</string>
+    <string name="tv_source_disable">Mənbəni bağla</string>
     <string name="tv_source_subscriptions_warning">%1$d abunəlik bu mənbədən istifadə edir. Yenidən aktivləşdirənə qədər onların videoları əlçatan olmayacaq. Bu mənbə deaktivləşdirilsin?</string>
     <string name="tv_source_login_hint">Mənbəyə giriş Grayjay-in telefon interfeysində idarə olunur.</string>
     <string name="tv_source_up_to_date">Ən son versiyadasınız</string>
@@ -229,7 +229,7 @@
     <string name="tv_sync_listener_failed">Yerli qoşalaşdırma başlada bilmədi. Başqa tətbiq Sinxronizasiya portundan istifadə edir ola bilər.</string>
     <string name="tv_sync_disconnected">Bağlantı kəsilib</string>
     <string name="tv_sync_connected_local">Qoşulub · Yerli şəbəkə</string>
-    <string name="tv_sync_connected_relay">Qoşulub · Rele</string>
+    <string name="tv_sync_connected_relay">Qoşulub · Relay</string>
     <string name="tv_sync_approve_title">Bu cihaz qoşalaşdırılsın?</string>
     <string name="tv_sync_approve_hint">Qoşalaşdırmanı digər cihazınızdan başlatmısınızsa, yalnız bu sorğuya icazə verin.</string>
     <string name="tv_sync_new_device">Yeni cihaz</string>
@@ -249,7 +249,7 @@
     <string name="tv_watch_later_down">Aşağı daşı</string>
     <string name="tv_watch_later_remove">Sonradan izlə siyahısından sil</string>
     <string name="tv_watch_later_empty">Hələ heç bir video saxlanılmayıb</string>
-    <string name="tv_watch_later_empty_hint">Video təfərrüatlarından videonu Sonradan izlə siyahısına saxlayın. Burada görünəcək.</string>
+    <string name="tv_watch_later_empty_hint">Video təfərrüatlarından videonu Sonra izlə siyahısında saxlayın. Burada görünəcək.</string>
     <string name="tv_watch_later_retry_hint">Zəhmət olmasa yenidən cəhd edin. Saxlanılmış videolarınız təmizlənməyib.</string>
     <string name="tv_queue_previous">Əvvəlki video</string>
     <string name="tv_queue_next">Növbəti video</string>
@@ -267,8 +267,8 @@
     <string name="tv_saved_playlist_change_error">Bu pleylist yenilənə bilmədi</string>
     <string name="tv_saved_playlist_remove">Pleylistdən sil</string>
     <string name="tv_saved_playlist_remove_hint">“%1$s” videosu “%2$s” pleylistindən silinsin?</string>
-    <string name="tv_video_save_watch_later">Sonradan izlə siyahısına saxla</string>
-    <string name="tv_video_saved_watch_later">Sonradan izlə siyahısına saxlanıldı</string>
+    <string name="tv_video_save_watch_later">Sonra izlə siyahısında saxla</string>
+    <string name="tv_video_saved_watch_later">Sonra izlə siyahısında saxlanıldı</string>
     <string name="tv_video_removed_watch_later">Sonradan izlə siyahısından silindi</string>
     <string name="tv_video_add_playlist">Pleylistə əlavə et</string>
     <string name="tv_video_added_playlist">“%1$s” pleylistə əlavə edildi</string>
@@ -288,7 +288,7 @@
     <string name="tv_source_url_required">Düzgün http:// və ya https:// plagin konfiqurasiya URL-i daxil edin.</string>
     <string name="tv_source_uninstall_warning">%1$s silinsin? Onun tənzimləmələri və saxlanılmış etimadnamələri bu TV-dən silinəcək. Abunəlikləriniz saxlanılacaq, lakin uyğun mənbə olmadan yenilənə bilməyəcək.</string>
     <string name="tv_keyboard_uppercase">Böyük hərflərə keçid</string>
-    <string name="tv_source_bundled_hint">Grayjay-ə daxildir. Bu mənbəni deaktivləşdirə bilərsiniz; silmə xüsusi mənbələr üçün əlçatandır.</string>
+    <string name="tv_source_bundled_hint">Grayjay-ə daxildir. Bu mənbəni bağlaya bilərsiniz; silmə xüsusi mənbələr üçün əlçatandır.</string>
     <string name="tv_sources_performance">TV-lərin emal gücü məhduddur. Yalnız istifadə etdiyiniz mənbələri aktivləşdirməyi tövsiyə edirik.</string>
     <string name="tv_launch_ui">TV interfeysini başlat</string>
     <string name="tv_launch_ui_description">Bu sessiya üçün TV interfeysini açın. Telefon interfeysinə qayıtmaq üçün tətbiqi yenidən açın.</string>
