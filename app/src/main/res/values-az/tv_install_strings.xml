@@ -11,7 +11,7 @@
     <string name="tv_install_saved">Saxlanılıb · Qoşulmaq üçün toxunun</string>
     <string name="tv_install_refresh">Bağlantıları yenilə</string>
     <string name="tv_install_forget">TV-ni unut</string>
-    <string name="tv_install_forget_description">%1$s bu siyahıdan silinsin? Grayjay quraşdırılmış olaraq qalacaq. Bu telefonun girişini ləğv etmək üçün onu TV-nin Simsiz sazlama (Wireless debugging) tənzimləmələrindən də silin.</string>
+    <string name="tv_install_forget_description">%1$s bu siyahıdan silinsin? Grayjay quraşdırılmış olaraq qalacaq. Bu telefonun girişini ləğv etmək üçün onu TV-nin Simsiz sazlama tənzimləmələrindən də silin.</string>
     <string name="tv_install_more">%1$s üçün seçimlər</string>
     <string name="tv_install_setup">TV-nizi quraşdırın</string>
     <string name="tv_install_step">Addım %1$d / 8</string>
@@ -29,7 +29,7 @@
     <string name="tv_install_update_note">Grayjay artıq quraşdırılıb. Bu telefonun versiyasını quraşdıra və ya yenidən quraşdırmadan Sinxronizasiyaya davam edə bilərsiniz. Mövcud TV məlumatları saxlanılacaq.</string>
     <string name="tv_install_skip_update">Quraşdırmadan davam et</string>
     <string name="tv_install_not_now">İndi deyil</string>
-    <string name="tv_install_sync_title">TV-nizi Sinxronizasiya ilə qoşalaşdırın?</string>
+    <string name="tv_install_sync_title">TV-nizi Sinxronizasiya ilə qoşalaşdırsın?</string>
     <string name="tv_install_sync_description">Grayjay %1$s cihazında hazırdır. Abunəlikləri, pleylistləri, sonradan izlə və tarixçəni paylaşmaq üçün bu telefonu əlaqələndirin.</string>
     <string name="tv_install_sync_note">TV-nizdə Sinxronizasiyanı açacağıq. Soruşularsa aktivləşdirin və pultunuzla əlaqələndirmə sorğusunu təsdiqləyin. Qoşalaşdırma Grayjay-in mövcud şifrələnmiş Sinxronizasiya bağlantısından istifadə edir.</string>
     <string name="tv_install_sync_pair">Sinxronizasiya ilə qoşalaşdır</string>
@@ -49,8 +49,8 @@
     <string name="tv_install_disable_open">TV tənzimləmələrini aç</string>
     <string name="tv_install_keep_debugging">Aktiv saxla və bitir</string>
     <string name="tv_install_disable_title">TV-də sazlamanı qapat</string>
-    <string name="tv_install_disable_description">Pultunuzdan istifadə edərək Simsiz sazlama və Şəbəkə sazlama və ya ADB sazlamanı qapatın. USB sazlama açıqdırsa, onu da qapatın. Sonra bu telefonda Hazırdır düyməsinə toxunun.</string>
-    <string name="tv_install_disable_note">Menyu adları TV-dən asılı olaraq dəyişir. Tənzimləmələr açılmadısa, Tənzimləmələr → Sistem və ya Cihaz seçimləri → Tərtibatçı seçimləri bölməsinə keçin. Hazırdır bu telefonun ADB bağlantısını bağlayır; TV-dəki keçidləri dəyişmir.</string>
+    <string name="tv_install_disable_description">Pultunuzdan istifadə edərək Simsiz sazlama və Şəbəkə sazlama və ya ADB sazlamanı qapadın. USB sazlama açıqdırsa, onu da qapadın. Sonra bu telefonda Bitdi düyməsinə toxunun.</string>
+    <string name="tv_install_disable_note">Menyu adları TV-dən asılı olaraq dəyişir. Tənzimləmələr açılmadısa, Tənzimləmələr → Sistem və ya Cihaz seçimləri → Tərtibatçı seçimləri bölməsinə keçin. Bitdi bu telefonun ADB bağlantısını bağlayır; TV-dəki keçidləri dəyişmir.</string>
     <string name="tv_install_settings_failed">Tənzimləmələr uzaqdan açıla bilmədi. TV pultunuzdan istifadə edərək yuxarıdakı addımları izləyin, sonra Hazırdır düyməsinə toxunun.</string>
     <string name="tv_install_intro_title">TV-nizdən başlayın</string>
     <string name="tv_install_intro_description">TV-nizdə bir neçə sürətli addım bu telefona Grayjay-i ev şəbəkəniz üzərindən göndərməyə imkan verəcək.</string>
@@ -66,7 +66,7 @@
     <string name="tv_install_about_description">Sistem bölməsində Haqqında seçin.</string>
     <string name="tv_install_about_note">TV-niz Cihaz seçimləri istifadə edirsə, Haqqında bölməsini orada tapacaqsınız.</string>
     <string name="tv_install_build_title">OK düyməsini 7 dəfə basın</string>
-    <string name="tv_install_build_description">Android TV OS quruluşu və ya Quruluş (Build) sətrinə qədər aşağı sürüşdürün. Həmin sətri seçili saxlayın və pultunuzun OK və ya mərkəz düyməsini 7 dəfə basın.</string>
+    <string name="tv_install_build_description">Android TV OS quruluşu və ya Build quruluşu sətrinə qədər aşağı sürüşdürün. Həmin sətri seçili saxlayın və pultunuzun OK və ya mərkəz düyməsini 7 dəfə basın.</string>
     <string name="tv_install_build_note">“Siz artıq tərtibatçısınız” mesajını gördükdə dayanın. Soruşularsa TV-nin PİN kodunu daxil edin. Artıq tərtibatçı olduğunuz deyilirsə, davam edin.</string>
     <string name="tv_install_options_title">Tərtibatçı seçimlərini açın</string>
     <string name="tv_install_options_description">Sistem bölməsinə qayıdın və ya Tənzimləmələrdən açın. Aşağı sürüşdürün və Tərtibatçı seçimləri seçin.</string>
@@ -91,7 +91,7 @@
     <string name="tv_install_pairing">TV-nizlə qoşalaşdırılır…</string>
     <string name="tv_install_connect_title">TV-nizə qoşulun</string>
     <string name="tv_install_connect_description">TV-nizdə əsas Simsiz sazlama ekranına qayıdın. Onun “İP ünvanı və portu”nu göstərildiyi kimi dəqiq daxil edin. Buradakı port qoşalaşdırma portundan fərqlidir.</string>
-    <string name="tv_install_connect_port_description">TV-nizdə əsas Simsiz sazlama ekranına qayıdın. “İP ünvanı və port” altında qoşalaşdırma portundan fərqli olan, yalnız qoşal nöqtədən (:) sonrakı rəqəmi daxil edin.</string>
+    <string name="tv_install_connect_port_description">TV-nizdə əsas Simsiz sazlama ekranına qayıdın. “İP ünvanı və port” altında qoşalaşdırma portundan fərqli olan, yalnız qoşa nöqtədən (:) sonrakı rəqəmi daxil edin.</string>
     <string name="tv_install_connection_port">Bağlantı portu</string>
     <string name="tv_install_connection_port_hint">məs. 37181</string>
     <string name="tv_install_connection_port_example">192.168.1.20:37181 üçün 37181 daxil edin.</string>
