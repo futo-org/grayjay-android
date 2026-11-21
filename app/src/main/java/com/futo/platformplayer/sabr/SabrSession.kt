@@ -1,6 +1,5 @@
 package com.futo.platformplayer.sabr
 
-import android.util.Base64
 import okhttp3.Call
 import com.futo.platformplayer.api.http.ManagedHttpClient
 import com.futo.platformplayer.api.media.models.modifier.IRequestModifier
@@ -26,6 +25,7 @@ import com.futo.platformplayer.sabr.proto.StreamerContext
 import com.futo.platformplayer.sabr.proto.VideoPlaybackAbrRequest
 import com.google.protobuf.ByteString
 import java.util.concurrent.ConcurrentHashMap
+import java.security.MessageDigest
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread
 import kotlin.random.Random
@@ -101,7 +101,9 @@ class SabrSession(
     @Volatile private var backoffNotified = false
     @Volatile private var backoffShown = false
     @Volatile private var lastWaitLogMs = 0L
-    @Volatile private var lastRequestMs = 0L
+    private val elapsedStartedNs = System.nanoTime()
+    @Volatile private var elapsedWallTimeOffsetMs = 0L
+    private fun elapsedWallTimeMs() = (System.nanoTime() - elapsedStartedNs) / 1_000_000 + elapsedWallTimeOffsetMs
     @Volatile private var lastActionMs = System.currentTimeMillis()
     @Volatile private var currentResponse: ManagedHttpClient.Response? = null
     @Volatile private var currentCall: Call? = null
@@ -171,7 +173,8 @@ class SabrSession(
         val mediaBaseUs: Long,
         val mediaBaseSet: Boolean,
         val formatInitialization: Map<SabrFormatKey, FormatInitializationMetadata>,
-        val liveMetadata: LiveMetadata?
+        val liveMetadata: LiveMetadata?,
+        val elapsedWallTimeMs: Long = 0L
     )
 
     fun exportTransferable(): Transferable = Transferable(
@@ -185,7 +188,8 @@ class SabrSession(
         mediaBaseUs = mediaBaseUs,
         mediaBaseSet = mediaBaseSet,
         formatInitialization = formatInitialization.toMap(),
-        liveMetadata = liveMetadata
+        liveMetadata = liveMetadata,
+        elapsedWallTimeMs = elapsedWallTimeMs()
     ).also {
         val remainingMs = backoffUntilMs - System.currentTimeMillis()
         sabrLog("Exported session state: rn=${it.requestNumber} contexts=${it.sabrContexts.keys.sorted()} " +
@@ -204,6 +208,7 @@ class SabrSession(
 
     fun continueFrom(state: Transferable) {
         restore(state)
+        elapsedWallTimeOffsetMs = state.elapsedWallTimeMs
         playbackCookie = state.playbackCookie
         requestNumber.set(state.requestNumber)
         if (state.streamingUrl.isNotEmpty()) streamingUrl = state.streamingUrl
@@ -445,7 +450,7 @@ class SabrSession(
                 Logger.e(TAG, "SABR request failed", ex)
 
                 if (ex is SabrBlockedException) {
-                    sabrLog("BLOCKED: ${ex.message}. po token is static; surfacing for reload.")
+                    sabrLog("BLOCKED: ${ex.message}. surfacing for reload.")
                     fatalError = ex
                     listener?.onSessionError(ex)
                     buffers.values.forEach { it.notifyChanged() }
@@ -496,11 +501,18 @@ class SabrSession(
     private fun starved(): Boolean {
         val demands = listOfNotNull(videoDemand, audioDemand)
         if (demands.isEmpty()) return false
+        val positionUs = refreshPlayheadUs()
         for (demand in demands) {
-            val buffer = bufferFor(demand.format)
-            val end = buffer.bufferedEndUs(effectiveFromUs(buffer, demand.fromUs))
-            if (end == Long.MIN_VALUE) return true
-            if (end - playbackPositionUs < STARVED_US) return true
+            var endUs = positionUs
+            val segments = demand.alternates.flatMap { bufferFor(it).snapshot() }
+                .filter { it.isComplete && it.size > 0 && it.endUs > positionUs }
+                .sortedBy { it.startUs }
+            for (segment in segments) {
+                if (segment.startUs > endUs + 1_000) break
+                endUs = maxOf(endUs, segment.endUs)
+            }
+            sabrLog("Backoff buffer: activeItag=${demand.format.itag} playheadMs=${positionUs / 1000} playableAheadMs=${(endUs - positionUs) / 1000}")
+            if (endUs - positionUs < STARVED_US) return true
         }
         return false
     }
@@ -605,11 +617,14 @@ class SabrSession(
     }
 
     private fun performRequest() {
+        if (released) return
         val startEpoch: Int
         val video: SabrFormat?
         val audio: SabrFormat?
         val requestedResume: Long?
         val positionUs: Long
+        val body: ByteArray
+        val acceptedKeys: Set<SabrFormatKey>
         synchronized(pumpLock) {
             aborting = false
             startEpoch = restartEpoch
@@ -618,6 +633,9 @@ class SabrSession(
             if (video == null && audio == null) return
             requestedResume = resumePositionUs
             positionUs = requestPositionUs()
+            body = buildRequest(video, audio, positionUs / 1000).toByteArray()
+            acceptedKeys = (videoDemand?.alternates.orEmpty() + audioDemand?.alternates.orEmpty())
+                .map { it.key }.toSet()
         }
         demandedHeaders = 0
         foreignHeaders = 0
@@ -634,10 +652,8 @@ class SabrSession(
             } ?: ""
             sabrLog("Request #${requestNumber.get() + 1} live=$isLive playerTimeMs=${positionUs / 1000} $v $a$lag " +
                 "bw=${bandwidthEstimate() / 1024}KB/s${if (throughputBytesPerSec == 0L) "(seed)" else ""} " +
-                "readahead=v${targetVideoReadaheadMs}ms/a${targetAudioReadaheadMs}ms")
+                "elapsedWallTimeMs=${elapsedWallTimeMs()} readahead=v${targetVideoReadaheadMs}ms/a${targetAudioReadaheadMs}ms")
         }
-
-        val body = buildRequest(video, audio, positionUs / 1000).toByteArray()
 
         val url = appendRequestNumber(streamingUrl)
         val headers = mutableMapOf(
@@ -652,9 +668,13 @@ class SabrSession(
 
         val videoBefore = video?.let { Pair(bufferFor(it).highestSequence, bufferFor(it).bufferedEndUs(demandFromUs(it))) }
         val audioBefore = audio?.let { Pair(bufferFor(it).highestSequence, bufferFor(it).bufferedEndUs(demandFromUs(it))) }
-        lastRequestMs = System.currentTimeMillis()
         val request = ManagedHttpClient.Request(finalUrl, "POST", body, finalHeaders)
-        request.onCallCreated.subscribe { currentCall = it }
+        request.onCallCreated.subscribe { call ->
+            synchronized(pumpLock) {
+                if (released || restartEpoch != startEpoch) call.cancel()
+                else currentCall = call
+            }
+        }
 
         val rn = requestNumber.get()
         val sentMs = System.currentTimeMillis()
@@ -691,18 +711,15 @@ class SabrSession(
         }
 
         synchronized(pumpLock) {
-            if (resumePositionUs == requestedResume) resumePositionUs = null
+            if (restartEpoch == startEpoch && resumePositionUs == requestedResume) resumePositionUs = null
         }
-
-        val acceptedKeys = (videoDemand?.alternates.orEmpty() + audioDemand?.alternates.orEmpty())
-            .map { it.key }.toSet()
 
         val consumed: Pair<Boolean, Boolean>
         val bytesBefore = mediaBytes
         val mediaUsBefore = mediaUsDelivered
         try {
             val stream = response.body?.byteStream() ?: throw SabrException("SABR response had no body")
-            consumed = stream.use { consume(UmpReader(it), positionUs, acceptedKeys) }
+            consumed = stream.use { consume(UmpReader(it), positionUs, acceptedKeys, startEpoch) }
         } finally {
             recordThroughput(
                 mediaBytes - bytesBefore,
@@ -885,7 +902,7 @@ class SabrSession(
         seekPendingUs = null
     }
 
-    private fun consume(reader: UmpReader, requestedPositionUs: Long, requestedKeys: Set<SabrFormatKey> = emptySet()): Pair<Boolean, Boolean> {
+    private fun consume(reader: UmpReader, requestedPositionUs: Long, requestedKeys: Set<SabrFormatKey>, requestEpoch: Int): Pair<Boolean, Boolean> {
         var advanced = false
         val pending = HashMap<Int, SabrSegment>()
         var redirect: String? = null
@@ -917,8 +934,15 @@ class SabrSession(
                             } else {
                                 val buffer = bufferFor(segment.formatKey)
                                 val tracked = (if(segment.isInit) buffer.initSegment else buffer.get(segment.sequenceNumber)) === segment
-                                if(tracked && segment.size > 0 && requestedKeys.contains(segment.formatKey)) advanced = true
                                 segment.markComplete()
+                                if (tracked && segment.size > 0 && requestedKeys.contains(segment.formatKey)) {
+                                    advanced = true
+                                    if (!segment.isInit) {
+                                        adoptServerFormat(segment.formatKey)
+                                        val clock = activeFormat(ROLE_VIDEO) ?: activeFormat(ROLE_AUDIO)
+                                        if (clock?.key == segment.formatKey) mediaUsDelivered += segment.durationUs
+                                    }
+                                }
                                 bufferFor(segment.formatKey).notifyChanged()
                                 onSegmentsChanged?.run()
                             }
@@ -1037,15 +1061,19 @@ class SabrSession(
         if (redirect != null) {
             Logger.i(TAG, "SABR redirect issued")
             streamingUrl = redirect
-            consecutiveRedirects++
+            consecutiveRedirects = if (advanced) 0 else consecutiveRedirects + 1
             if (consecutiveRedirects >= MAX_REDIRECTS)
                 throw SabrException("SABR redirected $consecutiveRedirects times without delivering media")
             backoffUntilMs = serverBackoffUntilMs
-            resumePositionUs = requestedPositionUs
+            synchronized(pumpLock) {
+                if (restartEpoch == requestEpoch && !advanced) resumePositionUs = requestedPositionUs
+            }
             return Pair(true, advanced)
         }
 
-        seekToUs?.let { applySabrSeek(it, requestedPositionUs) }
+        synchronized(pumpLock) {
+            if (restartEpoch == requestEpoch) seekToUs?.let { applySabrSeek(it, requestedPositionUs) }
+        }
         return Pair(false, advanced)
     }
 
@@ -1055,7 +1083,6 @@ class SabrSession(
 
         if (key in requestedKeys) {
             demandedHeaders++
-            adoptServerFormat(key)
         }
         else if (key !in demandedKeys) foreignHeaders++
 
@@ -1080,8 +1107,6 @@ class SabrSession(
             backPatchPrevious(buffer, header.sequenceNumber, startUs)
             if (!exact) durationUs = estimateSegmentUs(header.sequenceNumber, startUs, buffer)
 
-            val clock = activeFormat(ROLE_VIDEO) ?: activeFormat(ROLE_AUDIO)
-            if (clock != null && clock.key == key) mediaUsDelivered += durationUs
         }
 
         val segment = SabrSegment(
@@ -1176,6 +1201,8 @@ class SabrSession(
         val now = System.currentTimeMillis()
         val abrState = ClientAbrState.newBuilder()
             .setPlayerTimeMs(positionMs)
+            .setPlaybackRate(1f)
+            .setElapsedWallTimeMs(elapsedWallTimeMs())
             .setBandwidthEstimate(bandwidthEstimate())
             .setNetworkLatencyMs(Random.nextLong(7, 97))
             .setTimeSinceLastActionMs(now - lastActionMs)
@@ -1184,8 +1211,6 @@ class SabrSession(
             .setDrcEnabled(true)
             .setVisibility(0)
             .setPreferVp9(false)
-
-        if (lastRequestMs > 0) abrState.setTimeSinceLastRequestMs(now - lastRequestMs)
 
         val videoAlternates = videoDemand?.alternates.orEmpty()
         val audioAlternates = audioDemand?.alternates.orEmpty()
@@ -1321,20 +1346,22 @@ class SabrSession(
             Logger.e(TAG, "Po token is not valid base64; requests will be unattested and YouTube will " +
                 "block the session once the attestation grace period expires")
 
-        sabrLog("poToken: len=${token.length} decodedBytes=${poTokenDecoded?.size() ?: 0} prefix='${token.take(12)}'")
+        val decoded = poTokenDecoded?.toByteArray()
+        val fingerprint = decoded?.let { bytes -> MessageDigest.getInstance("SHA-256").digest(bytes).take(6).joinToString("") { "%02X".format(it) } } ?: "invalid"
+        val bootstrap = decoded?.let { isBootstrapToken(it) } ?: false
+        sabrLog("poToken: len=${token.length} decodedBytes=${decoded?.size ?: 0} fingerprint=$fingerprint bootstrap=$bootstrap")
+        if (bootstrap) Logger.w(TAG, "The source supplied a bootstrap po token, not a minted attestation token")
         return poTokenDecoded
     }
 
+    private fun isBootstrapToken(bytes: ByteArray): Boolean =
+        bytes.size == 10 && bytes[0] == 0x22.toByte() && bytes[1] == 8.toByte()
+
     private fun decodeBase64Lenient(value: String): ByteArray? {
-        val flags = Base64.NO_WRAP or Base64.NO_PADDING
-        try {
-            return Base64.decode(value, Base64.URL_SAFE or flags)
-        } catch (_: Throwable) {
-        }
         return try {
-            Base64.decode(value.replace('-', '+').replace('_', '/'), Base64.DEFAULT)
+            java.util.Base64.getDecoder().decode(value.replace('-', '+').replace('_', '/').filterNot { it.isWhitespace() })
         } catch (ex: Throwable) {
-            Logger.w(TAG, "Not valid base64 in either alphabet: '${value.take(16)}...' (${value.length} chars)", ex)
+            Logger.w(TAG, "Po token is not valid base64 (${value.length} chars)")
             null
         }
     }
