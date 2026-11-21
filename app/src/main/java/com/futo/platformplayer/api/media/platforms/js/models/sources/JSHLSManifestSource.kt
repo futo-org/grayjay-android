@@ -10,8 +10,8 @@ import com.futo.platformplayer.getOrNull
 import com.futo.platformplayer.getOrThrow
 
 class JSHLSManifestSource : IHLSManifestSource, JSSource {
-    override val width : Int = 0;
-    override val height : Int = 0;
+    override val width : Int;
+    override val height : Int;
     override val container : String get() = "application/vnd.apple.mpegurl";
     override val codec: String = "HLS";
     override val name : String;
@@ -31,6 +31,8 @@ class JSHLSManifestSource : IHLSManifestSource, JSSource {
         name = _obj.getOrThrow(config, "name", contextName);
         url = _obj.getOrThrow(config, "url", contextName);
         duration = _obj.getOrThrow<Int>(config, "duration", contextName).toLong();
+        width = _obj.getOrNull<Int>(config, "width", contextName) ?: 0;
+        height = _obj.getOrNull<Int>(config, "height", contextName) ?: 0;
 
         priority = obj.getOrNull(config, "priority", contextName) ?: false;
 
