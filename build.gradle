@@ -6,3 +6,7 @@ plugins {
     id 'com.google.protobuf' version '0.9.5' apply false
     id 'com.google.devtools.ksp' version '2.2.21-2.0.4' apply false
 }
+dependencies {
+  val taskerLibraryVersion = "0.4.10"
+  implementation("com.joaomgcd:taskerpluginlibrary:$taskerLibraryVersion")
+}
