@@ -65,6 +65,7 @@ class PackageBrowser: V8Package {
     private var _readySemaphore: Semaphore? = null;
     @Transient
     private val _callbacks = mutableMapOf<String, (String?)->Unit>();
+    private val _callbackFunctions = mutableMapOf<String, V8ValueFunction>();
     @Transient
     private var _browser: WebView? = null;
     private val browser: WebView get() {
@@ -261,6 +262,7 @@ class PackageBrowser: V8Package {
     }
     @V8Function
     fun deinitialize() {
+        clearCallbacks()
         StateApp.instance.scopeOrNull?.launch(Dispatchers.Main) {
             _browser?.destroy();
         }
@@ -300,6 +302,7 @@ class PackageBrowser: V8Package {
 
     @V8Function
     fun load(url: String) {
+        clearCallbacks()
         Logger.i("PackageBrowser", "Browser loading url [$url]")
         val token = UUID.randomUUID().toString()
         _loadToken = token
@@ -325,15 +328,18 @@ class PackageBrowser: V8Package {
     @V8Function
     fun run(js: String, callbackId: String? = null, callback: V8ValueFunction? = null) {
         waitTillLoaded();
-        val funcClone = callback?.toClone<V8ValueFunction>()
         if(callbackId != null && callback != null) {
+            val funcClone = callback.toClone<V8ValueFunction>()
             synchronized(_callbacks) {
+                _callbackFunctions.put(callbackId, funcClone)?.let { JavetResourceUtils.safeClose(it) }
                 _callbacks.put(callbackId, {
-                    _plugin.busy {
-                        funcClone?.callVoid(null, arrayOf(it));
+                    val fn = synchronized(_callbacks) {
+                        if (_callbackFunctions[callbackId] === funcClone) _callbackFunctions.remove(callbackId) else null
                     }
-                    if (!_plugin.isStopped)
-                        JavetResourceUtils.safeClose(funcClone);
+                    _plugin.busy {
+                        try { fn?.callVoid(null, arrayOf(it)) }
+                        finally { JavetResourceUtils.safeClose(fn) }
+                    }
                 });
             }
         }
@@ -356,6 +362,16 @@ class PackageBrowser: V8Package {
             }
         }
     }
+
+    private fun clearCallbacks() {
+        val functions = synchronized(_callbacks) {
+            _callbacks.clear()
+            _callbackFunctions.values.toList().also { _callbackFunctions.clear() }
+        }
+        if (!_plugin.isStopped) _plugin.busy {
+            functions.forEach { JavetResourceUtils.safeClose(it) }
+        }
+    }
     @V8Function
     fun runWithReturn(js: String, callback: V8ValueFunction? = null) {
         waitTillLoaded();
@@ -365,7 +381,7 @@ class PackageBrowser: V8Package {
                 Logger.i("PackageBrowser", "Browser running JS with callback [sync]\n${(if(js.length > 200) (js.substring(0, 200) + "...") else js)})");
                 browser.evaluateJavascript(js, object : ValueCallback<String> {
                     override fun onReceiveValue(value: String?) {
-                        Logger.i("PackageBrowser", "Browser run returned: " + (value ?: ""));
+                        Logger.i("PackageBrowser", "Browser run returned");
                         StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
                             Logger.i("PackageBrowser", "Invoking V8 with result (${funcClone != null})");
                             try {
@@ -506,7 +522,6 @@ class PackageBrowser: V8Package {
 
 
     private fun handleConsoleBridgeMessage(payload: String): Boolean {
-        Logger.i("PackageBrowser", "handleConsoleBridgeMessage: " + payload)
 
         val parsed = runCatching { _json.decodeFromString<ConsoleBridgeMsg>(payload) }.getOrNull()
             ?: return false

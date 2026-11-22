@@ -513,6 +513,8 @@ class HLSSource {
         this.name = obj.name ?? "HLS";
         this.duration = obj.duration ?? 0;
         this.url = obj.url;
+        this.width = obj.width ?? 0;
+        this.height = obj.height ?? 0;
         this.priority = obj.priority ?? false;
         if(obj.language)
             this.language = obj.language;

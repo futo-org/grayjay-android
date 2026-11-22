@@ -26,7 +26,7 @@ message ClientAbrState {
   optional int64 player_time_ms = 28;
   int64 time_since_last_seek_ms = 29;
   optional int64 visibility = 34;
-  int64 time_since_last_request_ms = 36;
+  optional int64 elapsed_wall_time_ms = 36;
   MediaCapabilities media_capabilities = 38;
   int64 time_since_last_action_ms = 39;
   MediaType enabled_track_types_bitfield = 40;
@@ -38,7 +38,7 @@ message ClientAbrState {
   bool is_prefetch = 61;
   bytes sabr_license_constraint = 63;
   int64 allow_proxima_live_latency = 64;
-  float playback_rate = 285;
+  float playback_rate = 35;
 }
 
 message MediaCapabilities {
