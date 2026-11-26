@@ -407,6 +407,7 @@ class StateSync {
                             existing.videos = playlist.videos;
                             existing.dateCreation = playlist.dateCreation;
                             existing.datePlayed = playlist.datePlayed;
+                            existing.sourceUrl = playlist.sourceUrl ?: existing.sourceUrl;
                             StatePlaylists.instance.createOrUpdatePlaylist(existing, false);
                         }
                     }
