@@ -300,6 +300,10 @@ class Settings : FragmentedStorageFileJson() {
     var subscriptions = SubscriptionsSettings();
     @Serializable
     class SubscriptionsSettings {
+        @FormField(R.string.subscription_swipe_action, FieldForm.DROPDOWN, R.string.subscription_swipe_action_description, 3)
+        @DropdownFieldOptionsId(R.array.subscription_swipe_action)
+        var subscriptionSwipeAction: Int = 1; //0 = Disabled, 1 = Swipe left (default), 2 = Swipe right
+
         @FormField(R.string.feed_style, FieldForm.DROPDOWN, R.string.may_require_restart, 4)
         @DropdownFieldOptionsId(R.array.feed_style)
         var subscriptionsFeedStyle: Int = 1;
