@@ -673,6 +673,9 @@
     <string name="unknown_file_format">Unknown file format</string>
     <string name="unknown_polycentric_format">Unknown Harbor format</string>
     <string name="unknown_url_format">Unknown url format</string>
+    <string name="this_link_has_a_video_and_a_playlist">This link has a video and a playlist</string>
+    <string name="open_video">Open video</string>
+    <string name="open_playlist">Open playlist</string>
     <string name="failed_to_handle_file">Failed to handle file</string>
     <string name="unknown_reconstruction_type">Unknown reconstruction type</string>
     <string name="failed_to_parse_text_file">Failed to parse text file</string>

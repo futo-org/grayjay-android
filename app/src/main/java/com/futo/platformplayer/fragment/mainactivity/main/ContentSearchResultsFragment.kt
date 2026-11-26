@@ -181,19 +181,10 @@ class ContentSearchResultsFragment : MainFragment() {
                     };
 
                     onSearch.subscribe(this) {
-                        if(it.isHttpUrl()) {
-                            if(StatePlatform.instance.hasEnabledPlaylistClient(it))
-                                navigate<RemotePlaylistFragment>(it);
-                            else if(StatePlatform.instance.hasEnabledChannelClient(it))
-                                navigate<ChannelFragment>(it);
-                            else {
-                                val url = it;
-                                activity?.let {
-                                    close()
-                                    if(it is MainActivity)
-                                        it.navigate(it.getFragment<VideoDetailFragment>(), url);
-                                }
-                            }
+                        val mainActivity = fragment.activity as MainActivity?;
+                        if(it.isHttpUrl() && mainActivity != null) {
+                            val url = it;
+                            mainActivity.lifecycleScope.launch { mainActivity.handleSearchUrl(url) };
                         }
                         else
                             setQuery(it, true);

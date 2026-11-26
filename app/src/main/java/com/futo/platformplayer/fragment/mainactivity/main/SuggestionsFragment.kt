@@ -20,6 +20,7 @@ import com.futo.platformplayer.stores.SearchHistoryStorage
 import com.futo.platformplayer.views.adapters.SearchSuggestionAdapter
 import com.futo.platformplayer.views.others.RadioGroupView
 import com.futo.platformplayer.views.others.TagsView
+import kotlinx.coroutines.launch
 
 data class SuggestionsFragmentData(val query: String, val searchType: SearchType);
 
@@ -51,7 +52,7 @@ class SuggestionsFragment : MainFragment {
         _adapterSuggestions.onClicked.subscribe { suggestion ->
             val storage = FragmentedStorage.get<SearchHistoryStorage>();
             storage.add(suggestion);
-            navigate<ContentSearchResultsFragment>(SuggestionsFragmentData(suggestion, _searchType));
+            search(suggestion);
         }
         _adapterSuggestions.onRemove.subscribe { suggestion ->
             val index = _suggestions.indexOf(suggestion);
@@ -117,22 +118,7 @@ class SuggestionsFragment : MainFragment {
         topBar?.apply {
             if (this is SearchTopBarFragment) {
                 onSearch.subscribe(this) {
-                    if(it.isHttpUrl()) {
-                        if(StatePlatform.instance.hasEnabledPlaylistClient(it))
-                            navigate<RemotePlaylistFragment>(it);
-                        else if(StatePlatform.instance.hasEnabledChannelClient(it))
-                            navigate<ChannelFragment>(it);
-                        else {
-                            val url = it;
-                            activity?.let {
-                                close()
-                                if(it is MainActivity)
-                                    it.navigate(it.getFragment<VideoDetailFragment>(), url);
-                            }
-                        }
-                    }
-                    else
-                        navigate<ContentSearchResultsFragment>(SuggestionsFragmentData(it, _searchType));
+                    search(it);
                 };
 
                 onTextChange.subscribe(this) {
@@ -153,6 +139,15 @@ class SuggestionsFragment : MainFragment {
             }
         }
     }
+
+    private fun search(query: String) {
+        val mainActivity = activity as MainActivity?;
+        if (query.isHttpUrl() && mainActivity != null)
+            mainActivity.lifecycleScope.launch { mainActivity.handleSearchUrl(query) };
+        else
+            navigate<ContentSearchResultsFragment>(SuggestionsFragmentData(query, _searchType));
+    }
+
     private fun setQuery(query: String) {
         _query = query;
         loadSuggestions();
