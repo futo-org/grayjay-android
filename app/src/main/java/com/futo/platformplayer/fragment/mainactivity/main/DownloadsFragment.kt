@@ -97,6 +97,7 @@ class DownloadsFragment : MainFragment() {
 
     private class DownloadsView : LinearLayout {
         private val TAG = "DownloadsView";
+        private val ACTIVE_DOWNLOADS_PREVIEW = 4;
         private val _frag: DownloadsFragment;
 
         private val _usageUsed: TextView;
@@ -106,6 +107,8 @@ class DownloadsFragment : MainFragment() {
         private val _listActiveDownloadsContainer: LinearLayout;
         private val _listActiveDownloadsMeta: TextView;
         private val _listActiveDownloads: LinearLayout;
+        private val _listActiveDownloadsToggle: TextView;
+        private var _showAllActiveDownloads = false;
 
         private val _listPlaylistsContainer: LinearLayout;
         private val _listPlaylistsMeta: TextView;
@@ -134,6 +137,11 @@ class DownloadsFragment : MainFragment() {
             _listActiveDownloadsMeta = findViewById(R.id.downloads_active_downloads_meta);
             _listDownloadSearch = findViewById(R.id.downloads_search);
             _listActiveDownloads = findViewById(R.id.downloads_active_downloads_list);
+            _listActiveDownloadsToggle = findViewById(R.id.downloads_active_downloads_toggle);
+            _listActiveDownloadsToggle.setOnClickListener {
+                _showAllActiveDownloads = !_showAllActiveDownloads;
+                reloadUI();
+            };
 
             _listPlaylistsContainer = findViewById(R.id.downloads_playlist_container);
             _listPlaylistsMeta = findViewById(R.id.downloads_playlist_meta);
@@ -202,9 +210,20 @@ class DownloadsFragment : MainFragment() {
                 _listActiveDownloadsContainer.visibility = VISIBLE;
                 _listActiveDownloadsMeta.text = "(${activeDownloads.size} videos)";
 
+                for(i in 0 until _listActiveDownloads.childCount)
+                    (_listActiveDownloads.getChildAt(i) as? ActiveDownloadItem)?.finalize();
                 _listActiveDownloads.removeAllViews();
-                for(view in activeDownloads.take(4).map { ActiveDownloadItem(context, it, _frag.lifecycleScope) })
+                val shown = if(_showAllActiveDownloads) activeDownloads else activeDownloads.take(ACTIVE_DOWNLOADS_PREVIEW);
+                for(view in shown.map { ActiveDownloadItem(context, it, _frag.lifecycleScope) })
                     _listActiveDownloads.addView(view);
+
+                if(activeDownloads.size > ACTIVE_DOWNLOADS_PREVIEW) {
+                    _listActiveDownloadsToggle.visibility = VISIBLE;
+                    _listActiveDownloadsToggle.text = if(_showAllActiveDownloads) context.getString(R.string.show_less)
+                        else context.getString(R.string.show_all_count, activeDownloads.size);
+                }
+                else
+                    _listActiveDownloadsToggle.visibility = GONE;
             }
 
             if(playlists.isEmpty() && watchLaterDownload == null)

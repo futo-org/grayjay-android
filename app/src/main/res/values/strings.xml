@@ -21,6 +21,8 @@
     <string name="hide_hidden_from_search_description">Hide videos and creators hidden from home also in search results</string>
     <string name="recommendations">Recommendations</string>
     <string name="more">More</string>
+    <string name="show_all_count">Show all (%1$d)</string>
+    <string name="show_less">Show less</string>
     <string name="playlists">Playlists</string>
     <string name="subscriptions">Subscriptions</string>
     <string name="loading">Loading</string>
