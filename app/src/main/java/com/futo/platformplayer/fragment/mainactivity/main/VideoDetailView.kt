@@ -2204,6 +2204,8 @@ class VideoDetailView : ConstraintLayout {
     @androidx.annotation.OptIn(UnstableApi::class)
     private fun onSourceChanged(videoSource: IVideoSource?, audioSource: IAudioSource?, resume: Boolean){
         Logger.i(TAG, "onSourceChanged(videoSource=$videoSource, audioSource=$audioSource, resume=$resume)")
+        _lastVideoSource = videoSource;
+        _lastAudioSource = audioSource;
 
         if((videoSource == null || videoSource is LocalVideoSource) && (audioSource == null || audioSource is LocalAudioSource)) {
             Logger.i(TAG, "Time since last offline playback toast: " + (System.currentTimeMillis() - _lastOfflinePlaybackToastTime).toString())

@@ -6,6 +6,7 @@ import com.caoccao.javet.values.V8Value
 import com.caoccao.javet.values.reference.V8ValueObject
 import com.futo.platformplayer.api.media.models.modifier.AdhocRequestModifier
 import com.futo.platformplayer.api.media.models.modifier.IRequestModifier
+import com.futo.platformplayer.api.media.models.streams.IVideoSourceDescriptor
 import com.futo.platformplayer.api.media.models.streams.sources.IAudioSource
 import com.futo.platformplayer.api.media.models.streams.sources.IVideoSource
 import com.futo.platformplayer.api.media.platforms.js.JSClient
@@ -31,6 +32,7 @@ abstract class JSSource {
     private val _requestModifier: JSRequest?;
 
     val hasRequestExecutor: Boolean;
+    val hasFallbackSource: Boolean;
     private val _requestExecutor: JSRequest?;
 
     val requiresCustomDatasource: Boolean get() {
@@ -65,6 +67,17 @@ abstract class JSSource {
         hasRequestModifier = parsedHasRequestModifier;
         _requestExecutor = parsedRequestExecutor;
         hasRequestExecutor = parsedHasRequestExecutor;
+        hasFallbackSource = plugin.busy { obj.has("getFallbackSource") };
+    }
+
+    fun getFallbackSource(): IVideoSourceDescriptor? = _plugin.busy {
+        if (!hasFallbackSource || _obj.isClosed)
+            return@busy null;
+
+        V8Plugin.catchScriptErrors(_config, "[${_config.name}] JSSource", "obj.getFallbackSource()") {
+            val result = _obj.invokeV8<V8Value>("getFallbackSource");
+            if (result is V8ValueObject) JSVideoSourceDescriptor.fromV8(_plugin, result) else null;
+        }
     }
 
     fun getRequestModifier(): IRequestModifier? = _obj.requireSourcePlugin("JSSource.getRequestModifier").busy {
