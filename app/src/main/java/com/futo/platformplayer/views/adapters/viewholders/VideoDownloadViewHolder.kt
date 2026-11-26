@@ -10,6 +10,7 @@ import android.widget.TextView
 import com.futo.platformplayer.*
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.constructs.Event1
+import com.futo.platformplayer.downloads.MissingDownloadActions
 import com.futo.platformplayer.downloads.VideoLocal
 import com.futo.platformplayer.images.GlideHelper.Companion.loadThumbnails
 import com.futo.platformplayer.states.StateApp
@@ -33,12 +34,20 @@ class VideoDownloadViewHolder(_viewGroup: ViewGroup) : AnyAdapter.AnyViewHolder<
     private val _videoDelete: LinearLayout = _view.findViewById(R.id.downloaded_video_delete);
     private val _videoExport: LinearLayout = _view.findViewById(R.id.button_export);
     private val _videoSize: TextView = _view.findViewById(R.id.downloaded_video_size);
+    private val _missingBadge: TextView = _view.findViewById(R.id.downloaded_missing_badge);
+    private val _thumbnailContainer: android.view.View = _view.findViewById(R.id.layout_video_thumbnail);
+    private val _textContainer: android.view.View = _view.findViewById(R.id.layout_text_container);
+    private var _isMissing = false;
 
     val onClick = Event1<VideoLocal>();
 
     init {
         _view.setOnClickListener {
-            _video?.let { onClick.emit(it) }
+            val v = _video ?: return@setOnClickListener;
+            if (_isMissing && _view.context is MainActivity)
+                MissingDownloadActions.show(_view.context as MainActivity, v);
+            else
+                onClick.emit(v);
         };
         _videoDelete.setOnClickListener {
             val id = _video?.id ?: return@setOnClickListener;
@@ -89,6 +98,16 @@ class VideoDownloadViewHolder(_viewGroup: ViewGroup) : AnyAdapter.AnyViewHolder<
         }
 
         _videoInfo.text = tokens.joinToString(" • ");
+
+        //Files can be missing (SD card out, file deleted). Keep the item, show it grey.
+        _isMissing = StateDownloads.instance.isMissing(value);
+        _missingBadge.visibility = if (_isMissing) android.view.View.VISIBLE else android.view.View.GONE;
+        _thumbnailContainer.alpha = if (_isMissing) 0.4f else 1f;
+        _textContainer.alpha = if (_isMissing) 0.5f else 1f;
+        _videoExport.visibility = if (_isMissing) android.view.View.GONE else android.view.View.VISIBLE;
+        _videoAddToQueue.visibility = if (_isMissing) android.view.View.GONE else android.view.View.VISIBLE;
+        if (_isMissing)
+            _videoInfo.text = "Missing: " + StateDownloads.instance.getMissingLocation(value);
 
         _videoImage.loadThumbnails(value.thumbnails, true) {
             it.placeholder(R.drawable.placeholder_video_thumbnail)

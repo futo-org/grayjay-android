@@ -19,6 +19,8 @@ class LocalAudioSource : IAudioSource, IStreamMetaDataSource {
 
     val filePath : String;
     val fileSize: Long;
+    /** [filePath] resolved against the current download folder. */
+    val absoluteFilePath: String get() = com.futo.platformplayer.states.StateDownloads.instance.resolveFile(filePath).absolutePath;
 
     //Only for particular videos
     override var streamMetaData: StreamMetaData? = null;
@@ -31,6 +33,13 @@ class LocalAudioSource : IAudioSource, IStreamMetaDataSource {
         this.filePath = filePath;
         this.language = language;
         this.fileSize = fileSize;
+    }
+
+    fun withFilePath(path: String): LocalAudioSource {
+        return LocalAudioSource(name, path, fileSize, bitrate, container, codec, language).also {
+            it.priority = priority;
+            it.streamMetaData = streamMetaData;
+        };
     }
 
     companion object {
