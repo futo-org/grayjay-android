@@ -223,6 +223,8 @@ class Settings : FragmentedStorageFileJson() {
         fun getHomeFeedStyle(): FeedStyle {
             if(homeFeedStyle == 0)
                 return FeedStyle.PREVIEW;
+            else if(homeFeedStyle == 2)
+                return FeedStyle.ACCESSIBILITY;
             else
                 return FeedStyle.THUMBNAIL;
         }
@@ -280,6 +282,8 @@ class Settings : FragmentedStorageFileJson() {
         fun getSearchFeedStyle(): FeedStyle {
             if(searchFeedStyle == 0)
                 return FeedStyle.PREVIEW;
+            else if(searchFeedStyle == 2)
+                return FeedStyle.ACCESSIBILITY;
             else
                 return FeedStyle.THUMBNAIL;
         }
@@ -307,6 +311,8 @@ class Settings : FragmentedStorageFileJson() {
         fun getSubscriptionsFeedStyle(): FeedStyle {
             if(subscriptionsFeedStyle == 0)
                 return FeedStyle.PREVIEW;
+            else if(subscriptionsFeedStyle == 2)
+                return FeedStyle.ACCESSIBILITY;
             else
                 return FeedStyle.THUMBNAIL;
         }
