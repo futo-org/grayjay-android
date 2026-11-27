@@ -224,41 +224,6 @@ class PackageBrowser: V8Package {
             }
         }
 
-        val bootstrap = """
-            (() => {
-              try {
-                if (window.__GJ) return;
-            
-                const PREFIX = ${CONSOLE_BRIDGE_PREFIX.quoteForJs()};
-                const emit = (obj) => {
-                  try {
-                    console.info(PREFIX + JSON.stringify(obj));
-                  } catch (_) {}
-                };
-            
-                Object.defineProperty(window, "__GJ", {
-                  value: {
-                    callback: (id, result) => {
-                      try {
-                        const r = (typeof result === "string")
-                          ? result
-                          : (() => { try { return JSON.stringify(result); } catch (_) { return String(result); } })();
-                        emit({ t: "cb", id: String(id), result: r });
-                      } catch (_) {}
-                    },
-                    log: (msg) => {
-                      try { emit({ t: "log", msg: String(msg) }); } catch (_) {}
-                    }
-                  },
-                  enumerable: false,
-                  configurable: false,
-                  writable: false
-                });
-              } catch (_) {}
-            })();
-            """.trimIndent()
-
-        addScriptOnLoad(bootstrap)
     }
     @V8Function
     fun deinitialize() {
@@ -328,6 +293,9 @@ class PackageBrowser: V8Package {
     @V8Function
     fun run(js: String, callbackId: String? = null, callback: V8ValueFunction? = null) {
         waitTillLoaded();
+        val script = if (callbackId != null && callback != null)
+            callbackScopePrefix + js.replace("window.__GJ", "__GJ") + "\n})();"
+        else js
         if(callbackId != null && callback != null) {
             val funcClone = callback.toClone<V8ValueFunction>()
             synchronized(_callbacks) {
@@ -347,7 +315,7 @@ class PackageBrowser: V8Package {
             try {
                 try {
                     Logger.i("PackageBrowser", "Browser running JS with callback [${callbackId}]\n${(if(js.length > 200) (js.substring(0, 200) + "...") else js)})");
-                    browser.evaluateJavascript(js, object : ValueCallback<String> {
+                    browser.evaluateJavascript(script, object : ValueCallback<String> {
                         override fun onReceiveValue(value: String?) {
                             Logger.i("PackageBrowser", "Browser run finished");
                         }
@@ -555,6 +523,24 @@ class PackageBrowser: V8Package {
 
     private companion object {
         private const val CONSOLE_BRIDGE_PREFIX = "__GJ__:"
+        private val callbackScopePrefix = """
+            (() => {
+            const __GJ = (() => {
+              const PREFIX = ${CONSOLE_BRIDGE_PREFIX.quoteForJs()};
+              const emit = (obj) => { try { console.info(PREFIX + JSON.stringify(obj)); } catch (_) {} };
+              return {
+                callback: (id, result) => {
+                  try {
+                    const r = (typeof result === "string")
+                      ? result
+                      : (() => { try { return JSON.stringify(result); } catch (_) { return String(result); } })();
+                    emit({ t: "cb", id: String(id), result: r });
+                  } catch (_) {}
+                },
+                log: (msg) => { try { emit({ t: "log", msg: String(msg) }); } catch (_) {} }
+              };
+            })();
+            """.trimIndent() + "\n"
         private const val TAG = "PackageBrowser"
 
         private fun String.quoteForJs(): String {

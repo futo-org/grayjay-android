@@ -17,7 +17,6 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.C
 import androidx.media3.ui.PlayerControlView
@@ -206,7 +205,7 @@ class TvPlayerFragment : Fragment() {
                 loadVideo(refresh = true)
             }
         }
-        player.onDatasourceError.subscribe(this) { showError() }
+        player.onPlaybackError.subscribe(this) { showError() }
         player.onPlayChanged.subscribe(this) { playing ->
             playbackTracking.updateTracker(player.position, playing, true)
             val resumed = lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
@@ -219,10 +218,6 @@ class TvPlayerFragment : Fragment() {
             ?.player
             ?.addListener(
                 object : Player.Listener {
-                    override fun onPlayerError(error: PlaybackException) {
-                        showError()
-                    }
-
                     override fun onPlaybackStateChanged(state: Int) {
                         updateLoading()
                         if (state == Player.STATE_READY || state == Player.STATE_ENDED) firstLoadHint?.visibility = View.GONE
@@ -296,7 +291,7 @@ class TvPlayerFragment : Fragment() {
         sidePanel = null
         playerView?.let { player ->
             listener?.let { player.exoPlayer?.player?.removeListener(it) }
-            player.onDatasourceError.remove(this)
+            player.onPlaybackError.remove(this)
             player.onPlayChanged.remove(this)
             player.onReloadRequired.remove(this)
             player.loaderGameVisibilityChanged.remove(this)

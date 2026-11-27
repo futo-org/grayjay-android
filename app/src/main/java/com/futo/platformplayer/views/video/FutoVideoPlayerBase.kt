@@ -100,8 +100,10 @@ import com.futo.platformplayer.views.video.datasources.PluginMediaDrmCallback
 import com.futo.platformplayer.views.video.datasources.JSHttpDataSource
 import getHttpDataSourceFactory
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -114,6 +116,8 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     private val TAG = "FutoVideoPlayerBase"
 
     private var _mediaSource: MediaSource? = null;
+    private var _fallbackJob: Job? = null;
+    private var _fallbackAttempts = 0;
 
     var lastVideoSource: IVideoSource? = null
         private set;
@@ -166,6 +170,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     val onStateChange = Event1<Int>();
     val onPositionDiscontinuity = Event1<Long>();
     val onDatasourceError = Event1<Throwable>();
+    val onPlaybackError = Event1<PlaybackException>();
 
     val onReloadRequired = Event0();
 
@@ -348,6 +353,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     }
 
     fun changePlayer(newPlayer: PlayerManager?) {
+        if (exoPlayer !== newPlayer) _fallbackJob?.cancel();
         exoPlayer?.modifyState(exoPlayerStateName, {state -> state.listener = null});
         newPlayer?.modifyState(exoPlayerStateName, {state -> state.listener = _playerEventListener});
         exoPlayer = newPlayer;
@@ -426,6 +432,11 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         swapSources(videoSource, audioSource,resume, play, keepSubtitles);
     }
     suspend fun swapSources(videoSource: IVideoSource?, audioSource: IAudioSource?, resume: Boolean = true, play: Boolean = true, keepSubtitles: Boolean = false): Boolean {
+        _fallbackJob?.cancel();
+        _fallbackAttempts = 0;
+        return swapSourcesInternal(videoSource, audioSource, resume, play, keepSubtitles);
+    }
+    private suspend fun swapSourcesInternal(videoSource: IVideoSource?, audioSource: IAudioSource?, resume: Boolean, play: Boolean, keepSubtitles: Boolean): Boolean {
         val didSet = withContext(Dispatchers.IO) {
             var videoSourceUsed = videoSource;
             var audioSourceUsed = audioSource;
@@ -452,6 +463,8 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         }
     }
     suspend fun swapSource(videoSource: IVideoSource?, resume: Boolean = true, play: Boolean = true): Boolean {
+        _fallbackJob?.cancel();
+        _fallbackAttempts = 0;
         val didSet = withContext(Dispatchers.IO) {
             var videoSourceUsed = videoSource;
             if (videoSource is JSDashManifestRawSource && lastVideoSource is JSDashManifestMergingRawSource)
@@ -466,6 +479,8 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
         }
     }
     suspend fun swapSource(audioSource: IAudioSource?, resume: Boolean = true, play: Boolean = true): Boolean {
+        _fallbackJob?.cancel();
+        _fallbackAttempts = 0;
         withContext(Dispatchers.IO) {
             if (audioSource is JSDashManifestRawAudioSource && lastVideoSource is JSDashManifestMergingRawSource)
                 swapSourceInternal(JSDashManifestMergingRawSource((lastVideoSource as JSDashManifestMergingRawSource).video, audioSource), play, resume);
@@ -1135,6 +1150,8 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     }
 
     fun clear() {
+        _fallbackJob?.cancel();
+        _fallbackAttempts = 0;
         exoPlayer?.player?.stop();
         exoPlayer?.player?.clearMediaItems();
         setLoading(false)
@@ -1148,6 +1165,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     }
 
     fun stop(){
+        _fallbackJob?.cancel();
         exoPlayer?.player?.stop();
     }
     fun pause(){
@@ -1167,6 +1185,57 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
 
     @Suppress("DEPRECATION")
     protected open fun onPlayerError(error: PlaybackException) {
+        if (tryFallbackSource(error)) return;
+        handlePlaybackError(error);
+    }
+
+    private fun tryFallbackSource(error: PlaybackException): Boolean {
+        if (_fallbackJob?.isActive == true) return true;
+        if (_fallbackAttempts >= MAX_SOURCE_FALLBACKS) return false;
+        val source = listOfNotNull(
+            lastVideoSource as? JSSource,
+            lastAudioSource as? JSSource,
+            (lastVideoSource as? JSDashManifestMergingRawSource)?.audio
+        ).firstOrNull { it.hasFallbackSource } ?: return false;
+        val scope = findViewTreeLifecycleOwner()?.lifecycle?.coroutineScope ?: return false;
+        val player = exoPlayer ?: return false;
+        val videoSwap = _swapIdVideo.get();
+        val audioSwap = _swapIdAudio.get();
+        fun isCurrent() = exoPlayer === player && _swapIdVideo.get() == videoSwap && _swapIdAudio.get() == audioSwap;
+
+        _fallbackAttempts++;
+        _fallbackJob = scope.launch {
+            try {
+                val fallback = withContext(Dispatchers.IO) { source.getFallbackSource() };
+                if (!isCurrent()) return@launch;
+                if (fallback == null) {
+                    handlePlaybackError(error);
+                    return@launch;
+                }
+                val video = VideoHelper.selectBestVideoSource(fallback,
+                    Settings.instance.playback.getCurrentPreferredQualityPixelCount(), PREFERED_VIDEO_CONTAINERS);
+                val audio = VideoHelper.selectBestAudioSource(fallback, PREFERED_AUDIO_CONTAINERS,
+                    Settings.instance.playback.getPrimaryLanguage(context));
+                if (video == null && audio == null) {
+                    handlePlaybackError(error);
+                    return@launch;
+                }
+                clearAudioTrackSelection();
+                Logger.i(TAG, "Switching to plugin fallback source");
+                swapSourcesInternal(video, audio, resume = true,
+                    play = player.player.playWhenReady, keepSubtitles = true);
+            } catch (cancelled: CancellationException) {
+                throw cancelled;
+            } catch (failure: Throwable) {
+                Logger.w(TAG, "Failed to load plugin fallback source", failure);
+                if (exoPlayer === player) handlePlaybackError(error);
+            }
+        };
+        return true;
+    }
+
+    @Suppress("DEPRECATION")
+    private fun handlePlaybackError(error: PlaybackException) {
         Logger.i(TAG, "onPlayerError error=$error error.errorCode=${error.errorCode} connectivityLoss, cause=${error.cause}");
 
         if(error is BehindLiveWindowException) {
@@ -1212,6 +1281,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
                 Logger.i(TAG, "IO error, set _shouldPlaybackRestartOnConnectivity=true _connectivityLossTime_ms=$_connectivityLossTime_ms");
             }
         }
+        onPlaybackError.emit(error);
     }
 
     protected open fun onVideoSizeChanged(videoSize: VideoSize) {
@@ -1236,6 +1306,7 @@ abstract class FutoVideoPlayerBase : RelativeLayout {
     protected open fun setLoading(expectedDurationMs: Int) { }
 
     companion object {
+        private const val MAX_SOURCE_FALLBACKS = 3;
         val DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0";
         private const val SABR_BACKOFF_UI_THRESHOLD_MS = 1500L;
         const val SABR_CALL_TIMEOUT_MS = 0L;
