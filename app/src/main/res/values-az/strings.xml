@@ -191,7 +191,7 @@
     <string name="send_your_identity_to_another_app">Kimliyinizi başqa tətbiqə göndərin</string>
     <string name="copy">Kopyala</string>
     <string name="copy_your_identity_to_clipboard">Kimliyinizi mübadilə buferinə kopyalayın</string>
-    <string name="polycentric">Polycentric</string>
+    <string name="polycentric">Harbor</string>
     <string name="harbor">Harbor</string>
     <string name="platform">Platforma</string>
     <string name="profile_name">Profil adı</string>
@@ -490,6 +490,9 @@
     <string name="watch_later_add_start">Yeni videoları Daha sonra izlə siyahısının əvvəlinə əlavə et</string>
     <string name="watch_later_add_start_description">Daha sonra izlə siyahısına videolar əlavə edərkən onları sonuna deyil, siyahının əvvəlinə əlavə edin</string>
     <string name="already_in_watch_later">Artıq daha sonra izlə siyahısındadır</string>
+    <string name="added_to_playlist">Pleylistə əlavə edildi [%1$s]</string>
+    <string name="video_already_in_playlist">Video artıq pleylistdədir [%1$s]</string>
+    <string name="playlist_no_longer_exists">Pleylist [%1$s] artıq mövcud deyil</string>
     <string name="enable_polycentric">Harbor-u aktivləşdir</string>
     <string name="can_be_disabled_when_you_are_experiencing_issues">Problemlərlə qarşılaşdıqda bağlana bilər</string>
     <string name="bypass_rotation_prevention_description">Video olmayan görünüşlərdə fırlanmaya icazə verir.\nXƏBƏRDARLIQ: Bunun üçün nəzərdə tutulmayıb</string>
@@ -537,6 +540,7 @@
     <string name="the_author">müəllif</string>
     <string name="reinstall_embedded_plugins">Yerləşdirilmiş plaginləri yenidən quraşdır</string>
     <string name="remove_cached_version">Keşlənmiş versiyanı sil</string>
+    <string name="remove_the_last_downloaded_version">Son yüklənilmiş versiyanı sil</string>
     <string name="clear_hidden">Gizliləri təmizlə</string>
     <string name="clear_hidden_description">Bütün gizli yaradıcıları və videoları silir, onları yenidən göstərir</string>
     <string name="reset_announcements">Elanları sıfırla</string>
@@ -564,7 +568,7 @@
     <string name="subscription_concurrency">Abunəlik eyniliyi</string>
     <string name="track_playtime_locally">Oynatma vaxtını yerli olaraq izlə</string>
     <string name="track_playtime_locally_description">Abunəliklərin sıralanması və yerli yaradıcı tövsiyələri üçün istifadə olunan abunəliklərin oynatma vaxtını yerli olaraq izləyin.</string>
-    <string name="show_watch_metrics">İzləmə metrikalarını göstər</string>
+    <string name="show_watch_metrics">İzləmə göstəricilərini göstər</string>
     <string name="show_watch_metrics_description">Yaradıcılar vərəqində hər bir yaradıcının izləmə vaxtını və baxışlarını göstərir</string>
     <string name="this_prevents_the_device_from_rotating_within_the_given_amount_of_degrees">Bu, cihazın verilən dərəcə miqdarında fırlanmasının qarşısını alır</string>
     <string name="use_the_live_chat_web_window_when_available_over_native_implementation">Mövcud olduqda yerli tətbiq əvəzinə canlı söhbət veb pəncərəsindən istifadə edin</string>
@@ -676,6 +680,8 @@
     <string name="failed_to_generate_qr_code">QR kod yaradılmadı</string>
     <string name="share_text">Mətni paylaş</string>
     <string name="copied_text">Kopyalanmış mətn</string>
+    <string name="copy_details">Təfərrüatları kopyala</string>
+    <string name="details_copied">Təfərrüatlar kopyalandı</string>
     <string name="must_be_at_least_3_characters_long">Ən azı 3 simvol uzunluğunda olmalıdır.</string>
     <string name="failed_to_create_profile">Profil yaradılmadı.</string>
     <string name="failed_to_delete_profile">Profil silinmədi.</string>
@@ -691,6 +697,8 @@
     <string name="are_you_sure_you_want_to_remove_this_profile">Bu profili silmək istədiyinizə əminsinizmi?</string>
     <string name="no_process_handle_set">Heç bir proses dəstəyi təyin edilməyib</string>
     <string name="name_must_be_at_least_3_characters_long">Ad ən azı 3 simvol uzunluğunda olmalıdır</string>
+    <string name="name_is_too_long">Ad çox uzundur</string>
+    <string name="name_is_invalid">Ad yanlışdır</string>
     <string name="process_handle_unset">Proses dəstəyi təyin edilməyib</string>
     <string name="failed_to_read_image">Şəkil oxunmadı</string>
     <string name="changes_have_been_saved">Dəyişikliklər saxlanıldı</string>
@@ -906,6 +914,11 @@
     <string name="polycentric_migration_complete_multiple">Polycentric profilləriniz Harbor-a köçürüldü. Profil şəkillərinizi yenidən yükləməli olacaqsınız.</string>
     <string name="polycentric_migration_failed">Polycentric profiliniz Harbor-a köçürülə bilmədi</string>
     <string name="polycentric_migration_not_found">Bu profil üçün heç bir Harbor hesabı tapılmadı.</string>
+    <string name="polycentric_migration_already_claimed">Polycentric profiliniz başqa cihazda köçürüldüyü üçün Harbor-a köçürülə bilmədi. Bunun əvəzinə bu cihazı həmin cihazdan cütləşdirin.</string>
+    <string name="polycentric_migration_create_new">Yeni yarat</string>
+    <string name="import_polycentric_profile">Polycentric profilini idxal et</string>
+    <string name="import_polycentric_profile_description">Polycentric-dən ixrac edilmiş profili Harbor-a köçür</string>
+    <string name="choose_an_import_option">İdxal seçimi seçin</string>
     <string name="harbor_moderation_settings">Moderasiya tənzimləmələri</string>
     <string name="harbor_moderation_settings_description">Polycentric şərhləri üçün moderasiya tənzimləmələrini təyin edin</string>
     <string name="harbor_servers">Serverlər</string>
