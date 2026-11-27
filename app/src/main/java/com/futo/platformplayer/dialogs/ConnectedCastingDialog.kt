@@ -176,6 +176,10 @@ class ConnectedCastingDialog(context: Context?) : AlertDialog(context) {
                 _imageDevice.setImageResource(R.drawable.ic_fc)
                 _textType.text = "FCast";
             }
+            CastProtocolType.DLNA -> {
+                _imageDevice.setImageResource(R.drawable.ic_cast)
+                _textType.text = "DLNA";
+            }
         }
 
         _textName.text = d.name;
