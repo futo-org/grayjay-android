@@ -1,6 +1,8 @@
 package com.futo.platformplayer.views.overlays
 
 import android.animation.LayoutTransition
+import android.app.Activity
+import android.content.ContextWrapper
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
@@ -438,6 +440,12 @@ class LiveChatOverlay : LinearLayout {
     fun setRaid(raid: LiveEventRaid?) {
         _currentRaid = raid;
         _scope?.launch(Dispatchers.Main) {
+            var ctx: Context? = context;
+            while (ctx is ContextWrapper && ctx !is Activity)
+                ctx = ctx.baseContext;
+            val activity = ctx as? Activity;
+            if (activity == null || activity.isFinishing || activity.isDestroyed)
+                return@launch;
             _overlayRaid_Name.text = raid?.targetName ?: "";
             Glide.with(_overlayRaid_Thumbnail).clear(_overlayRaid_Thumbnail);
             if(raid != null) {

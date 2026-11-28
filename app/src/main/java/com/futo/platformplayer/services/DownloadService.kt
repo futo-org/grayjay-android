@@ -1,5 +1,6 @@
 package com.futo.platformplayer.services
 
+import android.app.ActivityManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -28,6 +29,8 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
@@ -50,6 +53,7 @@ class DownloadService : Service() {
     private var _notificationManager: NotificationManager? = null;
     private var _notificationChannel: NotificationChannel? = null;
     private var _isForeground = false
+    private var _foregroundFailed = false
 
     private lateinit var _client: ManagedHttpClient
 
@@ -60,6 +64,10 @@ class DownloadService : Service() {
         synchronized(this) {
             if(_started)
                 return START_NOT_STICKY;
+            if(_foregroundFailed) {
+                stopSelf()
+                return START_NOT_STICKY;
+            }
 
             if(!FragmentedStorage.isInitialized) {
                 Logger.i(TAG, "Attempted to start DownloadService without initialized files")
@@ -89,6 +97,9 @@ class DownloadService : Service() {
                     .connectTimeout(Duration.ofSeconds(100))
                     .callTimeout(Duration.ofMinutes(0)))
                 doDownloading();
+            }
+            catch(ex: CancellationException) {
+                Logger.i(TAG, "Download session cancelled: ${ex.message}");
             }
             catch(ex: Throwable) {
                 try {
@@ -142,12 +153,34 @@ class DownloadService : Service() {
             .setSilent(true)
             .build()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
-            startForeground(DOWNLOAD_NOTIF_ID, bootstrapNotif, FOREGROUND_SERVICE_TYPE_DATA_SYNC)
-        else
-            startForeground(DOWNLOAD_NOTIF_ID, bootstrapNotif)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+                startForeground(DOWNLOAD_NOTIF_ID, bootstrapNotif, FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+            else
+                startForeground(DOWNLOAD_NOTIF_ID, bootstrapNotif)
+            _isForeground = true
+        }
+        catch (ex: Throwable) {
+            Logger.e(TAG, "Failed to start foreground download service", ex)
+            _foregroundFailed = true
+            stopSelf()
+        }
+    }
 
-        _isForeground = true
+    override fun onTimeout(startId: Int, fgsType: Int) {
+        Logger.w(TAG, "Foreground service timeout reached (type=$fgsType), stopping downloads")
+        try {
+            StateAnnouncement.instance.registerAnnouncementSession(
+                Announcement(
+                    "downloadServiceTimeout",
+                    "Downloads paused",
+                    "Android limits background downloads to 6 hours per day. Open Grayjay to continue downloading.",
+                    AnnouncementType.SESSION,
+                    OffsetDateTime.now()
+                )
+            );
+        } catch (_: Throwable) {}
+        closeDownloadSession()
     }
 
     override fun onBind(p0: Intent?): IBinder? {
@@ -164,6 +197,7 @@ class DownloadService : Service() {
                 doDownload(currentVideo);
             }
             catch(ex: SocketException) {
+                requeueIfInterrupted(currentVideo, ex);
                 var msg = ex.message;
                 if(ex.message == "Software caused connection abort")
                     msg = "Downloading disabled on current network";
@@ -177,6 +211,7 @@ class DownloadService : Service() {
                 delay(500);
             }
             catch(ex: Throwable) {
+                requeueIfInterrupted(currentVideo, ex);
                 //if(ex is ScriptReloadRequiredException)
                 Logger.e(TAG, "Download failed", ex);
                 if(currentVideo.video == null && currentVideo.videoDetails == null) {
@@ -217,6 +252,17 @@ class DownloadService : Service() {
         stopService(this);
     }
 
+
+    private suspend fun requeueIfInterrupted(download: VideoDownload, ex: Throwable) {
+        if(currentCoroutineContext().isActive)
+            return;
+        Logger.i(TAG, "Download [${download.name}] interrupted: ${ex.message}");
+        if(!download.isCancelled) {
+            download.changeState(VideoDownload.State.QUEUED);
+            StateDownloads.instance.updateDownloading(download);
+        }
+        throw if(ex is CancellationException) ex else CancellationException("Download service stopped").apply { initCause(ex) };
+    }
 
     private suspend fun doDownload(download: VideoDownload) {
         if(!Settings.instance.downloads.shouldDownload())
@@ -321,11 +367,16 @@ class DownloadService : Service() {
         if (_isForeground) {
             _notificationManager?.notify(DOWNLOAD_NOTIF_ID, notif)
         } else {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
-                startForeground(DOWNLOAD_NOTIF_ID, notif, FOREGROUND_SERVICE_TYPE_DATA_SYNC)
-            else
-                startForeground(DOWNLOAD_NOTIF_ID, notif)
-            _isForeground = true
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+                    startForeground(DOWNLOAD_NOTIF_ID, notif, FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+                else
+                    startForeground(DOWNLOAD_NOTIF_ID, notif)
+                _isForeground = true
+            }
+            catch (ex: Throwable) {
+                Logger.e(TAG, "Failed to promote download service to foreground", ex)
+            }
         }
     }
 
@@ -358,16 +409,34 @@ class DownloadService : Service() {
                 return;
             if(StateDownloads.instance.getDownloading().isEmpty())
                 return
+            if(_instance == null && !isAppInForeground()) {
+                Logger.i("DownloadService", "Not starting download service while app is in background");
+                return
+            }
             if(_instance == null) {
                 _callOnStarted = handle;
                 val intent = Intent(context, DownloadService::class.java);
-                context.startForegroundService(intent);
+                try {
+                    context.startForegroundService(intent);
+                }
+                catch (ex: Throwable) {
+                    _callOnStarted = null;
+                    Logger.e("DownloadService", "Failed to start download service", ex);
+                }
             }
             else _instance?.let {
                 if(handle != null)
                     handle(it);
             }
         }
+        private fun isAppInForeground(): Boolean {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S)
+                return true
+            val info = ActivityManager.RunningAppProcessInfo()
+            ActivityManager.getMyMemoryState(info)
+            return info.importance <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
+        }
+
         @Synchronized
         fun getService() : DownloadService? {
             return _instance;

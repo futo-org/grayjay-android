@@ -354,14 +354,18 @@ class PackageBrowser: V8Package {
                             Logger.i("PackageBrowser", "Invoking V8 with result (${funcClone != null})");
                             try {
                                 _plugin.busy {
-                                    if (value != null) {
-                                        val json = _json.decodeFromString<String>(value);
-                                        funcClone?.callVoid(null, arrayOf(json));
-                                    } else
-                                        funcClone?.callVoid(null, arrayOf((null as String?)));
+                                    try {
+                                        if (value != null) {
+                                            val json = _json.decodeFromString<String>(value);
+                                            funcClone?.callVoid(null, arrayOf(json));
+                                        } else
+                                            funcClone?.callVoid(null, arrayOf((null as String?)));
+                                    }
+                                    finally {
+                                        if (!_plugin.isStopped)
+                                            JavetResourceUtils.safeClose(funcClone);
+                                    }
                                 }
-                                if (!_plugin.isStopped)
-                                    JavetResourceUtils.safeClose(funcClone);
                             }
                             catch(ex: Throwable) {
                                 Logger.e("PackageBrowser", "Browser Failed to callback: " + ex.message, ex);

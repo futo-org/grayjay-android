@@ -327,7 +327,8 @@ class V8Plugin {
         unwedgeBusyHolder(context);
         if (_busyLock.tryLock(BUSY_RECOVERY_MS, TimeUnit.MILLISECONDS))
             return;
-        throw IllegalStateException("V8 busy lock for [${config.name}] timed out after ${maxWaitMs + BUSY_RECOVERY_MS}ms in $context; holder did not release after recovery");
+        val dump = logBusyContention("$context(fatal)");
+        throw IllegalStateException("V8 busy lock for [${config.name}] timed out after ${maxWaitMs + BUSY_RECOVERY_MS}ms in $context; holder did not release after recovery\n$dump");
     }
 
     private fun unwedgeBusyHolder(context: String) {
@@ -351,38 +352,41 @@ class V8Plugin {
         }
     }
 
-    private fun logBusyContention(context: String) {
-        try {
-            val holder = _busyHolder;
-            val sb = StringBuilder();
-            sb.append("V8 BUSY CONTENTION [${config.name}] in $context: queueLength=${_busyLock.queueLength}, holdCount=${_busyLock.holdCount}, waited>${BUSY_WARN_MS}ms\n");
-            if (holder != null) {
-                sb.append("Lock holder: ${holder.name} (id=${holder.id}, state=${holder.state})\n");
-                for (frame in holder.stackTrace.take(40))
-                    sb.append("  at ").append(frame.toString()).append("\n");
-            } else {
-                sb.append("Lock holder unknown (likely already released or never set)\n");
-            }
-            sb.append("Suspect waiting/blocked threads:\n");
-            val cur = Thread.currentThread();
-            for ((thread, stack) in Thread.getAllStackTraces()) {
-                if (thread == cur || thread == holder) continue;
-                if (thread.state != Thread.State.WAITING && thread.state != Thread.State.BLOCKED && thread.state != Thread.State.TIMED_WAITING) continue;
-                if (stack.none {
-                        val cn = it.className;
-                        cn.contains("V8Plugin") || cn.contains("JSClient") || cn.contains("Extensions_V8")
-                            || cn.contains("Subscription") || cn.contains("PackageHttp") || cn.contains("JSPager")
-                            || cn.contains("JSContent")
-                    }) continue;
-                sb.append("  ${thread.name} (state=${thread.state}):\n");
-                for (frame in stack.take(20))
-                    sb.append("    at ").append(frame.toString()).append("\n");
-            }
-            Logger.w(TAG, sb.toString());
+    private fun logBusyContention(context: String): String {
+        val dump = try {
+            buildBusyDump(context);
         }
         catch (ex: Throwable) {
-            Logger.e(TAG, "Failed to log busy contention", ex);
+            Logger.e(TAG, "Failed to build busy contention dump", ex);
+            return "";
         }
+        for (chunk in dump.chunked(3500))
+            Logger.w(TAG, chunk);
+        return dump;
+    }
+
+    private fun buildBusyDump(context: String): String {
+        val holder = _busyHolder;
+        val cur = Thread.currentThread();
+        val sb = StringBuilder();
+        sb.append("V8 BUSY CONTENTION [${config.name}] in $context: queueLength=${_busyLock.queueLength}, holdCount=${_busyLock.holdCount}, isLocked=${_busyLock.isLocked}\n");
+        sb.append("Waiting thread: ${cur.name} (id=${cur.id})\n");
+        val all = Thread.getAllStackTraces();
+        if (holder != null) {
+            sb.append("Lock holder: ${holder.name} (id=${holder.id}, state=${holder.state})\n");
+            for (frame in all[holder] ?: holder.stackTrace)
+                sb.append("  at ").append(frame.toString()).append("\n");
+        } else {
+            sb.append("Lock holder unknown\n");
+        }
+        sb.append("All threads (${all.size}):\n");
+        for ((thread, stack) in all.entries.sortedBy { it.key.name }) {
+            if (thread == holder) continue;
+            sb.append("\"${thread.name}\" id=${thread.id} state=${thread.state}${if (thread.isDaemon) " daemon" else ""}${if (thread == cur) " (waiter)" else ""}\n");
+            for (frame in stack)
+                sb.append("    at ").append(frame.toString()).append("\n");
+        }
+        return sb.toString();
     }
     fun execute(js: String) : V8Value {
         return executeTyped<V8Value>(js);

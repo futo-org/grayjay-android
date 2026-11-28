@@ -52,8 +52,8 @@ class VideoListEditorView : FrameLayout {
                     for (i in fromPosition downTo toPosition + 1)
                         Collections.swap(_videos, i, i - 1)
                 }
-                onVideoOrderChanged.emit(_videos.toList());
                 adapterVideos.notifyItemMoved(fromPosition, toPosition);
+                onVideoOrderChanged.emit(_videos.toList());
             }
         };
 
@@ -66,9 +66,9 @@ class VideoListEditorView : FrameLayout {
                     val index = _videos.indexOf(v);
                     if(index >= 0) {
                         _videos.removeAt(index);
+                        adapterVideos.notifyItemRemoved(index);
                         onVideoRemoved.emit(v);
                     }
-                    adapterVideos.notifyItemRemoved(index);
                 }
             }
 

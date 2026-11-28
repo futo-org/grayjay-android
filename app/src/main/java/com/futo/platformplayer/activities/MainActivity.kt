@@ -1,5 +1,6 @@
 package com.futo.platformplayer.activities
 
+import android.content.ActivityNotFoundException
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.UiModeManager
@@ -25,7 +26,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
-import androidx.constraintlayout.motion.widget.MotionLayout
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
@@ -112,6 +113,7 @@ import com.futo.platformplayer.states.StatePlayer
 import com.futo.platformplayer.states.StatePlaylists
 import com.futo.platformplayer.states.StateSubscriptions
 import com.futo.platformplayer.stores.FragmentedStorage
+import com.futo.platformplayer.services.DownloadService
 import com.futo.platformplayer.stores.StringStorage
 import com.futo.platformplayer.stores.SubscriptionStorage
 import com.futo.platformplayer.stores.v2.ManagedStore
@@ -147,7 +149,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
     private val HEIGHT_VIDEO_MINIMIZED_DP = 60f;
 
     //Containers
-    lateinit var rootView: MotionLayout;
+    lateinit var rootView: ConstraintLayout;
 
     private lateinit var _overlayContainer: FrameLayout;
     private lateinit var _toastView: ToastView;
@@ -312,6 +314,7 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         StateApp.instance.setGlobalContext(this, lifecycleScope, mainId);
         StateApp.instance.mainAppStarting(this);
 
+        stripFragmentState(savedInstanceState);
         super.onCreate(savedInstanceState);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val uiMode = getSystemService(UiModeManager::class.java)
@@ -568,7 +571,6 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         fragCurrent?.onShown(null, false);
 
         //Other stuff
-        rootView.progress = 0f;
 
         handleIntent(intent);
 
@@ -755,6 +757,13 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
         super.onResume();
         Logger.w(TAG, "onResume [$mainId]")
         _isVisible = true;
+
+        try {
+            if (FragmentedStorage.isInitialized && Settings.instance.downloads.shouldDownload() && DownloadService.getService() == null)
+                DownloadService.getOrCreateService(this);
+        } catch (e: Throwable) {
+            Logger.e(TAG, "Failed to resume downloads", e);
+        }
     }
 
     override fun onPause() {
@@ -1208,7 +1217,14 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState);
-        outState.remove(FRAGMENTS_TAG);
+        stripFragmentState(outState);
+    }
+
+    private fun stripFragmentState(state: Bundle?) {
+        if (state == null)
+            return;
+        state.remove(FRAGMENTS_TAG);
+        state.getBundle(SAVED_STATE_REGISTRY_TAG)?.remove(FRAGMENTS_TAG);
     }
 
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
@@ -1307,13 +1323,13 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
                     if (fragCurrent?.hasBottomBar ?: false)
                         transaction = transaction.hide(_fragBotBarMenu);
                 }
-                transaction.commitNow();
+                transaction.commitNowAllowingStateLoss();
             } else {
 
                 if (!segment.hasBottomBar) {
                     supportFragmentManager.beginTransaction()
                         .hide(_fragBotBarMenu)
-                        .commitNow();
+                        .commitNowAllowingStateLoss();
                 }
             }
 
@@ -1571,12 +1587,22 @@ class MainActivity : AppCompatActivity, IWithResultLauncher {
             resultLauncherMap[code] = handler;
         }
         requestCode = code;
-        resultLauncher.launch(intent);
+        try {
+            resultLauncher.launch(intent);
+        }
+        catch (ex: ActivityNotFoundException) {
+            synchronized(resultLauncherMap) {
+                resultLauncherMap.remove(code);
+            }
+            Logger.e(TAG, "No activity found for intent ${intent.action}", ex);
+            UIDialogs.toast(this, "No app found on this device to handle this action");
+        }
     }
 
     companion object {
         private val TAG = "MainActivity"
         private const val FRAGMENTS_TAG = "android:support:fragments"
+        private const val SAVED_STATE_REGISTRY_TAG = "androidx.lifecycle.BundlableSavedStateRegistry.key"
 
         fun getTabIntent(context: Context, tab: String): Intent {
             val sourcesIntent = Intent(context, MainActivity::class.java);

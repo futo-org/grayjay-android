@@ -360,18 +360,27 @@ class SubscriptionsFeedFragment : MainFragment() {
 
         private fun loadCache() {
             fragment.lifecycleScope.launch(Dispatchers.IO) {
-                val cachePager: IPager<IPlatformContent>;
+                var cachePager: IPager<IPlatformContent>? = null;
                 Logger.i(TAG, "Subscriptions retrieving cache");
                 val time = measureTimeMillis {
-                    cachePager = StateCache.instance.getSubscriptionCachePager();
+                    try {
+                        cachePager = StateCache.instance.getSubscriptionCachePager();
+                    }
+                    catch (ex: CancellationException) {
+                        throw ex;
+                    }
+                    catch (ex: Throwable) {
+                        Logger.e(TAG, "Failed to retrieve subscription cache", ex);
+                    }
                 }
+                val pager = cachePager ?: return@launch;
                 Logger.i(TAG, "Subscriptions retrieved cache (${time}ms)");
 
                 withContext(Dispatchers.Main) {
-                    val results = cachePager.getResults();
+                    val results = pager.getResults();
                     Logger.i(TAG, "Subscriptions show cache (${results.size})");
                     setEmptyPager(results.isEmpty());
-                    setPager(cachePager);
+                    setPager(pager);
                 }
             }
         }

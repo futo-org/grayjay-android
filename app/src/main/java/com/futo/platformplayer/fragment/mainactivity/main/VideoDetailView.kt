@@ -882,7 +882,7 @@ class VideoDetailView : ConstraintLayout {
         };
 
         onClose.subscribe {
-            _artworkTarget?.let { Glide.with(context).clear(it) }
+            _artworkTarget?.let { Glide.with(context.applicationContext).clear(it) }
             _artworkTarget = null
             _player.setArtwork(null)
             checkAndRemoveWatchLater();
@@ -1230,7 +1230,7 @@ class VideoDetailView : ConstraintLayout {
     fun onDestroy() {
         Logger.i(TAG, "onDestroy");
         _destroyed = true;
-        _artworkTarget?.let { Glide.with(context).clear(it) }
+        _artworkTarget?.let { Glide.with(context.applicationContext).clear(it) }
         _artworkTarget = null
         _player.setArtwork(null)
         _taskLoadVideo.cancel();
@@ -1972,7 +1972,7 @@ class VideoDetailView : ConstraintLayout {
                     _player.switchToVideoMode()
                     isAudioOnlyUserAction = false;
                 } else {
-                    _artworkTarget?.let { Glide.with(context).clear(it) }
+                    _artworkTarget?.let { Glide.with(context.applicationContext).clear(it) }
                     _artworkTarget = null
 
                     val thumbnail = video.thumbnails.getHQThumbnail()

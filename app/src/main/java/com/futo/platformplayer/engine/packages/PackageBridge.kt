@@ -145,40 +145,48 @@ class PackageBridge : V8Package {
     fun setTimeout(func: V8ValueFunction, timeout: Long): Int {
         val id = timeoutCounter++;
         val funcClone = func.toClone<V8ValueFunction>()
+        timeoutMap.put(id, true);
 
-        StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-            delay(timeout);
-            if (_plugin.isStopped)
-                return@launch;
-            if (!timeoutMap.containsKey(id)) {
-                _plugin.busy {
-                    if (!_plugin.isStopped)
-                        JavetResourceUtils.safeClose(funcClone);
-                }
-                return@launch;
-            }
+        val scope = StateApp.instance.scopeOrNull;
+        if (scope == null) {
             timeoutMap.remove(id);
+            JavetResourceUtils.safeClose(funcClone);
+            return id;
+        }
+
+        scope.launch(Dispatchers.IO) {
             try {
-                Logger.w(TAG, "setTimeout before busy (${timeout}): ${_plugin.isBusy}");
+                delay(timeout);
+                if (_plugin.isStopped)
+                    return@launch;
+                if (timeoutMap.remove(id) == null)
+                    return@launch;
                 _plugin.busy {
-                    Logger.w(TAG, "setTimeout in busy");
                     if (!_plugin.isStopped)
                         funcClone.callVoid(null, arrayOf<Any>());
-                    Logger.w(TAG, "setTimeout after");
                 }
+            } catch (ex: kotlinx.coroutines.CancellationException) {
+                throw ex;
             } catch (ex: Throwable) {
                 Logger.e(TAG, "Failed timeout callback", ex);
             } finally {
-                _plugin.busy {
-                    if (!_plugin.isStopped)
-                        JavetResourceUtils.safeClose(funcClone);
-                }
-                //_plugin.whenNotBusy {
-                //}
+                timeoutMap.remove(id);
+                releaseTimeoutCallback(funcClone);
             }
         };
-        timeoutMap.put(id, true);
         return id;
+    }
+    private fun releaseTimeoutCallback(funcClone: V8ValueFunction) {
+        if (_plugin.isStopped)
+            return;
+        try {
+            _plugin.busy {
+                if (!_plugin.isStopped)
+                    JavetResourceUtils.safeClose(funcClone);
+            }
+        } catch (ex: Throwable) {
+            Logger.e(TAG, "Failed to release timeout callback", ex);
+        }
     }
     @V8Function
     fun clearTimeout(id: Int) {

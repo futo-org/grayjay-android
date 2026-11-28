@@ -23,6 +23,8 @@ import com.bumptech.glide.Glide
 import com.futo.platformplayer.PresetImages
 import com.futo.platformplayer.R
 import com.futo.platformplayer.UIDialogs
+import com.futo.platformplayer.logging.Logger
+import android.webkit.MimeTypeMap
 import com.futo.platformplayer.activities.IWithResultLauncher
 import com.futo.platformplayer.activities.MainActivity
 import com.futo.platformplayer.api.media.models.channels.IPlatformChannel
@@ -122,13 +124,22 @@ class ImageVariableOverlay: ConstraintLayout {
                                 cleanupLastFile();
                                 val fileUri = it.data?.data;
                                 if(fileUri != null) {
-                                    val file = fileUri.toFile();
-                                    val ext = file.extension;
-                                    val persistFile = StateApp.instance.getPersistFile(ext);
-                                    file.copyTo(persistFile);
-                                    _selectedFile = persistFile.toUri().toString();
-                                    _selected = ImageVariable(_selectedFile);
-                                    updateSelected();
+                                    try {
+                                        val ext = if (fileUri.scheme == "file")
+                                            fileUri.toFile().extension;
+                                        else
+                                            MimeTypeMap.getSingleton().getExtensionFromMimeType(context.contentResolver.getType(fileUri)) ?: "jpg";
+                                        val persistFile = StateApp.instance.getPersistFile(ext);
+                                        val input = context.contentResolver.openInputStream(fileUri) ?: throw IllegalStateException("Unable to open $fileUri");
+                                        input.use { inp -> persistFile.outputStream().use { inp.copyTo(it) } };
+                                        _selectedFile = persistFile.toUri().toString();
+                                        _selected = ImageVariable(_selectedFile);
+                                        updateSelected();
+                                    }
+                                    catch(ex: Throwable) {
+                                        Logger.e("ImageVariableOverlay", "Failed to import image", ex);
+                                        UIDialogs.toast(context, "Failed to import image: ${ex.message}");
+                                    }
                                 }
                             }
                         };

@@ -33,11 +33,15 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.decodeFromStream
+import kotlinx.serialization.json.encodeToStream
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.InputStream
+import java.io.OutputStream
 import java.time.OffsetDateTime
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
@@ -283,8 +287,17 @@ class StateBackup {
                         UIDialogs.toast("Cancelled");
                         return@requestFileCreateAccess;
                     }
-                    it.writeBytes(activity, data.asZip());
-                    UIDialogs.toast("Export saved");
+                    StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
+                        try {
+                            val out = activity.contentResolver.openOutputStream(it.uri) ?: throw IllegalStateException("Unable to open ${it.uri}");
+                            out.buffered().use { stream -> data.writeZip(stream) };
+                            withContext(Dispatchers.Main) { UIDialogs.toast("Export saved"); }
+                        }
+                        catch(ex: Throwable) {
+                            Logger.e(TAG, "Failed to save export", ex);
+                            withContext(Dispatchers.Main) { UIDialogs.toast("Failed to save export: ${ex.message}"); }
+                        }
+                    }
                 };
         }
         fun shareExternalBackup() {
@@ -293,7 +306,7 @@ class StateBackup {
             val exportFile = File(
                 FragmentedStorage.getOrCreateDirectory("shares"),
                 "export_${now.year}-${now.monthValue.toString().padStart(2, '0')}-${now.dayOfMonth.toString().padStart(2, '0')}_${now.hour.toString().padStart(2, '0')}${now.minute.toString().padStart(2, '0')}.zip");
-            exportFile.writeBytes(data.asZip());
+            exportFile.outputStream().buffered().use { data.writeZip(it) };
 
             StateApp.instance.contextOrNull?.let {
                 val uri = FileProvider.getUriForFile(it, it.resources.getString(R.string.authority), exportFile);
@@ -389,6 +402,10 @@ class StateBackup {
             return export;
         }
 
+
+        fun readZip(input: InputStream): ExportStructure {
+            return ZipInputStream(input.buffered()).use { ExportStructure.fromZip(it) };
+        }
 
         fun importZipBytes(context: Context, scope: CoroutineScope, zipData: ByteArray) {
             val import: StateBackup.ExportStructure;
@@ -637,40 +654,47 @@ class StateBackup {
 
         fun asZip(): ByteArray {
             return ByteArrayOutputStream().use { byteStream ->
-                ZipOutputStream(byteStream).use { zipStream ->
-                    zipStream.putNextEntry(ZipEntry("exportInfo"));
-                    zipStream.write(Json.encodeToString(exportInfo).toByteArray());
-
-                    if(settings != null) {
-                        zipStream.putNextEntry(ZipEntry("settings"));
-                        zipStream.write(settings.toByteArray());
-                    }
-
-                    zipStream.putNextEntry(ZipEntry("stores/"));
-                    for(store in stores.mapValues { Json.encodeToString(it.value) }) {
-                        zipStream.putNextEntry(ZipEntry("stores/${store.key}"));
-                        zipStream.write(store.value.toByteArray());
-                    }
-
-                    zipStream.putNextEntry(ZipEntry("plugins"));
-                    zipStream.write(Json.encodeToString(plugins).toByteArray());
-
-                    zipStream.putNextEntry(ZipEntry("plugin_settings"));
-                    zipStream.write(Json.encodeToString(pluginSettings).toByteArray());
-
-                    if(cache != null) {
-                        if(cache?.videos != null) {
-                            zipStream.putNextEntry(ZipEntry("cache_videos"));
-                            zipStream.write(Json.encodeToString(cache!!.videos).toByteArray());
-                        }
-                        if(cache?.channels != null) {
-                            zipStream.putNextEntry(ZipEntry("cache_channels"));
-                            zipStream.write(Json.encodeToString(cache!!.channels).toByteArray());
-                        }
-                    }
-                };
-                return byteStream.toByteArray();
+                writeZip(byteStream);
+                byteStream.toByteArray();
             }
+        }
+
+        @OptIn(ExperimentalSerializationApi::class)
+        fun writeZip(output: OutputStream) {
+            val zipStream = ZipOutputStream(output);
+            zipStream.putNextEntry(ZipEntry("exportInfo"));
+            Json.encodeToStream(exportInfo, zipStream);
+
+            if(settings != null) {
+                zipStream.putNextEntry(ZipEntry("settings"));
+                zipStream.write(settings.toByteArray());
+            }
+
+            zipStream.putNextEntry(ZipEntry("stores/"));
+            for(store in stores) {
+                zipStream.putNextEntry(ZipEntry("stores/${store.key}"));
+                Json.encodeToStream(store.value, zipStream);
+            }
+
+            zipStream.putNextEntry(ZipEntry("plugins"));
+            Json.encodeToStream(plugins, zipStream);
+
+            zipStream.putNextEntry(ZipEntry("plugin_settings"));
+            Json.encodeToStream(pluginSettings, zipStream);
+
+            val c = cache;
+            if(c != null) {
+                if(c.videos != null) {
+                    zipStream.putNextEntry(ZipEntry("cache_videos"));
+                    Json.encodeToStream(c.videos, zipStream);
+                }
+                if(c.channels != null) {
+                    zipStream.putNextEntry(ZipEntry("cache_channels"));
+                    Json.encodeToStream(c.channels, zipStream);
+                }
+            }
+            zipStream.finish();
+            zipStream.flush();
         }
 
         companion object {
@@ -684,6 +708,7 @@ class StateBackup {
                     zip?.close();
                 }
             }
+            @OptIn(ExperimentalSerializationApi::class)
             fun fromZip(zipStream: ZipInputStream): ExportStructure {
                 var entry: ZipEntry?
 
@@ -701,13 +726,13 @@ class StateBackup {
                     try{
                         if(!entry!!.name.startsWith("stores/"))
                             when(entry!!.name) {
-                                "exportInfo" -> exportInfo = Json.decodeFromString(String(zipStream.readBytes()));
+                                "exportInfo" -> exportInfo = Json.decodeFromStream(zipStream);
                                 "settings" -> settings = String(zipStream.readBytes());
-                                "plugins" -> plugins = Json.decodeFromString(String(zipStream.readBytes()));
-                                "plugin_settings" -> pluginSettings = Json.decodeFromString(String(zipStream.readBytes()));
+                                "plugins" -> plugins = Json.decodeFromStream(zipStream);
+                                "plugin_settings" -> pluginSettings = Json.decodeFromStream(zipStream);
                                 "cache_videos" -> {
                                     try {
-                                        videoCache = Json.decodeFromString(String(zipStream.readBytes()));
+                                        videoCache = Json.decodeFromStream(zipStream);
                                     }
                                     catch(ex: Exception) {
                                         Logger.e(TAG, "Couldn't deserialize video cache", ex);
@@ -715,7 +740,7 @@ class StateBackup {
                                 };
                                 "cache_channels" -> {
                                     try {
-                                        channelCache = Json.decodeFromString(String(zipStream.readBytes()));
+                                        channelCache = Json.decodeFromStream(zipStream);
                                     }
                                     catch(ex: Exception) {
                                         Logger.e(TAG, "Couldn't deserialize channel cache", ex);
@@ -723,7 +748,7 @@ class StateBackup {
                                 };
                             }
                         else
-                            stores[entry!!.name.substring("stores/".length)] = Json.decodeFromString(String(zipStream.readBytes()));
+                            stores[entry!!.name.substring("stores/".length)] = Json.decodeFromStream(zipStream);
                     }
                     catch(ex: Throwable) {
                         throw IllegalStateException("Failed to parse zip [${entry?.name}] due to ${ex.message}");

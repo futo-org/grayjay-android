@@ -48,12 +48,16 @@ class ImportOptionsDialog: AlertDialog {
             dismiss();
             StateApp.instance.requestFileReadAccess(_context, null, "application/zip") {
                 StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-                    val zipBytes = it?.readBytes(context) ?: return@launch;
-                    withContext(Dispatchers.Main) {
-                        try {
-                            StateBackup.importZipBytes(_context, StateApp.instance.scope, zipBytes);
+                    val file = it ?: return@launch;
+                    try {
+                        val input = context.contentResolver.openInputStream(file.uri) ?: throw IllegalStateException("Unable to open ${file.uri}");
+                        val import = input.use { stream -> StateBackup.readZip(stream) };
+                        withContext(Dispatchers.Main) {
+                            StateBackup.import(_context, StateApp.instance.scope, import);
                         }
-                        catch(ex: Throwable) {
+                    }
+                    catch(ex: Throwable) {
+                        withContext(Dispatchers.Main) {
                             UIDialogs.toast("Failed to import, invalid format?\n" + ex.message);
                         }
                     }

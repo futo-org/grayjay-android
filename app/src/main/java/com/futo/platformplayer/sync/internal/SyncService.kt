@@ -274,7 +274,11 @@ class SyncService(
                     setAttribute("pk", pk.replace('+', '-').replace('/', '_').replace("=", ""))
                 }
 
-                nsdManager.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD, _registrationListener)
+                try {
+                    nsdManager.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD, _registrationListener)
+                } catch (e: SecurityException) {
+                    Logger.w(TAG, "mDNS broadcast unavailable", e)
+                }
             }
         }
 
@@ -325,8 +329,12 @@ class SyncService(
     }
 
     private fun startMdnsRetryLoop() {
-        _nsdManager?.apply {
-            discoverServices(serviceName, NsdManager.PROTOCOL_DNS_SD, _discoveryListener)
+        try {
+            _nsdManager?.apply {
+                discoverServices(serviceName, NsdManager.PROTOCOL_DNS_SD, _discoveryListener)
+            }
+        } catch (e: SecurityException) {
+            Logger.w(TAG, "mDNS discovery unavailable", e)
         }
 
         _scope?.launch(Dispatchers.IO) {

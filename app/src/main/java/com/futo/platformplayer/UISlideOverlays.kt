@@ -73,6 +73,7 @@ import com.futo.platformplayer.views.video.FutoVideoPlayerBase
 import isDownloadable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayInputStream
@@ -385,167 +386,177 @@ class UISlideOverlays {
             val slideUpMenuOverlay = SlideUpMenuOverlay(container.context, container, container.context.getString(R.string.download_video), null, true, items)
 
             StateApp.instance.scopeOrNull?.launch(Dispatchers.IO) {
-                val modifier = if (source is JSSource && source.hasRequestModifier) source.getRequestModifier() else null
-                val masterPlaylistResponse = ManagedHttpClient().get(sourceUrl, HashMap(), modifier)
-                if (!masterPlaylistResponse.isOk) {
-                    masterPlaylistResponse.close();
-                    throw IllegalStateException("Failed to get master playlist: ${masterPlaylistResponse.code}")
-                }
-
-                val masterPlaylistContent = masterPlaylistResponse.body?.string()
-                    ?: throw Exception("Master playlist content is empty")
-
-                val resolvedPlaylistUrl = masterPlaylistResponse.url
-
-                val videoButtons = arrayListOf<SlideUpMenuItem>()
-                val audioButtons = arrayListOf<SlideUpMenuItem>()
-                //TODO: Implement subtitles
-                //val subtitleButtons = arrayListOf<SlideUpMenuItem>()
-
-                var selectedVideoVariant: HLSVariantVideoUrlSource? = null
-                var selectedAudioVariant: HLSVariantAudioUrlSource? = null
-                //TODO: Implement subtitles
-                //var selectedSubtitleVariant: HLSVariantSubtitleUrlSource? = null
-
-                val masterPlaylist: HLS.MasterPlaylist
                 try {
-                    val inputStream = ByteArrayInputStream(masterPlaylistContent.toByteArray())
-                    val playlist = DefaultHlsPlaylistParserFactory().createPlaylistParser()
-                        .parse(sourceUrl.toUri(), inputStream)
-
-                    if (playlist is HlsMediaPlaylist) {
-                        if (source is IHLSManifestAudioSource) {
-                            val variant = HLS.mediaRenditionToVariant(MediaRendition("AUDIO", playlist.baseUri, "Single Playlist", null, null, null, null, null))!!
-
-                            val estSize = VideoHelper.estimateSourceSize(variant);
-                            val prefix = if(estSize > 0) "±" + estSize.toHumanBytesSize() + " " else "";
-                            audioButtons.add(SlideUpMenuItem(
-                                container.context,
-                                R.drawable.ic_music,
-                                variant.name,
-                                listOf(variant.language, variant.codec).mapNotNull { x -> x.ifEmpty { null } }.joinToString(", "),
-                                (prefix + variant.codec).trim(),
-                                tag = variant,
-                                call = {
-                                    selectedAudioVariant = variant
-                                    slideUpMenuOverlay.selectOption(audioButtons, variant)
-                                    slideUpMenuOverlay.setOk(container.context.getString(R.string.download))
-                                },
-                                invokeParent = false
-                            ))
-                        } else {
-                            val variant = HLS.variantReferenceToVariant(VariantPlaylistReference(playlist.baseUri, StreamInfo(null, null, null, null, null, null, null, null, null)))
-
-                            val estSize = VideoHelper.estimateSourceSize(variant);
-                            val prefix = if(estSize > 0) "±" + estSize.toHumanBytesSize() + " " else "";
-                            videoButtons.add(SlideUpMenuItem(
-                                container.context,
-                                R.drawable.ic_movie,
-                                variant.name,
-                                "${variant.width}x${variant.height}",
-                                (prefix + variant.codec).trim(),
-                                tag = variant,
-                                call = {
-                                    selectedVideoVariant = variant
-                                    slideUpMenuOverlay.selectOption(videoButtons, variant)
-                                    if (audioButtons.isEmpty()){
-                                        slideUpMenuOverlay.setOk(container.context.getString(R.string.download))
-                                    }
-                                },
-                                invokeParent = false
-                            ))
-                        }
-                    } else if (playlist is HlsMultivariantPlaylist) {
-                        masterPlaylist = HLS.parseMasterPlaylist(masterPlaylistContent, resolvedPlaylistUrl)
-
-                        masterPlaylist.getAudioSources().forEach { it ->
-
-                            val estSize = VideoHelper.estimateSourceSize(it);
-                            val prefix = if(estSize > 0) "±" + estSize.toHumanBytesSize() + " " else "";
-                            audioButtons.add(SlideUpMenuItem(
-                                container.context,
-                                R.drawable.ic_music,
-                                it.name,
-                                listOf(it.language, it.codec).mapNotNull { x -> x.ifEmpty { null } }.joinToString(", "),
-                                (prefix + it.codec).trim(),
-                                tag = it,
-                                call = {
-                                    selectedAudioVariant = it
-                                    slideUpMenuOverlay.selectOption(audioButtons, it)
-                                    slideUpMenuOverlay.setOk(container.context.getString(R.string.download))
-                                },
-                                invokeParent = false
-                            ))
-                        }
-
-                        /*masterPlaylist.getSubtitleSources().forEach { it ->
-                            subtitleButtons.add(SlideUpMenuItem(container.context, R.drawable.ic_music, it.name, listOf(it.format).mapNotNull { x -> x.ifEmpty { null } }.joinToString(", "), it, {
-                                selectedSubtitleVariant = it
-                                slideUpMenuOverlay.selectOption(subtitleButtons, it)
-                                slideUpMenuOverlay.setOk(container.context.getString(R.string.download))
-                            }, false))
-                        }*/
-
-                        masterPlaylist.getVideoSources().forEach {
-                            val estSize = VideoHelper.estimateSourceSize(it);
-                            val prefix = if(estSize > 0) "±" + estSize.toHumanBytesSize() + " " else "";
-                            videoButtons.add(SlideUpMenuItem(
-                                container.context,
-                                R.drawable.ic_movie,
-                                it.name,
-                                "${it.width}x${it.height}",
-                                (prefix + it.codec).trim(),
-                                tag = it,
-                                call = {
-                                    selectedVideoVariant = it
-                                    slideUpMenuOverlay.selectOption(videoButtons, it)
-                                    if (audioButtons.isEmpty()){
-                                        slideUpMenuOverlay.setOk(container.context.getString(R.string.download))
-                                    }
-                                },
-                                invokeParent = false
-                            ))
-                        }
+                    val modifier = if (source is JSSource && source.hasRequestModifier) source.getRequestModifier() else null
+                    val masterPlaylistResponse = ManagedHttpClient().get(sourceUrl, HashMap(), modifier)
+                    if (!masterPlaylistResponse.isOk) {
+                        masterPlaylistResponse.close();
+                        throw IllegalStateException("Failed to get master playlist: ${masterPlaylistResponse.code}")
                     }
 
-                    val newItems = arrayListOf<View>()
-                    if (videoButtons.isNotEmpty()) {
-                        newItems.add(SlideUpMenuGroup(container.context, container.context.getString(R.string.video), videoButtons, videoButtons))
-                    }
-                    if (audioButtons.isNotEmpty()) {
-                        newItems.add(SlideUpMenuGroup(container.context, container.context.getString(R.string.audio), audioButtons, audioButtons))
-                    }
+                    val masterPlaylistContent = masterPlaylistResponse.body?.string()
+                        ?: throw Exception("Master playlist content is empty")
+
+                    val resolvedPlaylistUrl = masterPlaylistResponse.url
+
+                    val videoButtons = arrayListOf<SlideUpMenuItem>()
+                    val audioButtons = arrayListOf<SlideUpMenuItem>()
                     //TODO: Implement subtitles
-                    /*if (subtitleButtons.isNotEmpty()) {
-                        newItems.add(SlideUpMenuGroup(container.context, container.context.getString(R.string.subtitles), subtitleButtons, subtitleButtons))
-                    }*/
+                    //val subtitleButtons = arrayListOf<SlideUpMenuItem>()
 
-                    slideUpMenuOverlay.onOK.subscribe {
-                        //TODO: Fix SubtitleRawSource issue
-                        StateDownloads.instance.download(video, selectedVideoVariant, selectedAudioVariant, null, videoModifier = modifier, audioModifier = modifier);
-                        slideUpMenuOverlay.hide()
-                    }
+                    var selectedVideoVariant: HLSVariantVideoUrlSource? = null
+                    var selectedAudioVariant: HLSVariantAudioUrlSource? = null
+                    //TODO: Implement subtitles
+                    //var selectedSubtitleVariant: HLSVariantSubtitleUrlSource? = null
 
-                    withContext(Dispatchers.Main) {
-                        slideUpMenuOverlay.setItems(newItems)
-                    }
-                } catch (e: Throwable) {
-                    if (masterPlaylistContent.lines().any { it.startsWith("#EXTINF:") }) {
-                        withContext(Dispatchers.Main) {
-                            if (source is IHLSManifestSource) {
-                                StateDownloads.instance.download(video, HLSVariantVideoUrlSource("variant", 0, 0, "application/vnd.apple.mpegurl", "", null, 0, false, resolvedPlaylistUrl), null, null, videoModifier = modifier)
-                                UIDialogs.toast(container.context, "Variant video HLS playlist download started")
-                                slideUpMenuOverlay.hide()
-                            } else if (source is IHLSManifestAudioSource) {
-                                StateDownloads.instance.download(video, null, HLSVariantAudioUrlSource("variant", 0, "application/vnd.apple.mpegurl", "", "", null, false, false, resolvedPlaylistUrl), null, audioModifier = modifier)
-                                UIDialogs.toast(container.context, "Variant audio HLS playlist download started")
-                                slideUpMenuOverlay.hide()
+                    val masterPlaylist: HLS.MasterPlaylist
+                    try {
+                        val inputStream = ByteArrayInputStream(masterPlaylistContent.toByteArray())
+                        val playlist = DefaultHlsPlaylistParserFactory().createPlaylistParser()
+                            .parse(sourceUrl.toUri(), inputStream)
+
+                        if (playlist is HlsMediaPlaylist) {
+                            if (source is IHLSManifestAudioSource) {
+                                val variant = HLS.mediaRenditionToVariant(MediaRendition("AUDIO", playlist.baseUri, "Single Playlist", null, null, null, null, null))!!
+
+                                val estSize = VideoHelper.estimateSourceSize(variant);
+                                val prefix = if(estSize > 0) "±" + estSize.toHumanBytesSize() + " " else "";
+                                audioButtons.add(SlideUpMenuItem(
+                                    container.context,
+                                    R.drawable.ic_music,
+                                    variant.name,
+                                    listOf(variant.language, variant.codec).mapNotNull { x -> x.ifEmpty { null } }.joinToString(", "),
+                                    (prefix + variant.codec).trim(),
+                                    tag = variant,
+                                    call = {
+                                        selectedAudioVariant = variant
+                                        slideUpMenuOverlay.selectOption(audioButtons, variant)
+                                        slideUpMenuOverlay.setOk(container.context.getString(R.string.download))
+                                    },
+                                    invokeParent = false
+                                ))
                             } else {
-                                throw NotImplementedError()
+                                val variant = HLS.variantReferenceToVariant(VariantPlaylistReference(playlist.baseUri, StreamInfo(null, null, null, null, null, null, null, null, null)))
+
+                                val estSize = VideoHelper.estimateSourceSize(variant);
+                                val prefix = if(estSize > 0) "±" + estSize.toHumanBytesSize() + " " else "";
+                                videoButtons.add(SlideUpMenuItem(
+                                    container.context,
+                                    R.drawable.ic_movie,
+                                    variant.name,
+                                    "${variant.width}x${variant.height}",
+                                    (prefix + variant.codec).trim(),
+                                    tag = variant,
+                                    call = {
+                                        selectedVideoVariant = variant
+                                        slideUpMenuOverlay.selectOption(videoButtons, variant)
+                                        if (audioButtons.isEmpty()){
+                                            slideUpMenuOverlay.setOk(container.context.getString(R.string.download))
+                                        }
+                                    },
+                                    invokeParent = false
+                                ))
+                            }
+                        } else if (playlist is HlsMultivariantPlaylist) {
+                            masterPlaylist = HLS.parseMasterPlaylist(masterPlaylistContent, resolvedPlaylistUrl)
+
+                            masterPlaylist.getAudioSources().forEach { it ->
+
+                                val estSize = VideoHelper.estimateSourceSize(it);
+                                val prefix = if(estSize > 0) "±" + estSize.toHumanBytesSize() + " " else "";
+                                audioButtons.add(SlideUpMenuItem(
+                                    container.context,
+                                    R.drawable.ic_music,
+                                    it.name,
+                                    listOf(it.language, it.codec).mapNotNull { x -> x.ifEmpty { null } }.joinToString(", "),
+                                    (prefix + it.codec).trim(),
+                                    tag = it,
+                                    call = {
+                                        selectedAudioVariant = it
+                                        slideUpMenuOverlay.selectOption(audioButtons, it)
+                                        slideUpMenuOverlay.setOk(container.context.getString(R.string.download))
+                                    },
+                                    invokeParent = false
+                                ))
+                            }
+
+                            /*masterPlaylist.getSubtitleSources().forEach { it ->
+                                subtitleButtons.add(SlideUpMenuItem(container.context, R.drawable.ic_music, it.name, listOf(it.format).mapNotNull { x -> x.ifEmpty { null } }.joinToString(", "), it, {
+                                    selectedSubtitleVariant = it
+                                    slideUpMenuOverlay.selectOption(subtitleButtons, it)
+                                    slideUpMenuOverlay.setOk(container.context.getString(R.string.download))
+                                }, false))
+                            }*/
+
+                            masterPlaylist.getVideoSources().forEach {
+                                val estSize = VideoHelper.estimateSourceSize(it);
+                                val prefix = if(estSize > 0) "±" + estSize.toHumanBytesSize() + " " else "";
+                                videoButtons.add(SlideUpMenuItem(
+                                    container.context,
+                                    R.drawable.ic_movie,
+                                    it.name,
+                                    "${it.width}x${it.height}",
+                                    (prefix + it.codec).trim(),
+                                    tag = it,
+                                    call = {
+                                        selectedVideoVariant = it
+                                        slideUpMenuOverlay.selectOption(videoButtons, it)
+                                        if (audioButtons.isEmpty()){
+                                            slideUpMenuOverlay.setOk(container.context.getString(R.string.download))
+                                        }
+                                    },
+                                    invokeParent = false
+                                ))
                             }
                         }
-                    } else {
-                        throw e
+
+                        val newItems = arrayListOf<View>()
+                        if (videoButtons.isNotEmpty()) {
+                            newItems.add(SlideUpMenuGroup(container.context, container.context.getString(R.string.video), videoButtons, videoButtons))
+                        }
+                        if (audioButtons.isNotEmpty()) {
+                            newItems.add(SlideUpMenuGroup(container.context, container.context.getString(R.string.audio), audioButtons, audioButtons))
+                        }
+                        //TODO: Implement subtitles
+                        /*if (subtitleButtons.isNotEmpty()) {
+                            newItems.add(SlideUpMenuGroup(container.context, container.context.getString(R.string.subtitles), subtitleButtons, subtitleButtons))
+                        }*/
+
+                        slideUpMenuOverlay.onOK.subscribe {
+                            //TODO: Fix SubtitleRawSource issue
+                            StateDownloads.instance.download(video, selectedVideoVariant, selectedAudioVariant, null, videoModifier = modifier, audioModifier = modifier);
+                            slideUpMenuOverlay.hide()
+                        }
+
+                        withContext(Dispatchers.Main) {
+                            slideUpMenuOverlay.setItems(newItems)
+                        }
+                    } catch (e: Throwable) {
+                        if (masterPlaylistContent.lines().any { it.startsWith("#EXTINF:") }) {
+                            withContext(Dispatchers.Main) {
+                                if (source is IHLSManifestSource) {
+                                    StateDownloads.instance.download(video, HLSVariantVideoUrlSource("variant", 0, 0, "application/vnd.apple.mpegurl", "", null, 0, false, resolvedPlaylistUrl), null, null, videoModifier = modifier)
+                                    UIDialogs.toast(container.context, "Variant video HLS playlist download started")
+                                    slideUpMenuOverlay.hide()
+                                } else if (source is IHLSManifestAudioSource) {
+                                    StateDownloads.instance.download(video, null, HLSVariantAudioUrlSource("variant", 0, "application/vnd.apple.mpegurl", "", "", null, false, false, resolvedPlaylistUrl), null, audioModifier = modifier)
+                                    UIDialogs.toast(container.context, "Variant audio HLS playlist download started")
+                                    slideUpMenuOverlay.hide()
+                                } else {
+                                    throw NotImplementedError()
+                                }
+                            }
+                        } else {
+                            throw e
+                        }
+                    }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Throwable) {
+                    Logger.e(TAG, "Failed to load HLS variants", e)
+                    withContext(Dispatchers.Main) {
+                        UIDialogs.toast(container.context, "Failed to load HLS variants: ${e.message}")
+                        slideUpMenuOverlay.hide()
                     }
                 }
             }

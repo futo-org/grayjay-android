@@ -176,12 +176,6 @@
             android:name=".activities.TestActivity"
             android:theme="@style/Theme.FutoVideo.NoActionBarFitsSystem" />
         <activity
-            android:name=".activities.SettingsActivity"
-            android:theme="@style/Theme.FutoVideo.NoActionBarFitsSystem" />
-        <activity
-            android:name=".activities.DeveloperActivity"
-            android:theme="@style/Theme.FutoVideo.NoActionBarFitsSystem" />
-        <activity
             android:name=".activities.ExceptionActivity"
             android:theme="@style/Theme.FutoVideo.NoActionBarFitsSystem" />
         <activity

@@ -248,7 +248,7 @@ class SettingsDev : FragmentedStorageFileJson() {
         try {
             UIDialogs.toast(StateApp.instance.activity!!, "Starting test background worker");
 
-            val wm = WorkManager.getInstance(act);
+            val wm = StateApp.getWorkManager(act);
             val req = OneTimeWorkRequestBuilder<BackgroundWorker>()
                 .setInputData(Data.Builder().putBoolean("bypassMainCheck", true).build())
                 .build();

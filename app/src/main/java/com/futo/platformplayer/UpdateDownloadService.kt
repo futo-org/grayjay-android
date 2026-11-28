@@ -49,6 +49,12 @@ class UpdateDownloadService : Service() {
             return START_NOT_STICKY
         }
 
+        val requestedVersion = intent.getIntExtra(EXTRA_VERSION, 0)
+        if (!isDownloading && !promoteToForeground(requestedVersion)) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
+
         if (intent.getBooleanExtra(EXTRA_CANCEL, false)) {
             cancelRequested = true
             Logger.i(TAG, "Download cancel requested")
@@ -58,8 +64,9 @@ class UpdateDownloadService : Service() {
             return START_NOT_STICKY
         }
 
-        val version = intent.getIntExtra(EXTRA_VERSION, 0)
+        val version = requestedVersion
         if (version == 0) {
+            stopForeground(Service.STOP_FOREGROUND_REMOVE)
             stopSelf()
             return START_NOT_STICKY
         }
@@ -76,9 +83,6 @@ class UpdateDownloadService : Service() {
 
         NotificationManagerCompat.from(this).cancel(UpdateNotificationManager.NOTIF_ID_READY)
 
-        val notification = UpdateNotificationManager.buildDownloadProgressNotification(this, version, 0, true)
-        startForeground(UpdateNotificationManager.NOTIF_ID_DOWNLOADING, notification)
-
         scope.launch {
             downloadApk(version)
         }
@@ -89,6 +93,25 @@ class UpdateDownloadService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         job.cancel()
+    }
+
+    override fun onTimeout(startId: Int, fgsType: Int) {
+        Logger.w(TAG, "Foreground service timeout reached (type=$fgsType), stopping update download")
+        cancelRequested = true
+        job.cancel()
+        stopForeground(Service.STOP_FOREGROUND_REMOVE)
+        stopSelf()
+    }
+
+    private fun promoteToForeground(version: Int): Boolean {
+        return try {
+            val notification = UpdateNotificationManager.buildDownloadProgressNotification(this, version, 0, true)
+            startForeground(UpdateNotificationManager.NOTIF_ID_DOWNLOADING, notification)
+            true
+        } catch (t: Throwable) {
+            Logger.e(TAG, "Failed to start foreground update download", t)
+            false
+        }
     }
 
     private fun throttledUpdateDownloadProgress(version: Int, progress: Int, indeterminate: Boolean, onProgress: ((Int) -> Unit)? = null) {

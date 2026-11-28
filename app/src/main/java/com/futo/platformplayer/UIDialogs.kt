@@ -73,11 +73,15 @@ class UIDialogs {
         }
 
         fun dismissAllDialogs() {
-            for (openDialog in _openDialogs) {
-                openDialog.dismiss();
-            }
-
+            val dialogs = _openDialogs.toList();
             _openDialogs.clear();
+            for (openDialog in dialogs) {
+                try {
+                    openDialog.dismiss();
+                } catch (e: Throwable) {
+                    Logger.w(TAG, "Failed to dismiss dialog", e);
+                }
+            }
         }
 
         fun showDialogProgress(context: Context, handler: ((ProgressDialog)->Unit)) {

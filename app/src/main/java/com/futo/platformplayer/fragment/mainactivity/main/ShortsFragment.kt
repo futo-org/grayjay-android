@@ -204,6 +204,8 @@ class ShortsFragment : MainFragment() {
     }
 
     private fun updateZeroState() {
+        if (!::zeroState.isInitialized)
+            return
         if (mainShorts.isEmpty() && !isChannelShortsMode && loadPagerTask == null) {
             zeroState.visibility = View.VISIBLE
         } else {
@@ -286,6 +288,8 @@ class ShortsFragment : MainFragment() {
     }
 
     private fun setLoading(isLoading: Boolean) {
+        if (!::overlayLoading.isInitialized || !::overlayLoadingSpinner.isInitialized)
+            return
         if (isLoading) {
             (overlayLoadingSpinner.drawable as Animatable?)?.start()
             overlayLoading.visibility = View.VISIBLE

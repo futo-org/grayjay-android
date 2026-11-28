@@ -660,7 +660,7 @@ class StateApp {
                     .setConstraints(constraints)
                     .build();
 
-                val wm = WorkManager.getInstance(context);
+                val wm = getWorkManager(context);
                 wm.enqueueUniquePeriodicWork(
                     UpdateCheckWorker.UNIQUE_WORK_NAME,
                     ExistingPeriodicWorkPolicy.UPDATE,
@@ -871,7 +871,7 @@ class StateApp {
 
     fun scheduleBackgroundWork(context: Context, active: Boolean = true, intervalMinutes: Int = 60 * 12) {
         try {
-            val wm = WorkManager.getInstance(context);
+            val wm = getWorkManager(context);
 
             if (active) {
                 if (BuildConfig.DEBUG)
@@ -1089,6 +1089,17 @@ class StateApp {
 
     companion object {
         private val TAG = "StateApp";
+
+        fun getWorkManager(context: Context): WorkManager {
+            if (!WorkManager.isInitialized()) {
+                try {
+                    WorkManager.initialize(context.applicationContext, androidx.work.Configuration.Builder().build());
+                } catch (ex: IllegalStateException) {
+                    Logger.w(TAG, "WorkManager initialize raced", ex);
+                }
+            }
+            return WorkManager.getInstance(context);
+        }
         @SuppressLint("StaticFieldLeak") //This is only alive while MainActivity is alive
         private var _instance : StateApp? = null;
         val instance : StateApp
